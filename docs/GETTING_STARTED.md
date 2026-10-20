@@ -11,7 +11,6 @@ Commands are shown for **Windows (PowerShell)**. Mac and Linux notes are in brac
 | Account | What to do |
 | --- | --- |
 | **GitHub** | Create a free account at [github.com](https://github.com) if you don't have one. Send your username to Samukelo, then **accept the invite email** to the `mngadisamu/relay` repo. You can't push code until you accept it. |
-| **Jira** | Accept the invite to the *Roadmap Planning* project. Your stories are there. |
 
 You don't need Supabase, Vercel or Gemini accounts. Samukelo shares the keys with you (step 6).
 
@@ -169,7 +168,7 @@ git push -u origin feature/S1-22-submit-form
 
 **6. Open a pull request.** GitHub shows a yellow **Compare & pull request** button. Fill in the template, then ask a teammate to review. Vercel adds a **preview link** to the pull request so they can test it live.
 
-**7. After approval,** click **Squash and merge**, then delete the branch. Move the story to **Done** in Jira and update the Completion column in the sprint plan.
+**7. After approval,** click **Squash and merge**, then delete the branch. Update your story's **Completion** column in the sprint plan to Done.
 
 ### Keeping your branch up to date
 
