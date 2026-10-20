@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Relay
 
-## Getting Started
+**AI-powered internal operations platform for Kopano Freight** · CAPACITI AI Bootcamp (8 weeks)
 
-First, run the development server:
+Kopano Freight is a fictional Johannesburg logistics company with about 350 staff across a head office, two depots and a driver workforce. Its internal requests to HR, IT, Finance and Operations arrive through a shared inbox and WhatsApp with no triage. Requests get misrouted, replies are slow and inconsistent, and management has no data on volumes, response times or upcoming surges.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Relay gives staff one place to ask for help. It classifies each request, drafts a reply, tracks performance, forecasts workload, governs its own AI decisions and automates approvals.
+
+## Roadmap
+
+| Sprint | Dates | Modules |
+| --- | --- | --- |
+| 1 | 20 Oct – 30 Oct 2026 | Ticket classification · AI response generator |
+| 2 | 2 Nov – 13 Nov 2026 | Analytics dashboard · Automated reporting |
+| 3 | 16 Nov – 27 Nov 2026 | Workload forecasting · AI risk and compliance |
+| 4 | 30 Nov – 11 Dec 2026 | Workflow automation · Deployment and showcase |
+
+Backlog and sprints are tracked in Jira (project **SCRUM**).
+
+## Tech stack
+
+- **Next.js 15** (App Router, TypeScript) on **Vercel**
+- **Supabase**: Postgres database, auth with roles, file storage
+- **Tailwind CSS** (shadcn/ui components added in Sprint 1)
+- **ML classifier**: TF-IDF + logistic regression, trained in Google Colab, exported to JSON and run inside a Next.js API route
+- **Gemini API** for response drafting and summaries
+
+## Project structure
+
+```
+src/app/            Pages and API routes
+src/lib/            Shared code (Supabase clients, classifier)
+supabase/migrations Database schema, applied in order
+supabase/seed       Seed scripts for historical tickets
+ml/notebooks        Colab notebooks for training the classifier
+ml/model            Exported model weights (JSON)
+data/raw            Source datasets (Kaggle, synthetic)
+data/processed      Cleaned, merged dataset
+docs/               Architecture document, sprint notes, retros
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repo and install dependencies:
+   ```bash
+   git clone <repo-url>
+   cd relay
+   npm install
+   ```
+2. Copy `.env.example` to `.env.local` and fill in the Supabase and Gemini keys (ask the team; never commit them).
+3. Run the app:
+   ```bash
+   npm run dev
+   ```
+   Open http://localhost:3000.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Working together
 
-## Learn More
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first commit. In short: never push to `main`, work on a branch named after the Jira story, and open a pull request that another team member reviews.
 
-To learn more about Next.js, take a look at the following resources:
+## Team
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Names and feature owners to be added.
