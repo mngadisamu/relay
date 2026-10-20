@@ -4,6 +4,10 @@ This guide takes you from a fresh laptop to running Relay and opening your first
 
 Commands are for **Windows Command Prompt** (cmd). Mac notes are in brackets where they differ.
 
+**Two tips before you start:**
+- Open a **normal** Command Prompt (Windows key → type `cmd` → Enter), not "Run as administrator". If your prompt starts with `C:\WINDOWS\system32>`, it's an admin window.
+- Paste and run commands **one line at a time**, so you can see which one fails. The word `cmd` at the top of each box is just a label; don't type it.
+
 ---
 
 ## 1. Accounts
@@ -82,7 +86,9 @@ cd relay
 code .
 ```
 
-The last command opens the project in VS Code. From now on you can use VS Code's built-in terminal: **Terminal → New Terminal** (or **Ctrl+`**). To make it use Command Prompt, click the **⌄** next to the **+** in the terminal panel → **Select Default Profile** → **Command Prompt**.
+The last command opens the project in VS Code. **If VS Code doesn't open**, run `dir` to check the files are there (you should see `package.json`), then open VS Code from the Start menu → **File → Open Folder…** → `C:\Users\<you>\Projects\relay` → **Select Folder**, and click **Yes, I trust the authors** if asked.
+
+From now on you can use VS Code's built-in terminal: **Terminal → New Terminal** (or **Ctrl+`**). To make it use Command Prompt, click the **⌄** next to the **+** in the terminal panel → **Select Default Profile** → **Command Prompt**.
 
 The first time you push, a GitHub sign-in window opens. Sign in with your browser.
 
@@ -207,6 +213,7 @@ git merge main
 | `'npm' is not recognized` or `'code' is not recognized` | Close **all** Command Prompt windows and VS Code, then open a new one. If it still fails, restart your laptop so Windows picks up the new install. |
 | `'winget' is not recognized` | Update **App Installer** from the Microsoft Store, then try again. Or download Node.js from [nodejs.org](https://nodejs.org) and VS Code from [code.visualstudio.com](https://code.visualstudio.com). |
 | `npm install` shows red **ERR!** lines | Check `node --version` is 20 or higher. Delete the `node_modules` folder and run `npm install` again. |
+| `code .` does nothing | Make sure you're in a normal (not administrator) Command Prompt and inside the `relay` folder. Or open the folder from VS Code: **File → Open Folder…**. |
 | `Port 3000 is already in use` | Another copy of the app is running. Close the other terminal, or use the address the terminal suggests (e.g. `localhost:3001`). |
 | `Permission denied` or `403` when pushing | Accept the GitHub invite email, then try again. |
 | Push rejected: `protected branch` | You're on `main`. Create a branch (step 2 of the daily workflow) and push that instead. |
