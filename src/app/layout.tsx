@@ -23,9 +23,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      {/* suppressHydrationWarning: browser extensions such as Grammarly add
+          attributes to <html>/<body> before React loads. This only ignores
+          attribute differences on these two tags, not on the rest of the page. */}
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         {children}
       </body>
