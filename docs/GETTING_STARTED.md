@@ -218,7 +218,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. You should 
 - Stop the app with **Ctrl+C** in the terminal.
 - **After changing `.env.local`, stop and restart `npm run dev`.** It only reads the keys when it starts.
 
-**Check the classify API (optional).** Open a second terminal with the **+** and run:
+**Check the classify API (optional).** Keep `npm run dev` running in the first terminal, open a second terminal with the **+**, and run:
 
 ```cmd
 curl -X POST http://localhost:3000/api/classify -H "Content-Type: application/json" -d "{\"subject\":\"Laptop broken\",\"description\":\"My laptop will not turn on\"}"
@@ -314,6 +314,7 @@ git merge main
 | `npm install` shows red **ERR!** lines | Check `node --version` is 20 or higher. Delete the `node_modules` folder and run `npm install` again. |
 | `The system cannot find the file specified` when copying `.env.example` | You're not in the `relay` folder. Run the command in VS Code's terminal (step 6), or `cd %USERPROFILE%\Projects\relay` first. |
 | Errors mentioning `SUPABASE_URL` or `undefined` keys | `.env.local` is missing, a value is empty, or there are spaces or quotes around a value. Check step 8.3, save, then stop and restart `npm run dev`. |
+| `curl: (7) Failed to connect to localhost port 3000` | The app isn't running. Start `npm run dev` in another terminal, wait for **Ready**, then try again. |
 | `Port 3000 is already in use` | Another copy of the app is running. Close the other terminal, or use the address the terminal suggests (e.g. `localhost:3001`). |
 | `Permission denied` or `403` when pushing | Accept the GitHub invite email, then try again. |
 | Push rejected: `protected branch` | You're on `main`. Create a branch (daily workflow step 2) and push that instead. |
