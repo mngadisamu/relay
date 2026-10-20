@@ -15,7 +15,7 @@ Relay gives staff one place to ask for help. It classifies each request, drafts 
 | 3 | 16 Nov – 27 Nov 2026 | Workload forecasting · AI risk and compliance |
 | 4 | 30 Nov – 11 Dec 2026 | Workflow automation · Deployment and showcase |
 
-Each sprint's plan, with user stories and progress, is in [docs/sprints](docs/sprints).
+Backlog and sprints are tracked in Jira (project **SCRUM**).
 
 ## Tech stack
 
@@ -58,7 +58,7 @@ First time? Follow the full step-by-step guide: **[docs/GETTING_STARTED.md](docs
 
 ## Working together
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first commit. In short: never push to `main`, work on a branch named after the user story, and open a pull request that another team member reviews.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first commit. In short: never push to `main`, work on a branch named after the Jira story, and open a pull request that another team member reviews.
 
 ## Team
 
