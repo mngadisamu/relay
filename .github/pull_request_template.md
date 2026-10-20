@@ -1,6 +1,6 @@
-## Jira story
+## User story
 
-SCRUM-
+S1-
 
 ## What changed
 

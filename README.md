@@ -41,6 +41,8 @@ docs/               Architecture document, sprint notes, retros
 
 ## Getting started
 
+First time? Follow the full step-by-step guide: **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**. Short version:
+
 1. Clone the repo and install dependencies:
    ```bash
    git clone <repo-url>

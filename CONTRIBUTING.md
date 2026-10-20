@@ -1,15 +1,17 @@
 # Contributing to Relay
 
+New to the project? Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
+
 Four of us work in this repo, so a few rules keep `main` working and deployable at all times.
 
 ## Branches
 
 - `main` is always deployable. Vercel deploys it automatically. **Never push to it directly.**
-- Create one branch per Jira story, named with the story key and a short description:
+- Create one branch per user story, named with the story ID from the sprint plan and a short description:
   ```
-  feature/SCRUM-21-submit-form
-  fix/SCRUM-30-login-redirect
-  docs/architecture
+  feature/S1-22-submit-form
+  fix/S1-09-login-redirect
+  docs/S1-20-architecture
   ```
 - Keep branches short-lived (a day or two). Pull from `main` often:
   ```bash
@@ -19,10 +21,10 @@ Four of us work in this repo, so a few rules keep `main` working and deployable 
 
 ## Commits
 
-Start each message with the Jira key so the work links back to the story:
+Start each message with the story ID so the work links back to the story:
 
 ```
-SCRUM-21 Add depot field to submit form
+S1-22 Add depot field to submit form
 ```
 
 ## Pull requests
