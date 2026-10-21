@@ -1,10 +1,9 @@
-import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { RoleHome } from "@/components/RoleHome";
 
 export default async function ComplianceHome() {
-  const profile = await getCurrentProfile();
-  if (!profile) redirect("/login");
+  // Only compliance users may open this page; everyone else goes to their own home.
+  const profile = await requireRole(["compliance"]);
 
   return (
     <RoleHome
