@@ -37,7 +37,7 @@ The bootcamp runs **8 weeks as 4 two-week sprints**. Work is graded on technical
 
 | Member | Sprint 1 feature | Owns (mainly) | Stories |
 | --- | --- | --- | --- |
-| **Samukelo** (team lead, BA) | F1 · Platform foundation | `supabase/migrations/`, `src/lib/supabase/`, `src/lib/auth.ts`, `src/middleware.ts`, login and role home pages, `docs/` | S1-01 ✅, S1-05 ✅, S1-09 ✅, S1-15, S1-20, S1-24 |
+| **Samukelo** (team lead, BA) | F1 · Platform foundation | `supabase/migrations/`, `src/lib/supabase/`, `src/lib/auth.ts`, `src/middleware.ts`, login and role home pages, `docs/` | S1-01 ✅, S1-05 ✅, S1-09 ✅, S1-15 ✅, S1-20, S1-24 |
 | **Elzel** | F2 · Ticket data and ML classifier | `data/`, `ml/`, `supabase/seed/`, `src/app/api/classify/`, classifier code | S1-02, S1-06, S1-10, S1-16, S1-17, S1-21, S1-25 |
 | **Mihlali** | F3 · Staff request portal (UI/UX) | Design system and shared UI components, submit form, My requests pages, role menu | S1-03, S1-07, S1-11, S1-12, S1-18, S1-22, S1-26 |
 | **Baphakamise** | F4 · AI response generator and agent inbox | Agent inbox, ticket view, template library, AI drafting route | S1-04, S1-08, S1-13, S1-14, S1-19, S1-23, S1-27, S1-28 |
@@ -77,7 +77,7 @@ GEMINI_API_KEY=                     # server only, never prefix with NEXT_PUBLIC
 src/
 ├── middleware.ts                 Runs before every page: refreshes the session, sends signed-out users to /login
 ├── lib/
-│   ├── auth.ts                   Role type, HOME_FOR_ROLE map, getCurrentProfile()
+│   ├── auth.ts                   Role type, HOME_FOR_ROLE map, getCurrentProfile(), requireRole()
 │   └── supabase/
 │       ├── client.ts             createClient() for browser ("use client") components
 │       ├── server.ts             createClient() for server components, server actions, route handlers
@@ -90,11 +90,12 @@ src/
     ├── login/page.tsx            Sign-in form (client component, useActionState)
     ├── login/actions.ts          signIn() and signOut() server actions
     ├── home/page.tsx             Redirects a signed-in user to their role's home
-    ├── staff/ agent/ manager/ compliance/page.tsx   Role home placeholders using RoleHome
+    ├── staff/ agent/ manager/ compliance/page.tsx   Role home placeholders; each guarded by requireRole()
     └── api/classify/route.ts     POST classify API: a keyword STUB until Elzel's model (S1-21)
 supabase/migrations/
 ├── 0001_initial_schema.sql       All tables, enums, RLS switched on
-└── 0002_profiles_on_signup.sql   Trigger: new auth user → profiles row (role staff); policy: read own profile
+├── 0002_profiles_on_signup.sql   Trigger: new auth user → profiles row (role staff); policy: read own profile
+└── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
 docs/  GETTING_STARTED.md · architecture.md (outline only) · sprints/ (plan .docx, dependencies .pdf, stories .md)
 ```
 
@@ -102,13 +103,15 @@ docs/  GETTING_STARTED.md · architecture.md (outline only) · sprints/ (plan .d
 
 **Test accounts** in Supabase: `staff@relay.test` (role staff) and `agent@relay.test` (role agent, department IT). Passwords are shared privately by Samukelo. **Never put them in code, docs or chat logs.**
 
-**In progress (not on `main` yet):** S1-15 on branch `feature/S1-15-staff-privacy` adds migration `0003_tickets_privacy.sql` with RLS policies on `tickets`:
+**Ticket privacy (S1-15, merged):** migration `0003_tickets_privacy.sql` adds RLS policies on `tickets`:
 - users read the tickets they submitted;
 - agents read tickets in their own department;
 - managers and compliance read all tickets;
 - users insert tickets only with `submitted_by = auth.uid()`.
 
-It also adds helper SQL functions `public.current_user_role()` and `public.current_user_department()`, plus page guards so a role can't open another role's home page.
+It also adds the SQL helpers `public.current_user_role()` and `public.current_user_department()` (use them in new policies). In the app, protect a page with `await requireRole(["agent"])` from `@/lib/auth`: signed-out users go to `/login`, other roles go back to their own home.
+
+**Test data in Supabase:** three tickets (two from `staff@relay.test`, IT and HR; one from `staff2@relay.test`, IT), plus a third account `staff2@relay.test` (role staff). Use them to test inboxes and lists.
 
 ---
 
@@ -128,7 +131,7 @@ It also adds helper SQL functions `public.current_user_role()` and `public.curre
 
 ### ⚠️ Known gap: missing RLS policies
 
-RLS is **on** for every table, and without a policy the app can neither read nor write. Policies exist only for `profiles` (read own row) and, once S1-15 merges, `tickets` (read and insert as above). **Still missing:**
+RLS is **on** for every table, and without a policy the app can neither read nor write. Policies exist only for `profiles` (read own row) and `tickets` (read and insert, see section 4). **Still missing:**
 - `tickets` **update** (agents set status, `answered_at`, department override): needed by S1-23 and S1-25
 - `classifications` insert and read: S1-21, S1-25
 - `templates` read and edit by agents: S1-04, S1-27
@@ -142,7 +145,7 @@ If a query returns **no rows or a "row-level security" error**, a missing policy
 ## 6. How to write code here (conventions)
 
 - **Supabase client:** use `createClient` from `@/lib/supabase/server` in server components, server actions and route handlers, and from `@/lib/supabase/client` only in `"use client"` components. **Never** use `SUPABASE_SERVICE_ROLE_KEY` in app code. The only exception is one-off scripts (e.g. the S1-17 seed script) run locally.
-- **Who is signed in:** call `getCurrentProfile()` from `@/lib/auth`. It returns `{ email, fullName, role, department }` or `null`. For role-based redirects use `HOME_FOR_ROLE`.
+- **Who is signed in:** call `getCurrentProfile()` from `@/lib/auth`. It returns `{ email, fullName, role, department }` or `null`. To restrict a page to certain roles, call `await requireRole([...])` at the top of the page; it returns the profile. For role-based redirects use `HOME_FOR_ROLE`.
 - **Forms:** use **server actions** (`"use server"` in an `actions.ts` file next to the page), with `useActionState` in the client form for errors and pending state. See `src/app/login/` as the reference pattern.
 - **Redirects:** redirect **straight to the final page**. Don't redirect from a server action to a page that redirects again: that chain made sign-in take ~40 s in dev (fixed in S1-09).
 - **Secrets:** API keys only in server code (server actions, route handlers). Nothing secret gets a `NEXT_PUBLIC_` prefix.
@@ -220,18 +223,18 @@ Full acceptance criteria are in [`docs/sprints/SPRINT1_STORIES.md`](docs/sprints
 - **S1-12:** shadcn/ui setup (`npx shadcn@latest init`), with colours, type and spacing. It changes `globals.css` and adds `src/components/ui/`, so announce it at stand-up first and keep `--background` / `--foreground` working.
 - **S1-18:** a menu that shows only the pages for the user's role (use `getCurrentProfile()`). Staff: Submit request, My requests. Agent: Inbox, Templates. Contrast must meet WCAG AA.
 - **S1-22:** submit form (subject, description, depot) as a server action. Insert into `tickets` with `submitted_by` = current user id (RLS requires it), get the department from the classify logic, and show the reference number and department. Must work at 360 px, with labelled fields and a clear error for an empty description. Build against the stub until S1-21.
-- **S1-26:** My requests list (newest first; status in words and colour) and a detail page (department, status history, reply once sent). Relies on S1-15's RLS so staff only see their own.
+- **S1-26:** My requests list (newest first; status in words and colour) and a detail page (department, status history, reply once sent). S1-15's RLS already limits staff to their own tickets, so a plain `select` from `tickets` returns only theirs.
 
 ### Baphakamise: AI replies and agent inbox
 - **S1-04:** at least 3 reply templates per department. Get the Gemini API key from Google AI Studio and keep it **only** in `.env.local` and Vercel.
 - **S1-08 / S1-13:** a server-side route or server action that calls Gemini with the ticket plus its department template. If Gemini fails or takes > 10 s, use the template text instead. Save the draft to `responses` (needs a policy). Adding an SDK changes `package.json`, so announce it first. Use a current Gemini Flash model (check AI Studio for the model name).
 - **S1-14:** tone toggle (formal, friendly, urgent) regenerates the draft. The chosen tone is saved with the response.
-- **S1-19:** agent inbox at `/agent` (or a sub-page): only the agent's department (S1-15's RLS does the filtering), most urgent first then oldest, filter by status, "Needs review" clearly marked.
+- **S1-19:** agent inbox at `/agent` (or a sub-page, guarded with `requireRole(["agent"])`): only the agent's department (S1-15's RLS does the filtering automatically, so a plain `select` from `tickets` is enough), most urgent first then oldest, filter by status, "Needs review" clearly marked.
 - **S1-23:** show the draft labelled "AI-drafted", let the agent edit it, then Send. Sending sets `status = 'answered'` and `answered_at`, and saves `final_text`, `sent_by` and `sent_at` (needs a tickets update policy).
 - **S1-27 / S1-28:** template library screen (view and edit by department), and the sent reply shown on the staff member's request detail (built together with Mihlali).
 
 ### Samukelo: platform
-- **S1-15** (in progress): tickets RLS (migration 0003) plus role page guards. Next: the missing policies listed in section 5, so teammates aren't blocked.
+- **S1-15 ✅** done. **Next:** the missing policies listed in section 5 (tickets update, classifications, templates, responses, audit_log), so teammates aren't blocked.
 - **S1-20 / S1-24:** `docs/architecture.md`: diagram, components and why chosen, data model, request flow, roles and security, how the design supports Sprints 2–4.
 
 ---
