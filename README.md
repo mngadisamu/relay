@@ -24,6 +24,8 @@ Backlog and sprints are tracked in Jira (project **SCRUM**). Sprint 1 is in prog
 | Document | What it's for |
 | --- | --- |
 | [Getting started](docs/GETTING_STARTED.md) | Set up your laptop, run Relay, and the daily Git workflow |
+| [AGENTS.md](AGENTS.md) | Context for AI assistants: give it to your AI before asking for help with a story |
+| [Sprint 1 stories (text)](docs/sprints/SPRINT1_STORIES.md) | Every Sprint 1 story with its Given / When / Then criteria, readable by AI tools |
 | [Sprint 1 plan](docs/sprints/Sprint1_Plan.docx) | Goal, owners, and every user story with its Given / When / Then acceptance criteria, day by day |
 | [Sprint 1 dependency map](docs/sprints/Sprint1_Dependencies.pdf) | Which story you can't start without, who you're waiting on, and who's waiting on you |
 | [Architecture](docs/architecture.md) | How Relay is built (written in Sprint 1, stories S1-20 and S1-24) |
