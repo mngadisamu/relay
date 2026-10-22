@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT1_STORIES.md`, and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Wed 21 Oct 2026 (Sprint 1, day 3).
+Last updated: Thu 22 Oct 2026 (Sprint 1, day 4).
 
 ---
 
@@ -95,7 +95,8 @@ src/
 supabase/migrations/
 ├── 0001_initial_schema.sql       All tables, enums, RLS switched on
 ├── 0002_profiles_on_signup.sql   Trigger: new auth user → profiles row (role staff); policy: read own profile
-└── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
+├── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
+└── 0004_team_policies.sql        RLS for ticket updates, classifications, templates, responses, audit_log + reroute_ticket()
 docs/  GETTING_STARTED.md · architecture.md (outline only) · sprints/ (plan .docx, dependencies .pdf, stories .md)
 ```
 
@@ -129,16 +130,34 @@ It also adds the SQL helpers `public.current_user_role()` and `public.current_us
 | `audit_log` | `actor`, `action`, `ticket_id`, `details` (jsonb) | e.g. classify, override, draft, send |
 | `approvals` | `ticket_id`, `approver`, `decision`, `decided_at` | Sprint 4 |
 
-### ⚠️ Known gap: missing RLS policies
+### Who can do what (row-level security, migrations 0003 and 0004)
 
-RLS is **on** for every table, and without a policy the app can neither read nor write. Policies exist only for `profiles` (read own row) and `tickets` (read and insert, see section 4). **Still missing:**
-- `tickets` **update** (agents set status, `answered_at`, department override): needed by S1-23 and S1-25
-- `classifications` insert and read: S1-21, S1-25
-- `templates` read and edit by agents: S1-04, S1-27
-- `responses` insert and read: S1-13, S1-23, S1-28
-- `audit_log` insert: S1-25
+RLS is **on** for every table. These rules are the whole permission model. If a query returns **no rows or a "row-level security" error**, check this table first.
 
-If a query returns **no rows or a "row-level security" error**, a missing policy is the likely cause. **Don't** turn RLS off, and don't use the service-role key in app code to get around it. Ask Samukelo for a policy in a new migration, and describe exactly who should be able to do what.
+| Table | Read | Create | Update |
+| --- | --- | --- | --- |
+| `profiles` | own row | automatic on sign-up (trigger) | (none yet) |
+| `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all |
+| `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
+| `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
+| `responses` | agents, managers, compliance on visible tickets · **staff only once `sent_at` is set** (never unsent drafts) | agents, managers, on visible tickets | agents, managers |
+| `audit_log` | managers, compliance | anyone signed in, only with `actor = auth.uid()` | nobody (append-only) |
+| `approvals` | (Sprint 4) | | |
+
+**Rules for writing code against this:**
+- **Re-routing a ticket to another department** (S1-25): use the database function, not a plain update. A plain update is refused, because the agent can no longer see the ticket afterwards:
+  ```ts
+  const { error } = await supabase.rpc("reroute_ticket", {
+    p_ticket_id: ticketId,
+    p_department: "HR",
+  });
+  ```
+  In one step it checks the caller is an agent of the ticket's current department (or a manager), moves the ticket, clears `needs_review`, records the override on the latest classification and writes an `audit_log` entry.
+- **AI drafts are created by the agent**, e.g. when the agent opens a ticket or clicks "Draft reply" (S1-08, S1-13). Staff accounts can't insert into `responses`, so don't generate drafts inside the staff submit form.
+- **Sending a reply** (S1-23): update the response (`final_text`, `sent_by`, `sent_at`) and the ticket (`status = 'answered'`, `answered_at`), both as the agent.
+- **Saving a classification** (S1-21): insert it right after inserting the ticket, in the same server action, as the submitting user.
+- **Audit entries:** always set `actor` to the signed-in user's id.
+- Need a permission that isn't here? Ask Samukelo for a new migration. Don't turn RLS off, and don't use the service-role key in app code.
 
 ---
 
@@ -215,8 +234,8 @@ Full acceptance criteria are in [`docs/sprints/SPRINT1_STORIES.md`](docs/sprints
 - **S1-02 / S1-06:** the Kaggle *IT Service Ticket Classification* dataset goes in `data/raw/`. Map its categories to HR / IT / Finance / Operations, and write synthetic HR, Finance and Operations tickets in Kopano Freight's context (depots, drivers, fuel cards, payslips, trucks). Columns: `subject, description, department, priority, depot, created_at` (dates spread over the last 12 months), `source` (real/synthetic). Add a data dictionary.
 - **S1-10 / S1-16:** train in Colab. Report accuracy **separately** on held-out *real* tickets and on synthetic ones, with a confusion matrix (target ≥ 85% on real). Export JSON to `ml/model/` containing `version`, `classes`, `vocabulary` (term → index), `idf`, `coef` (classes × terms), `intercept`, and the preprocessing settings (lowercase, n-grams, stop words) so TypeScript can reproduce them exactly. Save the notebook in `ml/notebooks/`.
 - **S1-17:** a local seed script in `supabase/seed/` inserts historical tickets with `is_historical = true` and their original `created_at`. It must be safe to run twice (no duplicates). This is the one place the service-role key may be used, from `.env.local`, never committed.
-- **S1-21:** replace the stub inside `src/app/api/classify/route.ts` with TF-IDF + logistic regression inference from the JSON. Keep the contract. Respond in under 1 s. Save each result to `classifications` with `model_version` (needs an insert policy from Samukelo).
-- **S1-25:** confidence < 0.6 sets `tickets.needs_review = true`. An agent can change the department, and the change is saved in `classifications.overridden_by / overridden_department` and `audit_log` (needs policies).
+- **S1-21:** replace the stub inside `src/app/api/classify/route.ts` with TF-IDF + logistic regression inference from the JSON. Keep the contract. Respond in under 1 s. Save each result to `classifications` with `model_version` (allowed by migration 0004).
+- **S1-25:** confidence < 0.6 sets `tickets.needs_review = true` when the ticket is inserted. An agent changes the department with `supabase.rpc("reroute_ticket", …)` (section 5), which also records the override and the audit entry.
 
 ### Mihlali: staff portal and design
 - **S1-03 / S1-07 / S1-11:** personas (staff, agent, manager, compliance), a journey map, and low-fidelity wireframes for login, submit request, My requests, request detail, agent inbox, ticket view and template library. Then a classmate review.
@@ -227,14 +246,14 @@ Full acceptance criteria are in [`docs/sprints/SPRINT1_STORIES.md`](docs/sprints
 
 ### Baphakamise: AI replies and agent inbox
 - **S1-04:** at least 3 reply templates per department. Get the Gemini API key from Google AI Studio and keep it **only** in `.env.local` and Vercel.
-- **S1-08 / S1-13:** a server-side route or server action that calls Gemini with the ticket plus its department template. If Gemini fails or takes > 10 s, use the template text instead. Save the draft to `responses` (needs a policy). Adding an SDK changes `package.json`, so announce it first. Use a current Gemini Flash model (check AI Studio for the model name).
+- **S1-08 / S1-13:** a server-side route or server action that calls Gemini with the ticket plus its department template. If Gemini fails or takes > 10 s, use the template text instead. Save the draft to `responses` as the signed-in agent (allowed by migration 0004). Adding an SDK changes `package.json`, so announce it first. Use a current Gemini Flash model (check AI Studio for the model name).
 - **S1-14:** tone toggle (formal, friendly, urgent) regenerates the draft. The chosen tone is saved with the response.
 - **S1-19:** agent inbox at `/agent` (or a sub-page, guarded with `requireRole(["agent"])`): only the agent's department (S1-15's RLS does the filtering automatically, so a plain `select` from `tickets` is enough), most urgent first then oldest, filter by status, "Needs review" clearly marked.
-- **S1-23:** show the draft labelled "AI-drafted", let the agent edit it, then Send. Sending sets `status = 'answered'` and `answered_at`, and saves `final_text`, `sent_by` and `sent_at` (needs a tickets update policy).
+- **S1-23:** show the draft labelled "AI-drafted", let the agent edit it, then Send. Sending sets `status = 'answered'` and `answered_at`, and saves `final_text`, `sent_by` and `sent_at` (allowed by migration 0004).
 - **S1-27 / S1-28:** template library screen (view and edit by department), and the sent reply shown on the staff member's request detail (built together with Mihlali).
 
 ### Samukelo: platform
-- **S1-15 ✅** done. **Next:** the missing policies listed in section 5 (tickets update, classifications, templates, responses, audit_log), so teammates aren't blocked.
+- **S1-15 ✅** done. **Database rules for the rest of Sprint 1 ✅** (migration 0004, see section 5).
 - **S1-20 / S1-24:** `docs/architecture.md`: diagram, components and why chosen, data model, request flow, roles and security, how the design supports Sprints 2–4.
 
 ---
