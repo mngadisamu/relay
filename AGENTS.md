@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT1_STORIES.md`, and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Thu 22 Oct 2026 (Sprint 1, day 4).
+Last updated: Thu 22 Oct 2026, midday (Sprint 1, day 4).
 
 ---
 
@@ -14,7 +14,7 @@ Last updated: Thu 22 Oct 2026 (Sprint 1, day 4).
 
 1. **Classifies** each request to a department (ML classifier). Sprint 1.
 2. **Drafts a reply** with AI in a chosen tone, which an agent edits and sends. Sprint 1.
-3. Later sprints: analytics dashboard and reports (Sprint 2), workload forecasting and AI risk/compliance (Sprint 3), workflow automation, approvals and deployment showcase (Sprint 4).
+3. Later sprints: analytics dashboard and reports (Sprint 2), workload forecasting and AI risk/compliance (Sprint 3), workflow automation, approvals and deployment showcase (Sprint 4). Sprint 2 starts with the Sprint 1 carry-over (Manage users, assigning and closing tickets, priority on submit, manager and compliance menus). Owners for Sprints 2–4 are chosen at each sprint's planning; features rotate. The full list is in the Jira epics.
 
 The bootcamp runs **8 weeks as 4 two-week sprints**. Work is graded on technical delivery *and* professional skills (documentation, teamwork, presentation, responsible AI).
 
@@ -37,7 +37,7 @@ The bootcamp runs **8 weeks as 4 two-week sprints**. Work is graded on technical
 
 | Member | Sprint 1 feature | Owns (mainly) | Stories |
 | --- | --- | --- | --- |
-| **Samukelo** (team lead, BA) | F1 · Platform foundation | `supabase/migrations/`, `src/lib/supabase/`, `src/lib/auth.ts`, `src/middleware.ts`, login and role home pages, `docs/` | S1-01 ✅, S1-05 ✅, S1-09 ✅, S1-15 ✅, S1-20, S1-24 |
+| **Samukelo** (team lead, BA) | F1 · Platform foundation | `supabase/migrations/`, `src/lib/supabase/`, `src/lib/auth.ts`, `src/middleware.ts`, login and role home pages, `docs/` | S1-01 ✅, S1-05 ✅, S1-09 ✅, S1-15 ✅, S1-20 ✅, S1-24 |
 | **Elzel** | F2 · Ticket data and ML classifier | `data/`, `ml/`, `supabase/seed/`, `src/app/api/classify/`, classifier code | S1-02, S1-06, S1-10, S1-16, S1-17, S1-21, S1-25 |
 | **Mihlali** | F3 · Staff request portal (UI/UX) | Design system and shared UI components, submit form, My requests pages, role menu | S1-03, S1-07, S1-11, S1-12, S1-18, S1-22, S1-26 |
 | **Baphakamise** | F4 · AI response generator and agent inbox | Agent inbox, ticket view, template library, AI drafting route | S1-04, S1-08, S1-13, S1-14, S1-19, S1-23, S1-27, S1-28 |
@@ -97,12 +97,14 @@ supabase/migrations/
 ├── 0002_profiles_on_signup.sql   Trigger: new auth user → profiles row (role staff); policy: read own profile
 ├── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
 └── 0004_team_policies.sql        RLS for ticket updates, classifications, templates, responses, audit_log + reroute_ticket()
-docs/  GETTING_STARTED.md · architecture.md (outline only) · sprints/ (plan .docx, dependencies .pdf, stories .md)
+docs/  GETTING_STARTED.md · architecture.md (sections 1–4 done in S1-20; 5–7 come in S1-24) · sprints/ (plan .docx, dependencies .pdf, stories .md)
 ```
 
 **Public paths** (no sign-in needed): `/`, `/login` and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`).
 
 **Test accounts** in Supabase: `staff@relay.test` (role staff) and `agent@relay.test` (role agent, department IT). Passwords are shared privately by Samukelo. **Never put them in code, docs or chat logs.**
+
+**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. Samukelo adds accounts in the Supabase dashboard and sets their role and department. Need a test account with another role? Ask him. Don't build a sign-up page: a **Manage users** screen (managers add users and set roles) is planned for the start of Sprint 2.
 
 **Ticket privacy (S1-15, merged):** migration `0003_tickets_privacy.sql` adds RLS policies on `tickets`:
 - users read the tickets they submitted;
@@ -122,7 +124,7 @@ It also adds the SQL helpers `public.current_user_role()` and `public.current_us
 
 | Table | Key columns | Notes |
 | --- | --- | --- |
-| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically on sign-up (role `staff`). Agents and managers have a `department`. |
+| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically when Samukelo adds an account (role `staff`). Agents and managers have a `department`. |
 | `tickets` | `id`, `reference` (auto, e.g. `KF-261021-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_historical`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | `is_historical = true` marks seeded past tickets (S1-17). Always set the matching timestamp when status changes. |
 | `classifications` | `ticket_id`, `predicted_department`, `confidence` (0–1), `model_version`, `overridden_by`, `overridden_department`, `created_at` | Keep every decision; never overwrite (needed for the Sprint 3 audit). |
 | `templates` | `department`, `name`, `body`, `updated_by`, timestamps | Reply templates (S1-04, S1-27) |
@@ -136,7 +138,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 
 | Table | Read | Create | Update |
 | --- | --- | --- | --- |
-| `profiles` | own row | automatic on sign-up (trigger) | (none yet) |
+| `profiles` | own row (so agents can't see a submitter's name yet; ask Samukelo if your story needs it) | automatic when an account is added (trigger) | (none yet) |
 | `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all |
 | `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
 | `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
@@ -254,7 +256,8 @@ Full acceptance criteria are in [`docs/sprints/SPRINT1_STORIES.md`](docs/sprints
 
 ### Samukelo: platform
 - **S1-15 ✅** done. **Database rules for the rest of Sprint 1 ✅** (migration 0004, see section 5).
-- **S1-20 / S1-24:** `docs/architecture.md`: diagram, components and why chosen, data model, request flow, roles and security, how the design supports Sprints 2–4.
+- **S1-20 ✅** `docs/architecture.md` sections 1–4: diagram, components and why chosen, data model.
+- **S1-24** (Wed 28): sections 5–7: request flow, roles and security, how the design supports Sprints 2–4. Section 5 describes what Mihlali and Baphakamise build, so it's written after their screens land on Tue 27.
 
 ---
 
