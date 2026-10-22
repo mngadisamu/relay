@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-// Classify API contract (story S1-07).
+// Classify API contract (agreed in Sprint 1 planning).
 //
 // Request:  POST /api/classify  { "subject": string, "description": string }
 // Response: { "department": "HR" | "IT" | "Finance" | "Operations",
@@ -10,7 +10,8 @@ import { NextResponse } from "next/server";
 //
 // STUB: returns a keyword-based guess so the submit form (F3) and agent
 // inbox (F4) can be built before the trained model (F2) is ready.
-// Replace with the exported TF-IDF + logistic regression model from ml/model.
+// S1-21 replaces this with the exported TF-IDF + logistic regression model
+// from ml/model, keeping the same request and response shape.
 
 const REVIEW_THRESHOLD = 0.6;
 
