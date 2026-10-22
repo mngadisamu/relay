@@ -170,7 +170,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 - **Secrets:** API keys only in server code (server actions, route handlers). Nothing secret gets a `NEXT_PUBLIC_` prefix.
 - **AI output must be labelled** ("AI-drafted") and editable by a person before sending. Store both the draft and the final text.
 - **Accessibility (WCAG 2.1 AA):** every input has a `<label htmlFor>`; status is shown in **text and colour**, not colour alone; errors use `role="alert"`; screens work at **360 px** width.
-- **Database changes:** never edit an applied migration. Add the next numbered file in `supabase/migrations/` (e.g. `0004_...sql`), with comments explaining each part, and run it in the Supabase SQL Editor. Samukelo owns migrations.
+- **Database changes:** never edit an applied migration. Add the next numbered file in `supabase/migrations/` (e.g. `0005_...sql`), with comments explaining each part, and run it in the Supabase SQL Editor. Samukelo owns migrations.
 - **Comments:** short and plain, explaining *why*. The team is learning, and the code will be presented to a panel.
 - **Before saying "done":** `npx tsc --noEmit` and `npm run lint` pass, and each Given / When / Then scenario has been tested by hand.
 
