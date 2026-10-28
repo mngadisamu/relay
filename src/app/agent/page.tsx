@@ -1,40 +1,28 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "@/app/login/actions";
+import { AgentHeader } from "@/components/AgentHeader";
+import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
+import { STATUS_LABEL, formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 
 type Ticket = {
   id: number;
   reference: string;
   subject: string;
   depot: string | null;
-  priority: "low" | "medium" | "high" | "urgent";
-  status: "received" | "assigned" | "answered" | "closed";
+  priority: TicketPriority;
+  status: TicketStatus;
   needs_review: boolean;
   created_at: string;
 };
 
-const STATUSES = ["received", "assigned", "answered", "closed"] as const;
+const STATUSES: TicketStatus[] = ["received", "assigned", "answered", "closed"];
 
 // Most urgent first (S1-19).
-const PRIORITY_RANK: Record<Ticket["priority"], number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+const PRIORITY_RANK: Record<TicketPriority, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
-// Status in words AND colour (WCAG: never colour alone).
-const STATUS_STYLE: Record<Ticket["status"], string> = {
-  received: "bg-gray-100 text-gray-800",
-  assigned: "bg-blue-50 text-blue-800",
-  answered: "bg-green-50 text-green-800",
-  closed: "bg-gray-200 text-gray-800",
-};
-const PRIORITY_STYLE: Record<Ticket["priority"], string> = {
-  urgent: "bg-red-50 text-red-800",
-  high: "bg-orange-50 text-orange-900",
-  medium: "bg-gray-100 text-gray-800",
-  low: "bg-gray-50 text-gray-700",
-};
-
-// Agent inbox (S1-19): only the agent's department, most urgent first then oldest,
-// a status filter, and "Needs review" clearly marked.
+// Agent inbox (S1-19, mockup screen 6): only the agent's department, most urgent
+// first then oldest, a status filter with counts, and "Needs review" clearly marked.
 export default async function AgentInbox({
   searchParams,
 }: {
@@ -45,117 +33,100 @@ export default async function AgentInbox({
   const filter = STATUSES.find((s) => s === status);
 
   // A plain select is enough: row-level security (S1-15) only returns
-  // tickets from this agent's department.
+  // tickets from this agent's department. Seeded history is left out.
   const supabase = await createClient();
-  let query = supabase
+  const { data, error } = await supabase
     .from("tickets")
     .select("id, reference, subject, depot, priority, status, needs_review, created_at")
     .eq("is_historical", false);
-  if (filter) query = query.eq("status", filter);
-  const { data, error } = await query;
 
-  const tickets = ((data ?? []) as Ticket[]).sort(
+  const all = ((data ?? []) as Ticket[]).sort(
     (a, b) =>
       PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
+  const tickets = filter ? all.filter((t) => t.status === filter) : all;
+  const countFor = (s?: TicketStatus) => (s ? all.filter((t) => t.status === s).length : all.length);
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-gray-600">Relay · {profile.department ?? "No department"}</p>
-          <h1 className="text-2xl font-semibold text-gray-900">Inbox</h1>
-          <p className="text-sm text-gray-600">Most urgent first, then oldest</p>
+    <div className="min-h-screen bg-page">
+      <AgentHeader profile={profile} current="inbox" />
+      <main className="mx-auto max-w-[1360px] space-y-[18px] px-6 pb-12 pt-7">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-[22px] font-semibold text-ink">Inbox</h1>
+            <p className="text-sm text-muted">
+              {profile.department ?? "Your department"} tickets only · most urgent first, then oldest
+            </p>
+          </div>
+          <nav aria-label="Filter by status" className="flex flex-wrap gap-1 rounded-lg border border-line bg-white p-1">
+            {[undefined, ...STATUSES].map((s) => {
+              const active = s === filter;
+              return (
+                <Link
+                  key={s ?? "all"}
+                  href={s ? `/agent?status=${s}` : "/agent"}
+                  aria-current={active ? "page" : undefined}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-[7px] text-sm ${
+                    active ? "bg-brand font-semibold text-white" : "font-medium text-ink-2 hover:bg-page"
+                  }`}
+                >
+                  {s ? STATUS_LABEL[s] : "All"}
+                  <span className={`text-xs tabular-nums ${active ? "text-[#dce8f7]" : "text-muted"}`}>{countFor(s)}</span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/agent/templates" className="text-sm font-medium text-blue-700 hover:underline">
-            Templates
-          </Link>
-          <form action={signOut}>
-            <button type="submit" className="rounded-md border border-gray-400 px-3 py-1.5 text-sm">
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
 
-      <nav aria-label="Filter by status" className="flex flex-wrap gap-2">
-        {[undefined, ...STATUSES].map((s) => {
-          const active = s === filter;
-          return (
-            <Link
-              key={s ?? "all"}
-              href={s ? `/agent?status=${s}` : "/agent"}
-              aria-current={active ? "page" : undefined}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize ${
-                active ? "bg-blue-700 text-white" : "border border-gray-300 bg-white text-gray-800"
-              }`}
-            >
-              {s ?? "All"}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {error && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-          Couldn&apos;t load tickets: {error.message}
-        </p>
-      )}
-
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="bg-gray-50 text-xs uppercase text-gray-600">
-            <tr>
-              <th scope="col" className="px-4 py-3">Priority</th>
-              <th scope="col" className="px-4 py-3">Subject</th>
-              <th scope="col" className="px-4 py-3">Reference</th>
-              <th scope="col" className="px-4 py-3">Depot</th>
-              <th scope="col" className="px-4 py-3">Status</th>
-              <th scope="col" className="px-4 py-3">Received</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {tickets.map((t) => (
-              <tr key={t.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <span className={`rounded px-2 py-0.5 text-xs font-semibold capitalize ${PRIORITY_STYLE[t.priority]}`}>
-                    {t.priority}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/agent/${t.id}`} className="font-semibold text-gray-900 hover:underline">
-                      {t.subject}
-                    </Link>
-                    {t.needs_review && (
-                      <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
-                        Needs review
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-gray-700">{t.reference}</td>
-                <td className="px-4 py-3 text-gray-700">{t.depot ?? "Not given"}</td>
-                <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${STATUS_STYLE[t.status]}`}>
-                    {t.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-700">
-                  {new Date(t.created_at).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {tickets.length === 0 && !error && (
-          <p className="p-6 text-center text-sm text-gray-600">
-            {filter ? `No ${filter} tickets.` : "No tickets for your department right now."}
+        {error && (
+          <p role="alert" className="rounded-md bg-[#fdecea] p-3 text-sm text-[#a4231a]">
+            Couldn&apos;t load tickets: {error.message}
           </p>
         )}
-      </div>
-    </main>
+
+        <div className="overflow-x-auto rounded-[10px] border border-line bg-white">
+          <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-[0.4px] text-muted">
+                {["Priority", "Subject", "Reference", "Depot", "Status", "Received"].map((h) => (
+                  <th key={h} scope="col" className="border-b border-line px-4 py-3 font-semibold">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tickets.map((t) => (
+                <tr key={t.id} className="hover:bg-[#f8f9fb]">
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5">
+                    <PriorityTag priority={t.priority} />
+                  </td>
+                  <td className="border-b border-line-soft px-4 py-3.5">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <Link href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
+                        {t.subject}
+                      </Link>
+                      {t.needs_review && <NeedsReviewTag />}
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 tabular-nums text-ink-2">{t.reference}</td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">{t.depot ?? "Not given"}</td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5">
+                    <StatusPill status={t.status} size="sm" />
+                  </td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">{formatWhen(t.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {tickets.length === 0 && !error && (
+            <p className="px-4 py-8 text-center text-sm text-muted">
+              {filter ? `No ${STATUS_LABEL[filter].toLowerCase()} tickets.` : "No tickets for your department right now."}
+            </p>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }

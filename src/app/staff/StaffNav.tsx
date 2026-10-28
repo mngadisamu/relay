@@ -1,28 +1,30 @@
 import Link from "next/link";
 import { signOut } from "@/app/login/actions";
+import { BrandMark } from "@/components/BrandMark";
 
-// Top bar for staff pages: only the two pages staff can use (S1-18).
+// Staff top bar (mockup screens 2–5): logo, Sign out, and only the two
+// pages staff can use (S1-18).
 export function StaffNav({ current }: { current: "submit" | "requests" }) {
-  const linkClass = (active: boolean) =>
-    `border-b-2 px-1 pb-3 pt-1 text-sm ${
-      active ? "border-blue-700 font-semibold text-blue-700" : "border-transparent text-gray-600 hover:text-gray-900"
+  const tab = (active: boolean) =>
+    `border-b-2 py-3 text-[15px] ${
+      active ? "border-brand font-semibold text-brand" : "border-transparent font-medium text-muted hover:text-ink"
     }`;
 
   return (
-    <header className="border-b border-gray-200 bg-white">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 pt-3">
-        <span className="text-lg font-bold text-gray-900">Relay</span>
+    <header className="border-b border-line bg-white">
+      <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
+        <BrandMark size="sm" />
         <form action={signOut}>
-          <button type="submit" className="py-2 text-sm font-medium text-blue-700 hover:underline">
+          <button type="submit" className="px-1 py-3 text-sm font-medium text-brand hover:text-brand-dark">
             Sign out
           </button>
         </form>
       </div>
-      <nav aria-label="Main" className="mx-auto flex max-w-3xl gap-6 px-4 pt-2">
-        <Link href="/staff" aria-current={current === "submit" ? "page" : undefined} className={linkClass(current === "submit")}>
+      <nav aria-label="Main" className="mx-auto flex max-w-3xl gap-6 px-4">
+        <Link href="/staff" aria-current={current === "submit" ? "page" : undefined} className={tab(current === "submit")}>
           Submit request
         </Link>
-        <Link href="/staff/requests" aria-current={current === "requests" ? "page" : undefined} className={linkClass(current === "requests")}>
+        <Link href="/staff/requests" aria-current={current === "requests" ? "page" : undefined} className={tab(current === "requests")}>
           My requests
         </Link>
       </nav>

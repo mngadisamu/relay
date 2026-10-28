@@ -1,26 +1,40 @@
 @import "tailwindcss";
 
+/* Relay colours, from docs/design/style-guide.pdf. All text colours pass WCAG AA.
+   Light only for Sprint 1: the old dark-mode block turned pages black on laptops
+   set to dark mode. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f5f7; /* page background behind cards */
+  --foreground: #16191d; /* main text */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand: #0f5fb8; /* buttons, links, active tab (white text 6.3:1) */
+  --color-brand-dark: #0b4c94; /* hover and active text */
+  --color-brand-soft: #e7f0fb; /* active nav background, AI label */
+  --color-navy: #0b3d73; /* sign-in panel */
+  --color-ink: #16191d; /* main text (17.6:1) */
+  --color-ink-2: #3d4651; /* secondary text */
+  --color-muted: #59626e; /* dates and hints (6.2:1 on white) */
+  --color-line: #dde1e6; /* card borders */
+  --color-line-soft: #eceef1; /* dividers inside cards */
+  --color-field: #b9c0c8; /* input borders */
+  --color-page: #f4f5f7;
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Visible keyboard focus everywhere (2 px blue ring). */
+:focus-visible {
+  outline: 2px solid #0f5fb8;
+  outline-offset: 2px;
 }

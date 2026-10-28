@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { StatusPill } from "@/components/StatusPill";
 import { StaffNav } from "../../StaffNav";
-import { STATUS_LABEL, STATUS_STYLE, formatWhen, type TicketStatus } from "../../status";
+import { formatWhen, type TicketStatus } from "../../status";
 
 type Ticket = {
   id: number;
@@ -19,7 +20,7 @@ type Ticket = {
   closed_at: string | null;
 };
 
-// Request detail (S1-26) with the agent's reply once sent (S1-28).
+// Request detail (S1-26, mockup screen 5) with the agent's reply once sent (S1-28).
 export default async function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await requireRole(["staff"]);
@@ -45,72 +46,88 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
 
   // Status history from the ticket's timestamps.
   const history = [
-    { label: "Received", at: ticket.created_at },
-    { label: "Assigned", at: ticket.assigned_at },
-    { label: "Answered", at: ticket.answered_at },
-    { label: "Closed", at: ticket.closed_at },
-  ].filter((step): step is { label: string; at: string } => Boolean(step.at));
+    { label: "Received", at: ticket.created_at, dot: "bg-[#3d4651]" },
+    { label: "Assigned", at: ticket.assigned_at, dot: "bg-[#0b4c94]" },
+    { label: "Answered", at: ticket.answered_at, dot: "bg-[#1b6b36]" },
+    { label: "Closed", at: ticket.closed_at, dot: "bg-[#4a4f57]" },
+  ].filter((step): step is { label: string; at: string; dot: string } => Boolean(step.at));
+
+  const team = ticket.department ?? "the support team";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-page">
       <StaffNav current="requests" />
-      <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
-        <Link href="/staff/requests" className="text-sm font-medium text-blue-700 hover:underline">
-          ← All requests
+      <main className="mx-auto max-w-3xl space-y-3.5 px-4 pb-8 pt-4">
+        <Link href="/staff/requests" className="inline-flex items-center gap-1 py-1.5 text-sm font-medium text-brand hover:text-brand-dark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 6l-6 6 6 6" />
+          </svg>
+          All requests
         </Link>
 
-        <section className="space-y-3 rounded-xl border border-gray-200 bg-white p-5">
-          <p className="text-sm tabular-nums text-gray-600">{ticket.reference}</p>
-          <h1 className="text-xl font-semibold text-gray-900">{ticket.subject}</h1>
-          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLE[ticket.status]}`}>
-            {STATUS_LABEL[ticket.status]}
-          </span>
-          <dl className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-sm">
-            <div>
-              <dt className="text-gray-600">Department</dt>
-              <dd className="font-medium text-gray-900">{ticket.department ?? "Not routed yet"}</dd>
+        <section className="space-y-3.5 rounded-[10px] border border-line bg-white px-4 py-[18px]">
+          <div className="space-y-2">
+            <p className="text-[13px] tabular-nums text-muted">{ticket.reference}</p>
+            <h1 className="text-[19px] font-semibold leading-[25px] text-ink">{ticket.subject}</h1>
+            <StatusPill status={ticket.status} />
+          </div>
+          <dl className="grid grid-cols-2 gap-3 border-t border-line-soft pt-3.5">
+            <div className="space-y-0.5">
+              <dt className="text-[13px] text-muted">Department</dt>
+              <dd className="text-[15px] font-medium text-ink">{ticket.department ?? "Not routed yet"}</dd>
             </div>
-            <div>
-              <dt className="text-gray-600">Depot</dt>
-              <dd className="font-medium text-gray-900">{ticket.depot ?? "Not given"}</dd>
+            <div className="space-y-0.5">
+              <dt className="text-[13px] text-muted">Depot</dt>
+              <dd className="text-[15px] font-medium text-ink">{ticket.depot ?? "Not given"}</dd>
             </div>
           </dl>
-          <div>
-            <p className="text-sm text-gray-600">Your request</p>
-            <p className="text-base text-gray-900">{ticket.description}</p>
+          <div className="space-y-1">
+            <p className="text-[13px] text-muted">Your request</p>
+            <p className="text-[15px] leading-[22px] text-ink">{ticket.description}</p>
           </div>
         </section>
 
-        <section aria-labelledby="reply-heading" className="space-y-3 rounded-xl border border-gray-200 bg-white p-5">
+        <section aria-labelledby="reply-heading" className="space-y-3 rounded-[10px] border border-line bg-white px-4 py-[18px]">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="reply-heading" className="text-base font-semibold text-gray-900">
+            <h2 id="reply-heading" className="text-base font-semibold text-ink">
               Reply from {ticket.department ?? "the team"}
             </h2>
-            {reply && <span className="text-sm text-gray-600">{formatWhen(reply.sent_at)}</span>}
+            {reply && <span className="text-[13px] text-muted">{formatWhen(reply.sent_at)}</span>}
           </div>
           {reply ? (
             <>
-              <p className="whitespace-pre-line text-base text-gray-900">{reply.final_text}</p>
+              <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{reply.final_text}</p>
               {reply.ai_generated && (
-                <p className="border-t border-gray-100 pt-3 text-sm text-gray-600">
-                  Drafted with AI, then checked and sent by the {ticket.department} team.
+                <p className="flex items-start gap-1.5 border-t border-line-soft pt-3 text-[13px] leading-[18px] text-muted">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 shrink-0">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 11v5" />
+                    <path d="M12 7.5v.5" />
+                  </svg>
+                  <span>Drafted with AI, then checked and sent by the {team} team.</span>
                 </p>
               )}
             </>
           ) : (
-            <p className="text-sm text-gray-700">No reply yet. The {ticket.department ?? "support"} team will reply here.</p>
+            <p className="text-sm text-ink-2">No reply yet. The {team} team will reply here.</p>
           )}
         </section>
 
-        <section aria-labelledby="history-heading" className="space-y-3 rounded-xl border border-gray-200 bg-white p-5">
-          <h2 id="history-heading" className="text-base font-semibold text-gray-900">
+        <section aria-labelledby="history-heading" className="space-y-3 rounded-[10px] border border-line bg-white px-4 py-[18px]">
+          <h2 id="history-heading" className="text-base font-semibold text-ink">
             Status history
           </h2>
-          <ol className="space-y-2">
-            {history.map((step) => (
-              <li key={step.label} className="flex justify-between gap-3 text-sm">
-                <span className="font-medium text-gray-900">{step.label}</span>
-                <span className="text-gray-600">{formatWhen(step.at)}</span>
+          <ol>
+            {history.map((step, i) => (
+              <li key={step.label} className="flex gap-3">
+                <div className="flex w-3 flex-col items-center">
+                  <span aria-hidden="true" className={`mt-[5px] h-2.5 w-2.5 rounded-full ${step.dot}`} />
+                  {i < history.length - 1 && <span aria-hidden="true" className="my-1 w-0.5 flex-1 bg-line" />}
+                </div>
+                <div className={`flex flex-col gap-0.5 ${i < history.length - 1 ? "pb-3.5" : ""}`}>
+                  <span className="text-[15px] font-medium text-ink">{step.label}</span>
+                  <span className="text-[13px] text-muted">{formatWhen(step.at)}</span>
+                </div>
               </li>
             ))}
           </ol>
