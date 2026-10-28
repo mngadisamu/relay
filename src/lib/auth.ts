@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type Role = "staff" | "agent" | "manager" | "compliance";
@@ -39,4 +40,13 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
     role: profile.role,
     department: profile.department,
   };
+}
+
+// Lets only the listed roles see a page. Signed-out users go to /login;
+// anyone with a different role goes back to their own home page.
+export async function requireRole(allowed: Role[]): Promise<CurrentProfile> {
+  const profile = await getCurrentProfile();
+  if (!profile) redirect("/login");
+  if (!allowed.includes(profile.role)) redirect(HOME_FOR_ROLE[profile.role]);
+  return profile;
 }
