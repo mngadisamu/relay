@@ -1,69 +1,84 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { departmentTemplates } from '@/lib/templates';
+import { useState } from "react";
+import Link from "next/link";
+import { departmentTemplates } from "@/lib/templates";
 
+// Department name → list of template texts.
+type TemplateLibraryData = Record<string, string[]>;
+
+// Template library (S1-27). Agents view the templates for every department.
+// Still to do for S1-27: save edits to the templates table so the next AI draft uses them.
 export default function TemplateLibrary() {
-  const [templates, setTemplates] = useState(departmentTemplates);
-  const [savedMessage, setSavedMessage] = useState('');
+  const [templates, setTemplates] = useState<TemplateLibraryData>(
+    departmentTemplates as TemplateLibraryData,
+  );
+  const [message, setMessage] = useState("");
 
   const handleTemplateChange = (dept: string, index: number, value: string) => {
-    setTemplates((prev: any) => {
-      const updatedDept = [...prev[dept]];
-      updatedDept[index] = value;
-      return { ...prev, [dept]: updatedDept };
+    setTemplates((prev) => {
+      const updated = [...prev[dept]];
+      updated[index] = value;
+      return { ...prev, [dept]: updated };
     });
   };
 
   const handleSave = () => {
-    // In a full DB setup, you'd save this to Supabase. For Sprint 1, updating state/local config satisfies the requirement.
-    setSavedMessage('Templates updated successfully for future AI drafts!');
-    setTimeout(() => setSavedMessage(''), 4000);
+    // Honest message until saving to the database is built.
+    setMessage("Changes are kept on this screen only for now. Saving to the database is still to come (S1-27).");
+    setTimeout(() => setMessage(""), 6000);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center border-b pb-4">
+    <main className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+      <Link href="/agent" className="text-sm font-medium text-blue-700 hover:underline">
+        ← Back to inbox
+      </Link>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Template Library</h1>
-          <p className="text-sm text-gray-600">View and update approved department response templates.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Template library</h1>
+          <p className="text-sm text-gray-600">View and update the reply templates for each department.</p>
         </div>
         <button
+          type="button"
           onClick={handleSave}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-md shadow"
+          className="rounded-md bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
         >
-          Save Changes
+          Save changes
         </button>
       </div>
 
-      {savedMessage && (
-        <div className="p-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
-          {savedMessage}
-        </div>
+      {message && (
+        <p role="status" className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {message}
+        </p>
       )}
 
       <div className="space-y-8">
-        {Object.entries(templates).map(([dept, deptTemplates]: [string, any]) => (
-          <div key={dept} className="bg-white p-6 rounded-lg shadow border border-gray-200 space-y-4">
-            <h2 className="text-lg font-bold text-gray-800 border-b pb-2">{dept} Department</h2>
-            <div className="space-y-4">
-              {deptTemplates.map((templateText: string, index: number) => (
-                <div key={index} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Template Option {index + 1}
+        {Object.entries(templates).map(([dept, deptTemplates]) => (
+          <section key={dept} className="space-y-4 rounded-lg border border-gray-200 bg-white p-6">
+            <h2 className="border-b pb-2 text-lg font-bold text-gray-800">{dept}</h2>
+            {deptTemplates.map((templateText, index) => {
+              const fieldId = `${dept}-template-${index}`;
+              return (
+                <div key={fieldId} className="space-y-1">
+                  <label htmlFor={fieldId} className="block text-xs font-semibold uppercase tracking-wider text-gray-600">
+                    Template {index + 1}
                   </label>
                   <textarea
+                    id={fieldId}
                     value={templateText}
                     onChange={(e) => handleTemplateChange(dept, index, e.target.value)}
-                    rows={2}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
+                    rows={3}
+                    className="w-full rounded-md border border-gray-400 p-3 text-sm"
                   />
                 </div>
-              ))}
-            </div>
-          </div>
+              );
+            })}
+          </section>
         ))}
       </div>
-    </div>
+    </main>
   );
 }

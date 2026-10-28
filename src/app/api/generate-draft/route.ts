@@ -9,6 +9,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const TONES = ["formal", "friendly", "urgent"] as const;
 type Tone = (typeof TONES)[number];
 
+// Drafts a reply with Gemini (S1-08, S1-13, S1-14) and saves it as the signed-in agent.
 export async function POST(request: Request) {
   // Only agents and managers may create drafts (staff can't insert into responses).
   const profile = await getCurrentProfile();
