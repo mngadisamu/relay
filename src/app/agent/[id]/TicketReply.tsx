@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
+import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 import { sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
@@ -13,21 +15,30 @@ export type TicketForReply = {
   description: string;
   depot: string | null;
   department: string | null;
-  priority: string;
-  status: string;
+  priority: TicketPriority;
+  status: TicketStatus;
   needs_review: boolean;
   created_at: string;
 };
 
+type Classification = { predicted_department: string; confidence: number; model_version: string } | null;
+
 // Which template goes with each tone (index in src/lib/templates.ts).
 const TEMPLATE_FOR_TONE: Record<Tone, number> = { formal: 0, friendly: 1, urgent: 2 };
+const TONES: { value: Tone; label: string }[] = [
+  { value: "formal", label: "Formal" },
+  { value: "friendly", label: "Friendly" },
+  { value: "urgent", label: "Urgent" },
+];
 
 export default function TicketReply({
   ticket,
   templates,
+  classification,
 }: {
   ticket: TicketForReply;
   templates: string[];
+  classification: Classification;
 }) {
   const [tone, setTone] = useState<Tone>("formal");
   const [draft, setDraft] = useState("");
@@ -91,99 +102,159 @@ export default function TicketReply({
     });
   }
 
+  const status: TicketStatus = sent ? "answered" : ticket.status;
+  const secondaryBtn =
+    "inline-flex h-[42px] items-center gap-1.5 rounded-md border border-field bg-white px-3.5 text-sm font-medium text-ink hover:bg-page disabled:opacity-60";
+
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
-      <Link href="/agent" className="text-sm font-medium text-blue-700 hover:underline">
-        ← Back to inbox
+    <main className="mx-auto max-w-[1360px] space-y-4 px-6 pb-12 pt-5">
+      <Link href="/agent" className="inline-flex items-center gap-1 py-1 text-sm font-medium text-brand hover:text-brand-dark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+        Back to inbox
       </Link>
 
-      <section className="space-y-3 rounded-lg border border-gray-200 bg-white p-5">
-        <p className="text-sm text-gray-600">{ticket.reference}</p>
-        <h1 className="text-xl font-semibold text-gray-900">{ticket.subject}</h1>
-        <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 capitalize text-gray-700">
-            Status: {sent ? "answered" : ticket.status}
-          </span>
-          <span className="rounded bg-gray-100 px-2.5 py-1 capitalize text-gray-700">
-            Priority: {ticket.priority}
-          </span>
-          {ticket.needs_review && (
-            <span className="rounded bg-amber-100 px-2.5 py-1 text-amber-900">Needs review</span>
-          )}
-        </div>
-        <p className="text-sm text-gray-600">
-          Depot: {ticket.depot ?? "Not given"} · Received{" "}
-          {new Date(ticket.created_at).toLocaleString("en-ZA")}
-        </p>
-        <p className="rounded-md bg-gray-50 p-3 text-sm text-gray-900">{ticket.description}</p>
-      </section>
+      <div className="flex flex-wrap items-start gap-4">
+        {/* Left: the ticket and how it was routed */}
+        <div className="flex min-w-0 flex-[1_1_380px] flex-col gap-4">
+          <section className="space-y-3.5 rounded-[10px] border border-line bg-white p-5">
+            <div className="space-y-2">
+              <p className="text-[13px] tabular-nums text-muted">{ticket.reference}</p>
+              <h1 className="text-xl font-semibold leading-[27px] text-ink">{ticket.subject}</h1>
+              <div className="flex flex-wrap gap-2">
+                <StatusPill status={status} size="sm" />
+                <PriorityTag priority={ticket.priority} />
+                {ticket.needs_review && <NeedsReviewTag />}
+              </div>
+            </div>
+            <dl className="grid grid-cols-2 gap-3 border-t border-line-soft pt-3.5">
+              <div className="space-y-0.5">
+                <dt className="text-[13px] text-muted">Depot</dt>
+                <dd className="text-sm font-medium text-ink">{ticket.depot ?? "Not given"}</dd>
+              </div>
+              <div className="space-y-0.5">
+                <dt className="text-[13px] text-muted">Received</dt>
+                <dd className="text-sm font-medium text-ink">{formatWhen(ticket.created_at)}</dd>
+              </div>
+            </dl>
+            <div className="space-y-1">
+              <p className="text-[13px] text-muted">Description</p>
+              <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{ticket.description}</p>
+            </div>
+          </section>
 
-      <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">Reply</h2>
-            {aiGenerated && !sent && (
-              <span className="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-800">
-                AI-drafted · check before sending
-              </span>
+          <section aria-labelledby="routing-heading" className="space-y-3.5 rounded-[10px] border border-line bg-white p-5">
+            <h2 id="routing-heading" className="text-[15px] font-semibold text-ink">
+              Routing
+            </h2>
+            {classification ? (
+              <dl className="grid grid-cols-3 gap-3">
+                <div className="space-y-0.5">
+                  <dt className="text-[13px] text-muted">Sent to</dt>
+                  <dd className="text-sm font-medium text-ink">{classification.predicted_department}</dd>
+                </div>
+                <div className="space-y-0.5">
+                  <dt className="text-[13px] text-muted">Confidence</dt>
+                  <dd className="text-sm font-medium tabular-nums text-ink">{Math.round(classification.confidence * 100)}%</dd>
+                </div>
+                <div className="space-y-0.5">
+                  <dt className="text-[13px] text-muted">Model</dt>
+                  <dd className="text-sm font-medium text-ink">{classification.model_version}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-sm text-muted">No classification recorded for this ticket.</p>
+            )}
+          </section>
+        </div>
+
+        {/* Right: the reply (S1-13, S1-14, S1-23) */}
+        <section aria-labelledby="reply-heading" className="flex min-w-0 flex-[999_1_560px] flex-col gap-4 rounded-[10px] border border-line bg-white p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 id="reply-heading" className="text-[17px] font-semibold text-ink">
+                Reply
+              </h2>
+              {aiGenerated && !sent && (
+                <span className="inline-flex h-6 items-center gap-1.5 rounded bg-brand-soft px-2 text-xs font-semibold text-brand-dark">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 20h4L19 9l-4-4L4 16z" />
+                    <path d="M13.5 6.5l4 4" />
+                  </svg>
+                  AI-drafted · check before sending
+                </span>
+              )}
+            </div>
+            {!sent && (
+              <div role="group" aria-label="Tone" className="flex gap-0.5 rounded-lg border border-line bg-page p-[3px]">
+                {TONES.map((t) => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    aria-pressed={tone === t.value}
+                    disabled={isGenerating || isSending}
+                    onClick={() => changeTone(t.value)}
+                    className={`rounded-md px-3 py-1.5 text-[13px] ${
+                      tone === t.value ? "bg-white font-semibold text-ink shadow-sm" : "font-medium text-ink-2"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
-          {!sent && (
-            <div role="group" aria-label="Tone" className="flex gap-1 rounded-lg bg-gray-100 p-1">
-              {(["formal", "friendly", "urgent"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  aria-pressed={tone === t}
-                  disabled={isGenerating || isSending}
-                  onClick={() => changeTone(t)}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize ${
-                    tone === t ? "bg-white text-gray-900 shadow" : "text-gray-700"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+
+          {error && (
+            <p role="alert" className="rounded-md bg-[#fdecea] px-3 py-2.5 text-sm text-[#a4231a]">
+              {error}
+            </p>
           )}
-        </div>
 
-        {error && (
-          <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-800">
-            {error}
-          </p>
-        )}
-
-        {sent ? (
-          <p role="status" className="rounded-md bg-green-50 p-3 text-sm font-medium text-green-800">
-            Reply sent. The ticket is now Answered.
-          </p>
-        ) : (
-          <>
-            <label htmlFor="draft" className="block text-sm font-medium text-gray-700">
-              Message to the staff member (you can edit it)
-            </label>
-            <textarea
-              id="draft"
-              rows={10}
-              value={isGenerating ? "Writing a draft…" : draft}
-              onChange={(e) => setDraft(e.target.value)}
-              disabled={isGenerating}
-              className="w-full rounded-md border border-gray-400 p-3 text-base"
-            />
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={isGenerating || isSending || !draft.trim()}
-                className="rounded-md bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
-              >
-                {isSending ? "Sending…" : "Send reply"}
-              </button>
-            </div>
-          </>
-        )}
-      </section>
+          {sent ? (
+            <p role="status" className="flex items-center gap-2 rounded-md bg-[#e5f3ea] px-3 py-2.5 text-sm font-medium text-[#1b6b36]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12.5l4.5 4.5L19 7.5" />
+              </svg>
+              Reply sent. The ticket is now Answered.
+            </p>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="draft" className="text-[13px] font-medium text-ink-2">
+                  Message to the staff member (you can edit it)
+                </label>
+                <textarea
+                  id="draft"
+                  rows={12}
+                  value={isGenerating ? "Writing a draft…" : draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  disabled={isGenerating}
+                  className="w-full resize-y rounded-md border border-field bg-white px-3.5 py-3 text-[15px] leading-[23px] text-ink disabled:text-muted"
+                />
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <button type="button" onClick={() => generateDraft(tone)} disabled={isGenerating || isSending} className={secondaryBtn}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+                    <path d="M20 5v6h-6" />
+                  </svg>
+                  Regenerate draft
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={isGenerating || isSending || !draft.trim()}
+                  className="h-[42px] rounded-md bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
+                >
+                  {isSending ? "Sending…" : "Send reply"}
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      </div>
     </main>
   );
 }

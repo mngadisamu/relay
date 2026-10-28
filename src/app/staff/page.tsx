@@ -1,15 +1,21 @@
 import { requireRole } from "@/lib/auth";
-import { RoleHome } from "@/components/RoleHome";
+import { StaffNav } from "./StaffNav";
+import { SubmitForm } from "./SubmitForm";
 
+// Staff home = the submit form (S1-22, mockup screens 2 and 3).
 export default async function StaffHome() {
-  // Only staff users may open this page; everyone else goes to their own home.
-  const profile = await requireRole(["staff"]);
+  await requireRole(["staff"]);
 
   return (
-    <RoleHome
-      title="Staff home"
-      description="Submit a request and track its progress. (Coming in S1-22 and S1-26.)"
-      profile={profile}
-    />
+    <div className="min-h-screen bg-page">
+      <StaffNav current="submit" />
+      <main className="mx-auto max-w-3xl space-y-4 px-4 py-5">
+        <div className="space-y-1">
+          <h1 className="text-xl font-semibold text-ink">New request</h1>
+          <p className="text-sm leading-5 text-muted">Relay sends it to the right team: HR, IT, Finance or Operations.</p>
+        </div>
+        <SubmitForm />
+      </main>
+    </div>
   );
 }

@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Inter is Relay's typeface (style guide, S1-12).
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -27,10 +23,7 @@ export default function RootLayout({
       {/* suppressHydrationWarning: browser extensions such as Grammarly add
           attributes to <html>/<body> before React loads. This only ignores
           attribute differences on these two tags, not on the rest of the page. */}
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning
-      >
+      <body className={`${inter.variable} bg-page text-ink antialiased`} suppressHydrationWarning>
         {children}
       </body>
     </html>
