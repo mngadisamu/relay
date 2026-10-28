@@ -1,83 +1,81 @@
-import { GoogleGenAI } from '@google/genai';
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { GoogleGenAI } from "@google/genai";
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/auth";
 
-// Initialize Google Gen AI client
+// Gemini key stays on the server only (never NEXT_PUBLIC_).
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Initialize Supabase server client (using service role or standard client)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const TONES = ["formal", "friendly", "urgent"] as const;
+type Tone = (typeof TONES)[number];
 
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { ticketId, ticketContent, department, templateText, tone = 'formal' } = body;
+  // Only agents and managers may create drafts (staff can't insert into responses).
+  const profile = await getCurrentProfile();
+  if (!profile || !["agent", "manager"].includes(profile.role)) {
+    return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  }
 
-    if (!ticketContent || !department) {
-      return NextResponse.json(
-        { error: 'Missing required fields: ticketContent or department' },
-        { status: 400 }
-      );
-    }
+  const body = await request.json().catch(() => null);
+  const { ticketId, ticketContent, department, templateText } = body ?? {};
+  const tone: Tone = TONES.includes(body?.tone) ? body.tone : "formal";
 
-    const prompt = `
+  if (!ticketContent || !department) {
+    return NextResponse.json(
+      { error: "Missing required fields: ticketContent or department" },
+      { status: 400 },
+    );
+  }
+
+  const prompt = `
 You are an AI support agent for Kopano Freight.
 Department: ${department}
 Tone: ${tone}
 
-Guidance Template:
-"${templateText || 'Use standard helpful company tone.'}"
+Guidance template:
+"${templateText || "Use the standard helpful company tone."}"
 
-User's Ticket Request:
+The staff member's request:
 "${ticketContent}"
 
-Instruction:
-Write a polite, concise, and helpful response to the user's ticket based on the guidance template, tone, and department context above.
+Write a polite, concise and helpful reply based on the template, tone and department above.
 `;
 
-    let draftText = '';
-
-    try {
-      // Create a 10-second timeout promise
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini API timeout')), 10000)
-      );
-
-      // Race Gemini call against the 10-second timeout
-      const geminiPromise = ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-
-      const response: any = await Promise.race([geminiPromise, timeoutPromise]);
-      draftText = response.text || templateText;
-    } catch (aiError) {
-      console.warn('Gemini failed or timed out, falling back to template:', aiError);
-      // Fallback to template text if Gemini fails or takes > 10s
-      draftText = templateText || `Dear Staff, thank you for your request regarding ${ticketContent}. We are looking into it.`;
-    }
-
-    // Save the draft into the responses table if a ticketId is provided
-    if (ticketId) {
-      await supabase.from('responses').insert([
-        {
-          ticket_id: ticketId,
-          draft_text: draftText,
-          tone: tone,
-          status: 'draft',
-        },
-      ]);
-    }
-
-    return NextResponse.json({ draft: draftText });
-  } catch (error) {
-    console.error('Error in AI draft route:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate AI draft' },
-      { status: 500 }
+  // Gemini first; if it fails or takes over 10 seconds, use the template (S1-13).
+  let draftText = "";
+  let aiGenerated = true;
+  try {
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Gemini timeout")), 10_000),
     );
+    const result = await Promise.race([
+      ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt }),
+      timeout,
+    ]);
+    draftText = result.text ?? "";
+  } catch (error) {
+    console.warn("Gemini failed or timed out, using the template instead:", error);
   }
+  if (!draftText) {
+    draftText = templateText || "Thank you for your request. We are looking into it.";
+    aiGenerated = false;
+  }
+
+  // Save as the signed-in agent, so row-level security applies (migration 0004).
+  let responseId: number | null = null;
+  if (ticketId) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("responses")
+      .insert({ ticket_id: ticketId, tone, ai_draft: draftText, ai_generated: aiGenerated })
+      .select("id")
+      .single();
+    if (error) {
+      console.error("Could not save the draft:", error);
+      return NextResponse.json({ error: "Could not save the draft" }, { status: 500 });
+    }
+    responseId = data.id;
+  }
+
+  return NextResponse.json({ draft: draftText, responseId, aiGenerated });
 }
