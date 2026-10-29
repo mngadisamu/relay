@@ -20,3 +20,29 @@ The live, editable versions are on the team's design canvas (ask Mihlali or Samu
 - Status is shown in words **and** colour (Received, Assigned, Answered, Closed), never colour alone.
 - Every AI draft is labelled "AI-drafted" and can be edited before it is sent.
 - Agents see the depot, not the submitter's name (agents can't read other people's profiles in Sprint 1).
+
+## Shared components (S1-12)
+
+shadcn/ui components live in `src/components/ui/` and already use the Relay colours (set in `src/app/globals.css`). Use them on new screens instead of writing button and input styles by hand.
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+<Card>
+  <CardHeader><CardTitle>New request</CardTitle></CardHeader>
+  <CardContent className="space-y-2">
+    <Label htmlFor="subject">Subject</Label>
+    <Input id="subject" name="subject" />
+    <Button type="submit">Send request</Button>
+  </CardContent>
+</Card>
+```
+
+- Button variants: `default` (blue), `outline`, `secondary`, `ghost`, `destructive`, `link`. Sizes: `sm`, `default`, `lg`, `icon`.
+- Add another component with `npx shadcn@latest add <name>` (for example `select` or `dialog`). It reads `components.json`, so it won't re-run setup. Check that `globals.css` still has the Relay colours afterwards.
+- Don't run `npx shadcn@latest init` again: it would replace the Relay colours in `globals.css`.
+- The Sprint 1 screens were built before these components existed and keep their own styles for now. Moving them over is a Sprint 2 tidy-up, not urgent.
