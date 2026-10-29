@@ -2,13 +2,31 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { submitRequest, type SubmitState } from "./actions";
+import { submitRequest, type Field, type SubmitState } from "./actions";
 
 const initialState: SubmitState = { status: "idle" };
 
 // 48 px tall fields and 16 px text, so phones don't zoom in (S1-22: 360 px without zooming).
-const fieldClass =
-  "w-full rounded-md border border-field bg-white px-3 text-base text-ink focus:border-brand focus:outline-2 focus:outline-brand";
+// Only one border colour is ever in the class list: when two compete, the red one can lose.
+function fieldClass(invalid: boolean) {
+  const border = invalid ? "border-2 border-[#a4231a]" : "border border-field focus:border-brand";
+  return `w-full rounded-md bg-white px-3 text-base text-ink focus:outline-2 focus:outline-brand ${border}`;
+}
+
+// The error under a field: an icon plus words, so it doesn't rely on colour alone (WCAG AA).
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} role="alert" className="flex items-start gap-1.5 text-sm leading-5 text-[#a4231a]">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 shrink-0">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v5" />
+        <path d="M12 16.5v.5" />
+      </svg>
+      <span>{message}</span>
+    </p>
+  );
+}
 
 // Submit form (S1-22, mockup screen 2) and the "Request sent" view (mockup screen 3).
 export function SubmitForm() {
@@ -52,15 +70,38 @@ export function SubmitForm() {
     );
   }
 
-  const hasError = state.status === "error";
+  const errors = state.status === "error" ? state.fieldErrors : {};
+  const formMessage = state.status === "error" ? state.message : undefined;
+  // After a submit, React empties the form. Putting back what was typed means a
+  // missing field doesn't cost the person everything else they wrote.
+  const values = state.status === "error" ? state.values : undefined;
+
+  // Props that link a field to its error, for screen readers and the red border.
+  const errorProps = (field: Field) =>
+    errors[field] ? { "aria-invalid": true, "aria-describedby": `${field}-error` } : {};
 
   return (
-    <form action={formAction} className="space-y-[18px] rounded-[10px] border border-line bg-white px-4 py-5">
+    <form action={formAction} noValidate className="space-y-[18px] rounded-[10px] border border-line bg-white px-4 py-5">
+      {formMessage && (
+        <p role="alert" className="rounded-md border border-[#f0c8c3] bg-[#fdf1ef] px-3 py-2.5 text-sm leading-5 text-[#a4231a]">
+          {formMessage}
+        </p>
+      )}
+
       <div className="space-y-1.5">
         <label htmlFor="subject" className="block text-sm font-medium text-ink">
           Subject
         </label>
-        <input id="subject" name="subject" type="text" placeholder="e.g. Fuel card declined at the pump" className={`${fieldClass} h-12`} />
+        <input
+          id="subject"
+          name="subject"
+          type="text"
+          defaultValue={values?.subject}
+          placeholder="e.g. Fuel card declined at the pump"
+          className={`${fieldClass(!!errors.subject)} h-12`}
+          {...errorProps("subject")}
+        />
+        <FieldError id="subject-error" message={errors.subject} />
       </div>
 
       <div className="space-y-1.5">
@@ -71,32 +112,30 @@ export function SubmitForm() {
           id="description"
           name="description"
           rows={6}
+          defaultValue={values?.description}
           placeholder="Describe what happened and add any details that will help."
-          aria-invalid={hasError || undefined}
-          aria-describedby={hasError ? "form-error" : undefined}
-          className={`${fieldClass} py-2.5 leading-[22px] ${hasError ? "border-2 border-[#a4231a]" : ""}`}
+          className={`${fieldClass(!!errors.description)} py-2.5 leading-[22px]`}
+          {...errorProps("description")}
         />
-        {hasError && (
-          <p id="form-error" role="alert" className="flex items-start gap-1.5 text-sm leading-5 text-[#a4231a]">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 shrink-0">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 8v5" />
-              <path d="M12 16.5v.5" />
-            </svg>
-            <span>{state.message}</span>
-          </p>
-        )}
+        <FieldError id="description-error" message={errors.description} />
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="depot" className="block text-sm font-medium text-ink">
           Your depot
         </label>
-        <select id="depot" name="depot" defaultValue="City Deep depot" className={`${fieldClass} h-12`}>
+        <select
+          id="depot"
+          name="depot"
+          defaultValue={values?.depot || "City Deep depot"}
+          className={`${fieldClass(!!errors.depot)} h-12`}
+          {...errorProps("depot")}
+        >
           <option>Head Office</option>
           <option>City Deep depot</option>
           <option>Pomona depot</option>
         </select>
+        <FieldError id="depot-error" message={errors.depot} />
       </div>
 
       <button
