@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT1_STORIES.md`, and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Thu 22 Oct 2026, midday (Sprint 1, day 4).
+Last updated: Thu 29 Oct 2026 (Sprint 1, day 9).
 
 ---
 
@@ -91,12 +91,13 @@ src/
     ├── login/actions.ts          signIn() and signOut() server actions
     ├── home/page.tsx             Redirects a signed-in user to their role's home
     ├── staff/ agent/ manager/ compliance/page.tsx   Role home placeholders; each guarded by requireRole()
-    └── api/classify/route.ts     POST classify API: a keyword STUB until Elzel's model (S1-21)
+    └── api/classify/route.ts     POST classify API: runs the trained model (src/lib/classifier.ts, S1-21)
 supabase/migrations/
 ├── 0001_initial_schema.sql       All tables, enums, RLS switched on
 ├── 0002_profiles_on_signup.sql   Trigger: new auth user → profiles row (role staff); policy: read own profile
 ├── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
-└── 0004_team_policies.sql        RLS for ticket updates, classifications, templates, responses, audit_log + reroute_ticket()
+├── 0004_team_policies.sql        RLS for ticket updates, classifications, templates, responses, audit_log + reroute_ticket()
+└── 0005_ticket_submitter.sql     ticket_submitter(): agents see the sender's name, email and depot for tickets they can see
 docs/  GETTING_STARTED.md · architecture.md (sections 1–4 done in S1-20; 5–7 come in S1-24) · sprints/ (plan .docx, dependencies .pdf, stories .md)
 ```
 
@@ -138,7 +139,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 
 | Table | Read | Create | Update |
 | --- | --- | --- | --- |
-| `profiles` | own row (so agents can't see a submitter's name yet; ask Samukelo if your story needs it) | automatic when an account is added (trigger) | (none yet) |
+| `profiles` | own row. Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (migration 0005) | automatic when an account is added (trigger) | (none yet) |
 | `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all |
 | `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
 | `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
@@ -184,7 +185,7 @@ Request:  { "subject": string, "description": string }
 Response: { "department": "HR" | "IT" | "Finance" | "Operations",
             "confidence": number,      // 0 to 1
             "needsReview": boolean,    // true when confidence < 0.6
-            "modelVersion": string }   // "stub-0" until the real model ships
+            "modelVersion": string }   // e.g. "tfidf-logreg-v2"
 ```
 Mihlali's form and Baphakamise's inbox build against the stub now. Elzel's real model (S1-21) replaces the inside of the route **without changing this shape**.
 

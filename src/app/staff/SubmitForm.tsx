@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { submitRequest, type Field, type SubmitState } from "./actions";
 
@@ -29,7 +29,14 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 // Submit form (S1-22, mockup screen 2) and the "Request sent" view (mockup screen 3).
+// "Send another request" used to link to /staff, the page you're already on, so
+// nothing changed. Giving the form a new key starts it again, empty.
 export function SubmitForm() {
+  const [formKey, setFormKey] = useState(0);
+  return <RequestForm key={formKey} onSendAnother={() => setFormKey((k) => k + 1)} />;
+}
+
+function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
   const [state, formAction, isPending] = useActionState(submitRequest, initialState);
 
   if (state.status === "sent") {
@@ -53,6 +60,10 @@ export function SubmitForm() {
               <dt className="text-[13px] text-muted">Sent to</dt>
               <dd className="text-base font-semibold text-ink">{state.department}</dd>
             </div>
+            <div className="space-y-0.5">
+              <dt className="text-[13px] text-muted">Subject</dt>
+              <dd className="text-[15px] text-ink">{state.subject}</dd>
+            </div>
           </dl>
           <p className="border-t border-line-soft pt-4 text-sm leading-5 text-ink-2">
             The {state.department} team will reply here in Relay. Keep the reference number if you call the office.
@@ -62,9 +73,13 @@ export function SubmitForm() {
           <Link href="/staff/requests" className="flex h-12 items-center justify-center rounded-md bg-brand text-base font-semibold text-white hover:bg-brand-dark">
             View my requests
           </Link>
-          <Link href="/staff" className="flex h-12 items-center justify-center rounded-md border border-field bg-white text-base font-medium text-ink">
+          <button
+            type="button"
+            onClick={onSendAnother}
+            className="flex h-12 items-center justify-center rounded-md border border-field bg-white text-base font-medium text-ink hover:bg-page"
+          >
             Send another request
-          </Link>
+          </button>
         </div>
       </div>
     );

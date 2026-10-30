@@ -26,10 +26,10 @@ const PRIORITY_RANK: Record<TicketPriority, number> = { urgent: 0, high: 1, medi
 export default async function AgentInbox({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; moved?: string; to?: string }>;
 }) {
   const profile = await requireRole(["agent"]);
-  const { status } = await searchParams;
+  const { status, moved, to } = await searchParams;
   const filter = STATUSES.find((s) => s === status);
 
   // A plain select is enough: row-level security (S1-15) only returns
@@ -78,6 +78,13 @@ export default async function AgentInbox({
             })}
           </nav>
         </div>
+
+        {/* Shown after an agent moves a ticket to another department (S1-25). */}
+        {moved && to && (
+          <p role="status" className="rounded-md bg-[#e5f3ea] px-3 py-2.5 text-sm font-medium text-[#1b6b36]">
+            {moved} was moved to {to}. It&apos;s now in the {to} inbox.
+          </p>
+        )}
 
         {error && (
           <p role="alert" className="rounded-md bg-[#fdecea] p-3 text-sm text-[#a4231a]">
