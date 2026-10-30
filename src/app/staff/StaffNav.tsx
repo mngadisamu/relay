@@ -1,3 +1,5 @@
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
 import Link from "next/link";
 import { signOut } from "@/app/login/actions";
 import { BrandMark } from "@/components/BrandMark";
@@ -21,10 +23,10 @@ export function StaffNav({ current }: { current: "submit" | "requests" }) {
         </form>
       </div>
       <nav aria-label="Main" className="mx-auto flex max-w-3xl gap-6 px-4">
-        <Link href="/staff" aria-current={current === "submit" ? "page" : undefined} className={tab(current === "submit")}>
+        <Link prefetch href="/staff" aria-current={current === "submit" ? "page" : undefined} className={tab(current === "submit")}>
           Submit request
         </Link>
-        <Link href="/staff/requests" aria-current={current === "requests" ? "page" : undefined} className={tab(current === "requests")}>
+        <Link prefetch href="/staff/requests" aria-current={current === "requests" ? "page" : undefined} className={tab(current === "requests")}>
           My requests
         </Link>
       </nav>

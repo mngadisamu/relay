@@ -1,3 +1,5 @@
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
 import Link from "next/link";
 import { signOut } from "@/app/login/actions";
 import { BrandMark } from "@/components/BrandMark";
@@ -20,10 +22,10 @@ export function AgentHeader({ profile, current }: { profile: CurrentProfile; cur
             )}
           </div>
           <nav aria-label="Main" className="flex gap-1">
-            <Link href="/agent" aria-current={current === "inbox" ? "page" : undefined} className={navClass(current === "inbox")}>
+            <Link prefetch href="/agent" aria-current={current === "inbox" ? "page" : undefined} className={navClass(current === "inbox")}>
               Inbox
             </Link>
-            <Link href="/agent/templates" aria-current={current === "templates" ? "page" : undefined} className={navClass(current === "templates")}>
+            <Link prefetch href="/agent/templates" aria-current={current === "templates" ? "page" : undefined} className={navClass(current === "templates")}>
               Templates
             </Link>
           </nav>

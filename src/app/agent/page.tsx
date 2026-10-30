@@ -1,3 +1,5 @@
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -64,6 +66,7 @@ export default async function AgentInbox({
               const active = s === filter;
               return (
                 <Link
+                  prefetch
                   key={s ?? "all"}
                   href={s ? `/agent?status=${s}` : "/agent"}
                   aria-current={active ? "page" : undefined}
@@ -111,7 +114,7 @@ export default async function AgentInbox({
                   </td>
                   <td className="border-b border-line-soft px-4 py-3.5">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <Link href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
+                      <Link prefetch href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
                         {t.subject}
                       </Link>
                       {t.needs_review && <NeedsReviewTag />}

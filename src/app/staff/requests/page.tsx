@@ -1,3 +1,5 @@
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -46,7 +48,7 @@ export default async function MyRequests() {
         {requests.length === 0 && !error ? (
           <div className="rounded-[10px] border border-line bg-white p-6 text-center">
             <p className="text-sm text-ink-2">You haven&apos;t sent any requests yet.</p>
-            <Link href="/staff" className="mt-3 inline-block text-sm font-semibold text-brand hover:text-brand-dark">
+            <Link prefetch href="/staff" className="mt-3 inline-block text-sm font-semibold text-brand hover:text-brand-dark">
               Submit a request
             </Link>
           </div>
@@ -55,6 +57,7 @@ export default async function MyRequests() {
             {requests.map((r) => (
               <li key={r.id}>
                 <Link
+                  prefetch
                   href={`/staff/requests/${r.id}`}
                   className="block space-y-2 rounded-[10px] border border-line bg-white px-4 py-3.5 hover:border-field"
                 >

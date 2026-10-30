@@ -1,5 +1,8 @@
 "use client";
 
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
+
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { submitRequest, type Field, type SubmitState } from "./actions";
@@ -70,7 +73,7 @@ function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
           </p>
         </section>
         <div className="flex flex-col gap-2.5">
-          <Link href="/staff/requests" className="flex h-12 items-center justify-center rounded-md bg-brand text-base font-semibold text-white hover:bg-brand-dark">
+          <Link prefetch href="/staff/requests" className="flex h-12 items-center justify-center rounded-md bg-brand text-base font-semibold text-white hover:bg-brand-dark">
             View my requests
           </Link>
           <button
