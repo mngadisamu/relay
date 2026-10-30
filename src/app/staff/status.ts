@@ -61,3 +61,17 @@ export function formatWhen(iso: string) {
   }).format(date);
   return `${datePart.replace(",", "").replace("Sept", "Sep")}, ${time}`;
 }
+
+// The latest step a ticket reached, e.g. { label: "Replied", at: "..." }.
+// Used in lists so people can see at a glance when something last happened.
+export function latestUpdate(t: {
+  created_at: string;
+  assigned_at?: string | null;
+  answered_at?: string | null;
+  closed_at?: string | null;
+}): { label: string; at: string } {
+  if (t.closed_at) return { label: "Closed", at: t.closed_at };
+  if (t.answered_at) return { label: "Replied", at: t.answered_at };
+  if (t.assigned_at) return { label: "Assigned", at: t.assigned_at };
+  return { label: "Sent", at: t.created_at };
+}
