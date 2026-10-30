@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/NavigationProgress";
 import "./globals.css";
 
 // Inter is Relay's typeface (style guide, S1-12).
@@ -24,6 +26,10 @@ export default function RootLayout({
           attributes to <html>/<body> before React loads. This only ignores
           attribute differences on these two tags, not on the rest of the page. */}
       <body className={`${inter.variable} bg-page text-ink antialiased`} suppressHydrationWarning>
+        {/* Suspense: the bar reads the URL, which Next.js needs wrapped like this. */}
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         {children}
       </body>
     </html>

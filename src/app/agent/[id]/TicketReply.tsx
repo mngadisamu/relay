@@ -1,5 +1,8 @@
 "use client";
 
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
+
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
@@ -152,7 +155,7 @@ export default function TicketReply({
 
   return (
     <main className="mx-auto max-w-[1360px] space-y-4 px-4 pb-12 pt-5 sm:px-6">
-      <Link href="/agent" className="inline-flex items-center gap-1 py-1 text-sm font-medium text-brand hover:text-brand-dark">
+      <Link prefetch href="/agent" className="inline-flex items-center gap-1 py-1 text-sm font-medium text-brand hover:text-brand-dark">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M15 6l-6 6 6 6" />
         </svg>
