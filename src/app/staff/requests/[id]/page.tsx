@@ -1,3 +1,5 @@
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
@@ -58,7 +60,7 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
     <div className="min-h-screen bg-page">
       <StaffNav current="requests" />
       <main className="mx-auto max-w-3xl space-y-3.5 px-4 pb-8 pt-4">
-        <Link href="/staff/requests" className="inline-flex items-center gap-1 py-1.5 text-sm font-medium text-brand hover:text-brand-dark">
+        <Link prefetch href="/staff/requests" className="inline-flex items-center gap-1 py-1.5 text-sm font-medium text-brand hover:text-brand-dark">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 6l-6 6 6 6" />
           </svg>

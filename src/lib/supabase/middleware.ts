@@ -29,9 +29,10 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Checks who is signed in, and refreshes their session if it is about to expire.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the token locally instead of a round trip to Supabase Auth
+  // on every page, which was a big part of the slow page loads.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.includes(path) || path.startsWith("/api");

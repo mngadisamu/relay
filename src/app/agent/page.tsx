@@ -1,9 +1,11 @@
+// prefetch on links: Next.js fetches the page in the background before the click,
+// so it opens instantly instead of showing a loading screen.
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { AgentHeader } from "@/components/AgentHeader";
 import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
-import { STATUS_LABEL, formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
+import { STATUS_LABEL, formatWhen, latestUpdate, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 
 type Ticket = {
   id: number;
@@ -14,6 +16,9 @@ type Ticket = {
   status: TicketStatus;
   needs_review: boolean;
   created_at: string;
+  assigned_at: string | null;
+  answered_at: string | null;
+  closed_at: string | null;
 };
 
 const STATUSES: TicketStatus[] = ["received", "assigned", "answered", "closed"];
@@ -26,10 +31,10 @@ const PRIORITY_RANK: Record<TicketPriority, number> = { urgent: 0, high: 1, medi
 export default async function AgentInbox({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; moved?: string; to?: string }>;
 }) {
   const profile = await requireRole(["agent"]);
-  const { status } = await searchParams;
+  const { status, moved, to } = await searchParams;
   const filter = STATUSES.find((s) => s === status);
 
   // A plain select is enough: row-level security (S1-15) only returns
@@ -37,7 +42,7 @@ export default async function AgentInbox({
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tickets")
-    .select("id, reference, subject, depot, priority, status, needs_review, created_at")
+    .select("id, reference, subject, depot, priority, status, needs_review, created_at, assigned_at, answered_at, closed_at")
     .eq("is_historical", false);
 
   const all = ((data ?? []) as Ticket[]).sort(
@@ -64,6 +69,7 @@ export default async function AgentInbox({
               const active = s === filter;
               return (
                 <Link
+                  prefetch
                   key={s ?? "all"}
                   href={s ? `/agent?status=${s}` : "/agent"}
                   aria-current={active ? "page" : undefined}
@@ -79,6 +85,13 @@ export default async function AgentInbox({
           </nav>
         </div>
 
+        {/* Shown after an agent moves a ticket to another department (S1-25). */}
+        {moved && to && (
+          <p role="status" className="rounded-md bg-[#e5f3ea] px-3 py-2.5 text-sm font-medium text-[#1b6b36]">
+            {moved} was moved to {to}. It&apos;s now in the {to} inbox.
+          </p>
+        )}
+
         {error && (
           <p role="alert" className="rounded-md bg-[#fdecea] p-3 text-sm text-[#a4231a]">
             Couldn&apos;t load tickets: {error.message}
@@ -86,10 +99,10 @@ export default async function AgentInbox({
         )}
 
         <div className="overflow-x-auto rounded-[10px] border border-line bg-white">
-          <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-[0.4px] text-muted">
-                {["Priority", "Subject", "Reference", "Depot", "Status", "Received"].map((h) => (
+                {["Priority", "Subject", "Reference", "Depot", "Status", "Received", "Last update"].map((h) => (
                   <th key={h} scope="col" className="border-b border-line px-4 py-3 font-semibold">
                     {h}
                   </th>
@@ -104,7 +117,7 @@ export default async function AgentInbox({
                   </td>
                   <td className="border-b border-line-soft px-4 py-3.5">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <Link href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
+                      <Link prefetch href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
                         {t.subject}
                       </Link>
                       {t.needs_review && <NeedsReviewTag />}
@@ -115,7 +128,21 @@ export default async function AgentInbox({
                   <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5">
                     <StatusPill status={t.status} size="sm" />
                   </td>
-                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">{formatWhen(t.created_at)}</td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">
+                    <time dateTime={t.created_at}>{formatWhen(t.created_at)}</time>
+                  </td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">
+                    {(() => {
+                      const update = latestUpdate(t);
+                      return update.label === "Sent" ? (
+                        <span className="text-muted">No reply yet</span>
+                      ) : (
+                        <>
+                          {update.label} <time dateTime={update.at}>{formatWhen(update.at)}</time>
+                        </>
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>

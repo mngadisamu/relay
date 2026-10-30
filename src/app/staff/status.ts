@@ -32,6 +32,46 @@ export const PRIORITY_STYLE: Record<TicketPriority, string> = {
   low: "bg-page text-muted",
 };
 
+// Relay is used in South Africa, but Vercel's servers run on UTC time. Without a
+// time zone every time showed 2 hours behind, so always format in SAST.
+const TIME_ZONE = "Africa/Johannesburg";
+
+// The calendar day (e.g. "2026-10-29") of a moment, in Johannesburg.
+function dayKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(date);
+}
+
+// "Today, 14:05", "Yesterday, 15:40", "Mon 19 Oct, 09:12", or with the year if it isn't this year.
 export function formatWhen(iso: string) {
-  return new Date(iso).toLocaleString("en-ZA", { dateStyle: "medium", timeStyle: "short" });
+  const date = new Date(iso);
+  const now = new Date();
+  const time = new Intl.DateTimeFormat("en-ZA", { timeZone: TIME_ZONE, hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+
+  const day = dayKey(date);
+  if (day === dayKey(now)) return `Today, ${time}`;
+  if (day === dayKey(new Date(now.getTime() - 24 * 60 * 60 * 1000))) return `Yesterday, ${time}`;
+
+  const sameYear = day.slice(0, 4) === dayKey(now).slice(0, 4);
+  const datePart = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+  }).format(date);
+  return `${datePart.replace(",", "").replace("Sept", "Sep")}, ${time}`;
+}
+
+// The latest step a ticket reached, e.g. { label: "Replied", at: "..." }.
+// Used in lists so people can see at a glance when something last happened.
+export function latestUpdate(t: {
+  created_at: string;
+  assigned_at?: string | null;
+  answered_at?: string | null;
+  closed_at?: string | null;
+}): { label: string; at: string } {
+  if (t.closed_at) return { label: "Closed", at: t.closed_at };
+  if (t.answered_at) return { label: "Replied", at: t.answered_at };
+  if (t.assigned_at) return { label: "Assigned", at: t.assigned_at };
+  return { label: "Sent", at: t.created_at };
 }

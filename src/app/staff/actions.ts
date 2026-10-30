@@ -1,8 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { classify } from "@/lib/classifier";
+import { getCurrentProfile } from "@/lib/auth";
 
 export type Field = "subject" | "description" | "depot";
 
@@ -14,7 +15,7 @@ export type SubmitState =
   // fieldErrors: one message per empty field, shown under that field with a red border.
   // message: a problem that isn't about one field (e.g. the save failed).
   | { status: "error"; fieldErrors: Partial<Record<Field, string>>; message?: string; values: SubmitValues }
-  | { status: "sent"; reference: string; department: string };
+  | { status: "sent"; reference: string; department: string; subject: string; sentAt: string };
 
 const DEPOTS = ["Head Office", "City Deep depot", "Pomona depot"];
 
@@ -38,58 +39,45 @@ export async function submitRequest(
   if (!DEPOTS.includes(depot)) fieldErrors.depot = "Please choose your depot";
   if (Object.keys(fieldErrors).length > 0) return { status: "error", fieldErrors, values };
 
+  const profile = await getCurrentProfile();
+  if (!profile) return { status: "error", fieldErrors: {}, message: "Please sign in again.", values };
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { status: "error", fieldErrors: {}, message: "Please sign in again.", values };
 
-  // 1. Ask the classify API which department this belongs to (stub now, Elzel's model later).
-  const h = await headers();
-  const host = h.get("host");
-  const protocol = h.get("x-forwarded-proto") ?? "http";
-  let department = "Operations";
-  let confidence = 0;
-  let modelVersion = "unavailable";
-  try {
-    const res = await fetch(`${protocol}://${host}/api/classify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subject, description }),
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const result = await res.json();
-      department = result.department;
-      confidence = result.confidence;
-      modelVersion = result.modelVersion;
-    }
-  } catch (error) {
-    // If classifying fails, the ticket is still saved and marked for a person to check.
-    console.error("Classify failed:", error);
-  }
-  const needsReview = confidence < 0.6;
+  // 1. Work out the department with the trained model (S1-21). It runs right here
+  //    on the server in a few milliseconds; calling our own /api/classify over the
+  //    network used to add a second or more to every submit.
+  const { department, confidence, modelVersion, needsReview } = classify(subject, description);
 
   // 2. Save the ticket. submitted_by must be the signed-in user (RLS requires it).
   const { data: ticket, error } = await supabase
     .from("tickets")
-    .insert({ submitted_by: user.id, subject, description, depot, department, needs_review: needsReview })
-    .select("id, reference")
+    .insert({ submitted_by: profile.id, subject, description, depot, department, needs_review: needsReview })
+    .select("id, reference, created_at")
     .single();
   if (error || !ticket) {
     console.error("Could not save the ticket:", error);
     return { status: "error", fieldErrors: {}, message: "Your request couldn't be sent. Please try again.", values };
   }
 
-  // 3. Keep the classifier's decision for the Sprint 3 audit.
-  const { error: classifyError } = await supabase.from("classifications").insert({
-    ticket_id: ticket.id,
-    predicted_department: department,
-    confidence,
-    model_version: modelVersion,
-  });
+  // 3. Keep the classifier's decision (S1-21) and an audit entry (Sprint 3 compliance),
+  //    both saved at the same time. Neither stops the request if it fails.
+  const [{ error: classifyError }, { error: auditError }] = await Promise.all([
+    supabase.from("classifications").insert({
+      ticket_id: ticket.id,
+      predicted_department: department,
+      confidence,
+      model_version: modelVersion,
+    }),
+    supabase.from("audit_log").insert({
+      actor: profile.id,
+      action: "classify",
+      ticket_id: ticket.id,
+      details: { department, confidence, model_version: modelVersion, needs_review: needsReview },
+    }),
+  ]);
   if (classifyError) console.error("Could not save the classification:", classifyError);
+  if (auditError) console.error("Could not write the audit entry:", auditError);
 
   revalidatePath("/staff/requests");
-  return { status: "sent", reference: ticket.reference, department };
+  return { status: "sent", reference: ticket.reference, department, subject, sentAt: ticket.created_at };
 }
