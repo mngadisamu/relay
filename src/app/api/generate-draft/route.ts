@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { loadTemplates, templateForTone } from "@/lib/reply-templates";
 
 // Gemini key stays on the server only (never NEXT_PUBLIC_).
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -10,7 +11,7 @@ const TONES = ["formal", "friendly", "urgent"] as const;
 type Tone = (typeof TONES)[number];
 
 // Drafts a reply with Gemini (S1-08, S1-13, S1-14) and saves it as the signed-in agent.
-// Body: { ticketId: number, tone: "formal" | "friendly" | "urgent", templateText?: string }
+// Body: { ticketId: number, tone: "formal" | "friendly" | "urgent" }
 export async function POST(request: Request) {
   // Only agents and managers may create drafts (staff can't insert into responses).
   const profile = await getCurrentProfile();
@@ -21,7 +22,6 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const ticketId = Number(body?.ticketId);
   const tone: Tone = TONES.includes(body?.tone) ? body.tone : "formal";
-  const templateText: string = typeof body?.templateText === "string" ? body.templateText : "";
   if (!ticketId) return NextResponse.json({ error: "ticketId is required" }, { status: 400 });
 
   // Load the ticket here, as the agent, instead of trusting text sent from the browser.
@@ -32,6 +32,11 @@ export async function POST(request: Request) {
     supabase.rpc("ticket_submitter", { p_ticket_id: ticketId }).maybeSingle<{ full_name: string }>(),
   ]);
   if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+
+  // The department's template for this tone, read from the database every time (S1-27),
+  // so a template saved in the Template library is used by the very next draft.
+  const saved = templateForTone(await loadTemplates(supabase, ticket.department ?? "IT"), tone);
+  const templateText = saved?.body ?? "";
 
   const staffName = submitter?.full_name ?? "colleague";
   // Fill the template's [Staff Name] and [Subject] gaps, so neither the AI draft
@@ -82,7 +87,7 @@ Sign off as "${profile.fullName}, ${ticket.department} team".
   // and note it in the audit log (Sprint 3 compliance).
   const { data, error } = await supabase
     .from("responses")
-    .insert({ ticket_id: ticketId, tone, ai_draft: draftText, ai_generated: aiGenerated })
+    .insert({ ticket_id: ticketId, template_id: saved?.id ?? null, tone, ai_draft: draftText, ai_generated: aiGenerated })
     .select("id")
     .single();
   if (error) {
@@ -93,7 +98,7 @@ Sign off as "${profile.fullName}, ${ticket.department} team".
     actor: profile.id,
     action: "draft",
     ticket_id: ticketId,
-    details: { tone, ai_generated: aiGenerated, response_id: data.id },
+    details: { tone, ai_generated: aiGenerated, response_id: data.id, template_id: saved?.id ?? null },
   });
 
   return NextResponse.json({ draft: draftText, responseId: data.id, aiGenerated });

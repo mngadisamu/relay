@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { departmentTemplates } from "@/lib/templates";
+import { TONES, loadTemplates, templateForTone } from "@/lib/reply-templates";
 import { AgentHeader } from "@/components/AgentHeader";
 import TicketReply, { type Classification, type Draft, type SentReply, type Submitter, type TicketForReply } from "./TicketReply";
 
@@ -56,9 +56,11 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
       .maybeSingle<SentReply>(),
   ]);
 
-  // Templates for this department (moving into the templates table is S1-27).
-  const all = departmentTemplates as Record<string, string[]>;
-  const templates = all[ticket.department ?? "IT"] ?? all.IT;
+  // This department's templates from the database (S1-27), in tone order
+  // (formal, friendly, urgent). The draft route reads them itself; the page only
+  // needs them to show a template if the AI route can't be reached at all.
+  const departmentTemplates = await loadTemplates(supabase, ticket.department ?? "IT");
+  const templates = TONES.map((tone) => templateForTone(departmentTemplates, tone)?.body ?? "");
 
   return (
     <div className="min-h-screen bg-page">
