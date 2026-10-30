@@ -34,7 +34,8 @@ export type Submitter = { full_name: string; email: string; depot: string | null
 export type Draft = { id: number; ai_draft: string | null; tone: Tone; ai_generated: boolean };
 export type SentReply = { final_text: string; sent_at: string; ai_generated: boolean };
 
-// Which template goes with each tone (index in src/lib/templates.ts).
+// Which template goes with each tone (the page passes them as formal, friendly, urgent).
+// Only used if the draft route can't be reached; normally the server picks the template.
 const TEMPLATE_FOR_TONE: Record<Tone, number> = { formal: 0, friendly: 1, urgent: 2 };
 const TONES: { value: Tone; label: string }[] = [
   { value: "formal", label: "Formal" },
@@ -84,7 +85,6 @@ export default function TicketReply({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ticketId: ticket.id,
-          templateText: templates[TEMPLATE_FOR_TONE[selectedTone]] ?? templates[0],
           tone: selectedTone,
         }),
       });
@@ -95,7 +95,10 @@ export default function TicketReply({
       setAiGenerated(data.aiGenerated ?? true);
     } catch {
       // If the AI route fails completely, start from the template so the agent can still reply.
-      setDraft(templates[TEMPLATE_FOR_TONE[selectedTone]] ?? "");
+      const fallbackText = (templates[TEMPLATE_FOR_TONE[selectedTone]] ?? "")
+        .replaceAll("[Staff Name]", submitter?.full_name ?? "colleague")
+        .replaceAll("[Subject]", ticket.subject);
+      setDraft(fallbackText);
       setResponseId(null);
       setAiGenerated(false);
       setError("The AI draft didn't load, so the template is shown instead.");
