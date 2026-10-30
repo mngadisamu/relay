@@ -15,7 +15,7 @@ export type SubmitState =
   // fieldErrors: one message per empty field, shown under that field with a red border.
   // message: a problem that isn't about one field (e.g. the save failed).
   | { status: "error"; fieldErrors: Partial<Record<Field, string>>; message?: string; values: SubmitValues }
-  | { status: "sent"; reference: string; department: string; subject: string };
+  | { status: "sent"; reference: string; department: string; subject: string; sentAt: string };
 
 const DEPOTS = ["Head Office", "City Deep depot", "Pomona depot"];
 
@@ -52,7 +52,7 @@ export async function submitRequest(
   const { data: ticket, error } = await supabase
     .from("tickets")
     .insert({ submitted_by: profile.id, subject, description, depot, department, needs_review: needsReview })
-    .select("id, reference")
+    .select("id, reference, created_at")
     .single();
   if (error || !ticket) {
     console.error("Could not save the ticket:", error);
@@ -79,5 +79,5 @@ export async function submitRequest(
   if (auditError) console.error("Could not write the audit entry:", auditError);
 
   revalidatePath("/staff/requests");
-  return { status: "sent", reference: ticket.reference, department, subject };
+  return { status: "sent", reference: ticket.reference, department, subject, sentAt: ticket.created_at };
 }

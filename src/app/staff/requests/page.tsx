@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StatusPill } from "@/components/StatusPill";
 import { StaffNav } from "../StaffNav";
-import { formatWhen, type TicketStatus } from "../status";
+import { formatWhen, latestUpdate, type TicketStatus } from "../status";
 
 type Row = {
   id: number;
@@ -14,6 +14,9 @@ type Row = {
   department: string | null;
   status: TicketStatus;
   created_at: string;
+  assigned_at: string | null;
+  answered_at: string | null;
+  closed_at: string | null;
 };
 
 // My requests (S1-26, mockup screen 4): newest first, status in words and colour.
@@ -24,7 +27,7 @@ export default async function MyRequests() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tickets")
-    .select("id, reference, subject, department, status, created_at")
+    .select("id, reference, subject, department, status, created_at, assigned_at, answered_at, closed_at")
     .order("created_at", { ascending: false });
   const requests = (data ?? []) as Row[];
 
@@ -54,7 +57,9 @@ export default async function MyRequests() {
           </div>
         ) : (
           <ul className="space-y-2.5">
-            {requests.map((r) => (
+            {requests.map((r) => {
+              const update = latestUpdate(r);
+              return (
               <li key={r.id}>
                 <Link
                   prefetch
@@ -66,11 +71,22 @@ export default async function MyRequests() {
                     <StatusPill status={r.status} />
                   </div>
                   <p className="text-[13px] tabular-nums text-muted">
-                    {r.reference} · {r.department ?? "Not routed yet"} · {formatWhen(r.created_at)}
+                    {r.reference} · {r.department ?? "Not routed yet"}
+                  </p>
+                  {/* Sent time, plus the latest change once there is one (e.g. "Replied Today, 10:05"). */}
+                  <p className="text-[13px] tabular-nums text-ink-2">
+                    Sent <time dateTime={r.created_at}>{formatWhen(r.created_at)}</time>
+                    {update.label !== "Sent" && (
+                      <>
+                        {" · "}
+                        <span className="font-medium">{update.label}</span> <time dateTime={update.at}>{formatWhen(update.at)}</time>
+                      </>
+                    )}
                   </p>
                 </Link>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </main>

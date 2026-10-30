@@ -6,6 +6,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { submitRequest, type Field, type SubmitState } from "./actions";
+import { formatWhen } from "./status";
 
 const initialState: SubmitState = { status: "idle" };
 
@@ -66,6 +67,12 @@ function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
             <div className="space-y-0.5">
               <dt className="text-[13px] text-muted">Subject</dt>
               <dd className="text-[15px] text-ink">{state.subject}</dd>
+            </div>
+            <div className="space-y-0.5">
+              <dt className="text-[13px] text-muted">Sent</dt>
+              <dd className="text-[15px] text-ink">
+                <time dateTime={state.sentAt}>{formatWhen(state.sentAt)}</time>
+              </dd>
             </div>
           </dl>
           <p className="border-t border-line-soft pt-4 text-sm leading-5 text-ink-2">

@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { AgentHeader } from "@/components/AgentHeader";
 import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
-import { STATUS_LABEL, formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
+import { STATUS_LABEL, formatWhen, latestUpdate, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 
 type Ticket = {
   id: number;
@@ -16,6 +16,9 @@ type Ticket = {
   status: TicketStatus;
   needs_review: boolean;
   created_at: string;
+  assigned_at: string | null;
+  answered_at: string | null;
+  closed_at: string | null;
 };
 
 const STATUSES: TicketStatus[] = ["received", "assigned", "answered", "closed"];
@@ -39,7 +42,7 @@ export default async function AgentInbox({
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tickets")
-    .select("id, reference, subject, depot, priority, status, needs_review, created_at")
+    .select("id, reference, subject, depot, priority, status, needs_review, created_at, assigned_at, answered_at, closed_at")
     .eq("is_historical", false);
 
   const all = ((data ?? []) as Ticket[]).sort(
@@ -96,10 +99,10 @@ export default async function AgentInbox({
         )}
 
         <div className="overflow-x-auto rounded-[10px] border border-line bg-white">
-          <table className="w-full min-w-[920px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-[0.4px] text-muted">
-                {["Priority", "Subject", "Reference", "Depot", "Status", "Received"].map((h) => (
+                {["Priority", "Subject", "Reference", "Depot", "Status", "Received", "Last update"].map((h) => (
                   <th key={h} scope="col" className="border-b border-line px-4 py-3 font-semibold">
                     {h}
                   </th>
@@ -125,7 +128,21 @@ export default async function AgentInbox({
                   <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5">
                     <StatusPill status={t.status} size="sm" />
                   </td>
-                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">{formatWhen(t.created_at)}</td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">
+                    <time dateTime={t.created_at}>{formatWhen(t.created_at)}</time>
+                  </td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">
+                    {(() => {
+                      const update = latestUpdate(t);
+                      return update.label === "Sent" ? (
+                        <span className="text-muted">No reply yet</span>
+                      ) : (
+                        <>
+                          {update.label} <time dateTime={update.at}>{formatWhen(update.at)}</time>
+                        </>
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
