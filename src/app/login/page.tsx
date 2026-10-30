@@ -2,6 +2,10 @@
 
 import { useActionState } from "react";
 import { BrandMark } from "@/components/BrandMark";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { signIn, type LoginState } from "./actions";
 
 const initialState: LoginState = { error: null };
@@ -66,54 +70,53 @@ export default function LoginPage() {
 
       <section className="-mt-28 flex flex-1 items-start justify-center px-6 pb-8 lg:mt-0 lg:items-center lg:px-6 lg:py-12">
         <div className="relative w-full max-w-[420px] space-y-6">
-          <form action={formAction} className="space-y-5 rounded-xl border border-line bg-white px-5 py-6 shadow-[0_8px_24px_rgba(11,35,66,0.10)] lg:px-8 lg:py-9">
-            <div className="space-y-1.5">
+          {/* Built from the shared shadcn/ui components (S1-12), in Relay's colours. */}
+          <Card className="gap-5 py-6 shadow-[0_8px_24px_rgba(11,35,66,0.10)] lg:py-9">
+            <CardHeader className="gap-1.5 px-5 lg:px-8">
+              {/* The page's main heading, so it's an h1 rather than CardTitle's h2. */}
               <h1 className="text-xl font-semibold text-ink lg:text-2xl">Sign in</h1>
-              <p className="text-sm text-muted">Use your Kopano Freight work email.</p>
-            </div>
+              <CardDescription>Use your Kopano Freight work email.</CardDescription>
+            </CardHeader>
+            <CardContent className="px-5 lg:px-8">
+              <form action={formAction} className="space-y-5">
+                {state.error && (
+                  <p role="alert" className="rounded-md border border-[#f4c7c2] bg-[#fdecea] px-3 py-2.5 text-sm leading-5 text-destructive">
+                    {state.error}
+                  </p>
+                )}
 
-            {state.error && (
-              <p role="alert" className="rounded-md border border-[#f4c7c2] bg-[#fdecea] px-3 py-2.5 text-sm leading-5 text-[#a4231a]">
-                {state.error}
-              </p>
-            )}
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Work email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    aria-invalid={state.error ? true : undefined}
+                    className="h-12 text-base"
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-sm font-medium text-ink">
-                Work email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="h-12 w-full rounded-md border border-field bg-white px-3 text-base text-ink focus:border-brand"
-              />
-            </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    aria-invalid={state.error ? true : undefined}
+                    className="h-12 text-base"
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-sm font-medium text-ink">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="h-12 w-full rounded-md border border-field bg-white px-3 text-base text-ink focus:border-brand"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="h-12 w-full rounded-md bg-brand text-base font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
-            >
-              {isPending ? "Signing in…" : "Sign in"}
-            </button>
-          </form>
+                <Button type="submit" size="lg" disabled={isPending} className="h-12 w-full text-base">
+                  {isPending ? "Signing in…" : "Sign in"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
 
           <p className="mx-auto max-w-[300px] text-center text-sm leading-5 text-muted lg:max-w-none">
             No account yet, or forgot your password? Ask your manager or the IT desk on ext. 2204.

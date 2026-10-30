@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -12,6 +13,7 @@ export const HOME_FOR_ROLE: Record<Role, string> = {
 };
 
 export type CurrentProfile = {
+  id: string; // the user's id (same as auth.uid() in the database)
   email: string;
   fullName: string;
   role: Role;
@@ -19,28 +21,31 @@ export type CurrentProfile = {
 };
 
 // Returns the signed-in user's profile, or null if nobody is signed in.
-export async function getCurrentProfile(): Promise<CurrentProfile | null> {
+// cache(): a page and its layout often both ask; this way it's looked up once per request.
+export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> => {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  // getClaims() checks the sign-in token on our own server where it can,
+  // instead of calling Supabase Auth over the internet on every page (much faster).
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims) return null;
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, role, department")
-    .eq("id", user.id)
+    .eq("id", claims.sub)
     .single();
   if (!profile) return null;
 
   return {
-    email: user.email ?? "",
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : "",
     fullName: profile.full_name,
     role: profile.role,
     department: profile.department,
   };
-}
+});
 
 // Lets only the listed roles see a page. Signed-out users go to /login;
 // anyone with a different role goes back to their own home page.
