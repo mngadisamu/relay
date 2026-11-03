@@ -98,3 +98,22 @@ export async function rerouteTicket(input: {
   revalidatePath("/agent");
   redirect(`/agent?moved=${encodeURIComponent(input.reference)}&to=${encodeURIComponent(input.department)}`);
 }
+
+// "Department is correct" on a Needs review ticket (S2-11).
+// confirm_department() (migration 0006) clears "Needs review", records who
+// confirmed it on the classification, and writes an audit entry.
+export async function confirmDepartment(ticketId: number): Promise<{ error: string } | { ok: true }> {
+  const profile = await getCurrentProfile();
+  if (!profile || !["agent", "manager"].includes(profile.role)) {
+    return { error: "Only agents and managers can confirm a department." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("confirm_department", { p_ticket_id: ticketId });
+  if (error) return { error: "Couldn't confirm the department: " + error.message };
+
+  // Reload this ticket (tag gone, "Confirmed by" shown) and the inbox.
+  revalidatePath("/agent");
+  revalidatePath(`/agent/${ticketId}`);
+  return { ok: true };
+}

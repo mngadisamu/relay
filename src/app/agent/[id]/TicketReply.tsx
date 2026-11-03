@@ -7,7 +7,8 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
 import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
-import { rerouteTicket, sendReply } from "./actions";
+import { AiNote } from "@/components/AiNote";
+import { confirmDepartment, rerouteTicket, sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
 
@@ -29,6 +30,8 @@ export type Classification = {
   confidence: number;
   model_version: string;
   overridden_department: string | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
 };
 export type Submitter = { full_name: string; email: string; depot: string | null };
 export type Draft = { id: number; ai_draft: string | null; tone: Tone; ai_generated: boolean };
@@ -48,6 +51,7 @@ export default function TicketReply({
   ticket,
   templates,
   classification,
+  confirmedByName,
   submitter,
   initialDraft,
   sentReply,
@@ -55,6 +59,7 @@ export default function TicketReply({
   ticket: TicketForReply;
   templates: string[];
   classification: Classification | null;
+  confirmedByName: string | null;
   submitter: Submitter | null;
   initialDraft: Draft | null;
   sentReply: SentReply | null;
@@ -73,6 +78,8 @@ export default function TicketReply({
   const [moveTo, setMoveTo] = useState("");
   const [moveError, setMoveError] = useState<string | null>(null);
   const [isMoving, startMoving] = useTransition();
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [isConfirming, startConfirming] = useTransition();
 
   // Ask the server for a new draft in the chosen tone (S1-08, S1-13, S1-14).
   async function generateDraft(selectedTone: Tone) {
@@ -137,6 +144,16 @@ export default function TicketReply({
     });
   }
 
+  // "Department is correct" (S2-11). The server reloads this page afterwards,
+  // so the Needs review tag disappears and "Confirmed by" appears.
+  function handleConfirm() {
+    setConfirmError(null);
+    startConfirming(async () => {
+      const result = await confirmDepartment(ticket.id);
+      if ("error" in result) setConfirmError(result.error);
+    });
+  }
+
   // Move the ticket to another department (S1-25).
   function handleMove() {
     if (!moveTo) {
@@ -154,7 +171,7 @@ export default function TicketReply({
   const status: TicketStatus = sent ? "answered" : ticket.status;
   const secondaryBtn =
     "inline-flex h-[42px] items-center gap-1.5 rounded-md border border-field bg-white px-3.5 text-sm font-medium text-ink hover:bg-page disabled:opacity-60";
-  const busy = isGenerating || isSending || isMoving;
+  const busy = isGenerating || isSending || isMoving || isConfirming;
 
   return (
     <main className="mx-auto max-w-[1360px] space-y-4 px-4 pb-12 pt-5 sm:px-6">
@@ -215,6 +232,7 @@ export default function TicketReply({
             <h2 id="routing-heading" className="text-[15px] font-semibold text-ink">
               Routing
             </h2>
+            {classification && <AiNote kind="routing" confidence={classification.confidence} />}
             {classification ? (
               <dl className="grid grid-cols-3 gap-3">
                 <div className="space-y-0.5">
@@ -236,10 +254,31 @@ export default function TicketReply({
             {classification?.overridden_department && (
               <p className="text-[13px] text-ink-2">Moved by an agent to {classification.overridden_department}.</p>
             )}
-            {ticket.needs_review && (
-              <p className="rounded-md bg-[#fff4e0] px-3 py-2.5 text-[13px] leading-[19px] text-[#7a4a00]">
-                The AI wasn&apos;t sure about this one. Check it belongs to {ticket.department}, or move it below.
+            {classification?.confirmed_at && !ticket.needs_review && (
+              <p className="flex items-center gap-1.5 text-[13px] text-ink-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1b6b36" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+                Confirmed by {confirmedByName ?? "a manager"} · {formatWhen(classification.confirmed_at)}
               </p>
+            )}
+            {ticket.needs_review && (
+              <div className="space-y-2.5 rounded-md bg-[#fff4e0] px-3 py-2.5">
+                <p className="text-[13px] leading-[19px] text-[#7a4a00]">
+                  The AI wasn&apos;t sure about this one. If it belongs in {ticket.department}, confirm it; if not, move it below.
+                </p>
+                <button type="button" onClick={handleConfirm} disabled={busy} className={secondaryBtn}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                  {isConfirming ? "Confirming…" : "Department is correct"}
+                </button>
+                {confirmError && (
+                  <p role="alert" className="text-[13px] text-[#a4231a]">
+                    {confirmError}
+                  </p>
+                )}
+              </div>
             )}
 
             {/* Reroute (S1-25) */}

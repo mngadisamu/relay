@@ -29,7 +29,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
     // The latest routing decision, for the Routing panel.
     supabase
       .from("classifications")
-      .select("predicted_department, confidence, model_version, overridden_department")
+      .select("predicted_department, confidence, model_version, overridden_department, confirmed_by, confirmed_at")
       .eq("ticket_id", ticket.id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -56,6 +56,19 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
       .maybeSingle<SentReply>(),
   ]);
 
+  // Who confirmed the department (S2-11). Agents can read the names of people in
+  // their own department (migration 0006); a general manager's name isn't visible
+  // to them, so the panel then just says "a manager".
+  let confirmedByName: string | null = null;
+  if (classification?.confirmed_by) {
+    const { data: person } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", classification.confirmed_by)
+      .maybeSingle<{ full_name: string }>();
+    confirmedByName = person?.full_name ?? null;
+  }
+
   // This department's templates from the database (S1-27), in tone order
   // (formal, friendly, urgent). The draft route reads them itself; the page only
   // needs them to show a template if the AI route can't be reached at all.
@@ -69,6 +82,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         ticket={ticket}
         templates={templates}
         classification={classification ?? null}
+        confirmedByName={confirmedByName}
         submitter={submitter ?? null}
         initialDraft={draft ?? null}
         sentReply={sentReply ?? null}
