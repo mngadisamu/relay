@@ -198,6 +198,20 @@ export default function TicketReply({
     "inline-flex h-[42px] items-center gap-1.5 rounded-md border border-field bg-white px-3.5 text-sm font-medium text-ink hover:bg-page disabled:opacity-60";
   const busy = isGenerating || isSending || isMoving || isConfirming || isAssigning;
 
+  // Only the person working on the ticket replies: an agent once it's assigned to
+  // them, a manager once it's assigned to someone. Otherwise Send reply is greyed
+  // out and the reason is shown under it (the server checks the same thing).
+  const sendBlockedReason =
+    viewer.role === "manager"
+      ? ticket.assigned_to
+        ? null
+        : "Assign this ticket to an agent before replying."
+      : !ticket.assigned_to
+        ? "Take this ticket before you reply, so everyone knows you're on it."
+        : ticket.assigned_to !== viewer.id
+          ? `${assigneeName ?? "Another agent"} is working on this ticket, so only they can reply.`
+          : null;
+
   return (
     <main className="mx-auto max-w-[1360px] space-y-4 px-4 pb-12 pt-5 sm:px-6">
       <Link prefetch href="/agent" className="inline-flex items-center gap-1 py-1 text-sm font-medium text-brand hover:text-brand-dark">
@@ -499,14 +513,26 @@ export default function TicketReply({
                   </button>
                   <p className="text-xs text-muted">Replaces the text above with a fresh draft in the {tone} tone.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={busy || !draft.trim()}
-                  className="h-[42px] rounded-md bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
-                >
-                  {isSending ? "Sending…" : "Send reply"}
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={busy || !draft.trim() || sendBlockedReason !== null}
+                    aria-describedby={sendBlockedReason ? "send-blocked" : undefined}
+                    className={`h-[42px] rounded-md px-5 text-[15px] font-semibold ${
+                      sendBlockedReason
+                        ? "cursor-not-allowed bg-[#e3e6ea] text-[#59626e]"
+                        : "bg-brand text-white hover:bg-brand-dark disabled:opacity-60"
+                    }`}
+                  >
+                    {isSending ? "Sending…" : "Send reply"}
+                  </button>
+                  {sendBlockedReason && (
+                    <p id="send-blocked" className="max-w-[300px] text-right text-xs leading-[18px] text-ink-2">
+                      {sendBlockedReason}
+                    </p>
+                  )}
+                </div>
               </div>
             </>
           )}

@@ -29,6 +29,22 @@ export async function sendReply(input: {
   const supabase = await createClient();
   const now = new Date().toISOString();
 
+  // 0. Only the person working on the ticket replies: an agent needs it assigned
+  //    to them, a manager needs it assigned to someone. The button is greyed out
+  //    in the same cases; this check makes sure it can't be skipped.
+  const { data: current } = await supabase
+    .from("tickets")
+    .select("assigned_to")
+    .eq("id", input.ticketId)
+    .maybeSingle<{ assigned_to: string | null }>();
+  if (!current) return { error: "Ticket not found." };
+  if (profile.role === "agent" && current.assigned_to !== profile.id) {
+    return { error: current.assigned_to ? "This ticket is assigned to someone else." : "Take this ticket before you reply." };
+  }
+  if (profile.role === "manager" && !current.assigned_to) {
+    return { error: "Assign this ticket to an agent before replying." };
+  }
+
   // 1. Save the reply. If there's an AI draft, update it so the draft and the
   //    final text sit side by side (needed for the Sprint 3 audit).
   if (input.responseId) {
