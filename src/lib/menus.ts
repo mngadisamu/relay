@@ -6,6 +6,12 @@ import type { MenuItem } from "@/components/RoleHeader";
 
 export const MANAGER_MENU: MenuItem[] = [
   {
+    label: "Tickets",
+    href: "/agent",
+    description: "Open tickets in your department. Assign them to an agent.",
+    ready: true, // Samukelo, S2-16
+  },
+  {
     label: "Dashboard",
     href: "/manager/dashboard",
     description: "Ticket numbers, reply times and trends by department.",

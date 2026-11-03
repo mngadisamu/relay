@@ -117,3 +117,29 @@ export async function confirmDepartment(ticketId: number): Promise<{ error: stri
   revalidatePath(`/agent/${ticketId}`);
   return { ok: true };
 }
+
+// Take ticket (agent) or Assign (manager) (S2-16).
+// assign_ticket() (migration 0006) checks who may do it, sets assigned_to,
+// moves Received to Assigned with the time, and writes an audit entry.
+// agentId is left out when an agent takes a ticket for themselves.
+export async function assignTicket(ticketId: number, agentId?: string): Promise<{ error: string } | { ok: true }> {
+  const profile = await getCurrentProfile();
+  if (!profile || !["agent", "manager"].includes(profile.role)) {
+    return { error: "Only agents and managers can assign tickets." };
+  }
+  if (profile.role === "manager" && !agentId) return { error: "Choose an agent to assign it to." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("assign_ticket", {
+    p_ticket_id: ticketId,
+    ...(agentId ? { p_agent: agentId } : {}),
+  });
+  if (error) return { error: "Couldn't assign the ticket: " + error.message };
+
+  // The ticket, the inboxes and the staff member's status history all change.
+  revalidatePath("/agent");
+  revalidatePath(`/agent/${ticketId}`);
+  revalidatePath(`/staff/requests/${ticketId}`);
+  revalidatePath("/staff/requests");
+  return { ok: true };
+}
