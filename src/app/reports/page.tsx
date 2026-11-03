@@ -97,7 +97,7 @@ export default function ReportsPage() {
         <ReportPreview 
           department={reportData.department} 
           weekStart={reportData.week_start} 
-          reportData={reportData} 
+          reportData={reportData as unknown as Parameters<typeof ReportPreview>[0]['reportData']} 
         />
       ) : (
         <div className="max-w-4xl mx-auto text-center py-12 text-slate-400 italic">
