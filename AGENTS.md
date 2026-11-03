@@ -172,7 +172,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
   Who does what: agents take tickets in their own department; a department manager (one with a `department`) assigns, confirms and closes in that department only; a general manager (no department) can do so everywhere; managers still read every ticket. Who confirmed a department is on the latest `classifications` row (`confirmed_by`, `confirmed_at`). Ticket references use South African time.
 - **Sending a reply** (S1-23): update the response (`final_text`, `sent_by`, `sent_at`) and the ticket (`status = 'answered'`, `answered_at`), both as the agent.
 - **Saving a classification** (S1-21): insert it right after inserting the ticket, in the same server action, as the submitting user.
-- **Audit entries:** always set `actor` to the signed-in user's id.
+- **Audit entries:** always set `actor` to the signed-in user's id. Every action and what goes in `details` is listed in [`docs/audit-actions.md`](docs/audit-actions.md) (contract 3); add new actions there in the same PR.
 - Need a permission that isn't here? Ask Samukelo for a new migration. Don't turn RLS off, and don't use the service-role key in app code.
 
 ---
@@ -184,7 +184,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 - **Forms:** use **server actions** (`"use server"` in an `actions.ts` file next to the page), with `useActionState` in the client form for errors and pending state. See `src/app/login/` as the reference pattern.
 - **Redirects:** redirect **straight to the final page**. Don't redirect from a server action to a page that redirects again: that chain made sign-in take ~40 s in dev (fixed in S1-09).
 - **Secrets:** API keys only in server code (server actions, route handlers). Nothing secret gets a `NEXT_PUBLIC_` prefix.
-- **AI output must be labelled** ("AI-drafted") and editable by a person before sending. Store both the draft and the final text.
+- **AI output must be labelled** and editable by a person before sending. Use `<AiNote kind="routing" confidence={c} />`, `"draft"`, `"summary"` or `"forecast"` from `@/components/AiNote` so the wording is the same everywhere. Store both the draft and the final text.
 - **Accessibility (WCAG 2.1 AA):** every input has a `<label htmlFor>`; status is shown in **text and colour**, not colour alone; errors use `role="alert"`; screens work at **360 px** width.
 - **Database changes:** never edit an applied migration. Add the next numbered file in `supabase/migrations/` (e.g. `0005_...sql`), with comments explaining each part, and run it in the Supabase SQL Editor. Samukelo owns migrations.
 - **Comments:** short and plain, explaining *why*. The team is learning, and the code will be presented to a panel.

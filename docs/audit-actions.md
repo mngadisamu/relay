@@ -1,0 +1,49 @@
+# Audit actions (S2-07, contract 3)
+
+Every AI decision and every human change in Relay writes one row to `audit_log`.
+This page is the single list of those rows, so every feature records its work the
+same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
+
+**Adding a new action?** Add it to this table in the same pull request.
+
+## Rules for every entry
+
+- **`actor`** is the signed-in user's id (`auth.uid()`). Row-level security refuses anything else.
+- **`ticket_id`** is set when the action is about a ticket, and left empty otherwise.
+- **`details`** holds ids and short values only. Never copy a request, reply or message text into it:
+  the text already lives in its own table, and the audit log is read by more people (POPIA).
+- **`created_at`** is the time of the action. It's stored in UTC; screens show it in South African time.
+- Entries are **never edited or deleted** (there are no update or delete rules on `audit_log`).
+- Write the entry in the **same step** as the change: inside the database function, or straight
+  after the change in the same server action.
+
+## The actions
+
+| Action | Written by (where) | When | `ticket_id` | `details` |
+| --- | --- | --- | --- | --- |
+| `classify` | The staff member who sent the request (`src/app/staff/actions.ts`) | The AI routes a new request | yes | `department`, `confidence` (0 to 1), `model_version`, `needs_review` |
+| `draft` | The agent (`src/app/api/generate-draft/route.ts`) | An AI draft is made or remade in a tone | yes | `tone`, `ai_generated` (false when the template was used because Gemini failed), `response_id`, `template_id` |
+| `send` | The agent (`src/app/agent/[id]/actions.ts`) | A reply is sent | yes | `tone`, `response_id`, `edited_ai_draft` (true when the reply started from a saved draft; compare `responses.ai_draft` with `final_text` to see how much changed) |
+| `reroute` | The agent or manager (`reroute_ticket()`, migration 0004) | A ticket is moved to another department | yes | `from`, `to` (departments) |
+| `confirm_department` | The agent or manager (`confirm_department()`, 0006) | "Department is correct" on a Needs review ticket | yes | `department` |
+| `assign` | The agent or manager (`assign_ticket()`, 0006) | Take ticket, or a manager assigns it | yes | `assigned_to` (profile id), `previous` (profile id or null) |
+| `close` | The sender, agent or manager (`close_ticket()`, 0006) | "This solved it", or Close ticket | yes | `closed_by_role` (`staff`, `agent` or `manager`) |
+| `reopen` *(added by 0006)* | The sender (`reopen_ticket()`, 0006) | "I still need help" | yes | `message_id` (row in `ticket_messages`) |
+| `template_edit` | The agent or manager (`src/app/agent/templates/actions.ts`) | A reply template is saved | no | `template_id`, `department`, `name` |
+| `user_create` | The manager (Manage users, S2-25) | A person is added | no | `user_id`, `role`, `department` (no email: it's in `auth.users`) |
+| `role_change` | The manager (Manage users, S2-25) | A role or department changes | no | `user_id`, `from_role`, `to_role`, `from_department`, `to_department` |
+| `insight_generate` | The manager who opens it (`src/lib/insights.ts`, S2-28) | Gemini writes a weekly summary | no | `insight_id`, `department` (or null for all), `week_start`, `ai_generated` (false if the numbers-only fallback was used) |
+| `report_download` | The manager (PDF route, S2-19) | A report PDF is downloaded | no | `report_id` (null for an unsaved preview), `department`, `week_start` |
+| `flag` | The agent who sent the reply (automatic check in `sendReply`, S2-26), or a person | An AI reply is flagged for a second look | yes | `flag_id`, `response_id`, `reason`, `source` (`auto` or `person`) |
+| `flag_resolve` | The compliance officer (Flagged replies, S2-26) | A flag is reviewed | yes | `flag_id`, `outcome` (`ok` or `needs_change`) |
+
+## How to read it
+
+- A ticket's whole history: `select * from audit_log where ticket_id = 42 order by created_at;`
+  It runs `classify` → (`confirm_department` or `reroute`) → `assign` → `draft` → `send` → `close`
+  (or `reopen`, then round again).
+- How often people overrule the AI: count `reroute` against `classify` for the same period.
+- How often AI drafts go out unchanged: `send` entries where `edited_ai_draft` is true, joined to
+  `responses` to compare `ai_draft` and `final_text`.
+
+Only managers and compliance can read `audit_log` (migration 0004).
