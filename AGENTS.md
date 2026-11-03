@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT1_STORIES.md`, and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Thu 29 Oct 2026 (Sprint 1, day 9).
+Last updated: Tue 3 Nov 2026 (Sprint 2+3, day 2).
 
 ---
 
@@ -55,7 +55,7 @@ The bootcamp runs **8 weeks as 4 two-week sprints**. Work is graded on technical
 | Layer | Choice | Notes |
 | --- | --- | --- |
 | Framework | **Next.js 15.5** (App Router), **React 19**, **TypeScript** | `src/` directory, import alias `@/*` → `src/*` |
-| Styling | **Tailwind CSS v4** | Theme colours `bg-background`, `text-foreground` come from `globals.css`. shadcn/ui is **not installed yet** (Mihlali, S1-12). |
+| Styling | **Tailwind CSS v4** | Theme colours `bg-background`, `text-foreground` come from `globals.css`. shadcn/ui components are in `src/components/ui/` (S1-12). |
 | Database and auth | **Supabase** (Postgres + Auth) via `@supabase/ssr` 0.12 and `@supabase/supabase-js` 2.x | Email and password sign-in. Row-level security (RLS) is on for every table. |
 | Hosting | **Vercel** (team "Team AI", project `relay`) | Env vars set in Vercel. Every PR gets a preview URL. |
 | ML classifier | TF-IDF + logistic regression, trained in **Google Colab** (Python/scikit-learn), exported to **JSON**, run in TypeScript inside a Next.js route | No Python server in production |
@@ -83,7 +83,8 @@ src/
 │       ├── server.ts             createClient() for server components, server actions, route handlers
 │       └── middleware.ts         updateSession(): used by src/middleware.ts
 ├── components/
-│   └── RoleHome.tsx              Shared layout for role home pages (title, signed-in info, Sign out)
+│   ├── RoleHeader.tsx            Top bar for managers and compliance: logo, role menu, Sign out (S2-02)
+│   └── RoleHome.tsx              Manager and compliance home: menu bar plus a card per page (S2-02)
 └── app/
     ├── layout.tsx                Root layout (suppressHydrationWarning for browser extensions)
     ├── page.tsx                  Public placeholder home page
@@ -97,7 +98,8 @@ supabase/migrations/
 ├── 0002_profiles_on_signup.sql   Trigger: new auth user → profiles row (role staff); policy: read own profile
 ├── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
 ├── 0004_team_policies.sql        RLS for ticket updates, classifications, templates, responses, audit_log + reroute_ticket()
-└── 0005_ticket_submitter.sql     ticket_submitter(): agents see the sender's name, email and depot for tickets they can see
+├── 0005_ticket_submitter.sql     ticket_submitter(): agents see the sender's name, email and depot for tickets they can see
+└── 0006_ticket_lifecycle.sql     assigned_to, ticket_messages, assign/confirm/close/reopen functions, profile rules, SAST references (S2-06)
 docs/  GETTING_STARTED.md · architecture.md (sections 1–4 done in S1-20; 5–7 come in S1-24) · sprints/ (plan .docx, dependencies .pdf, stories .md)
 ```
 
@@ -126,11 +128,12 @@ It also adds the SQL helpers `public.current_user_role()` and `public.current_us
 | Table | Key columns | Notes |
 | --- | --- | --- |
 | `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically when Samukelo adds an account (role `staff`). Agents and managers have a `department`. |
-| `tickets` | `id`, `reference` (auto, e.g. `KF-261021-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_historical`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | `is_historical = true` marks seeded past tickets (S1-17). Always set the matching timestamp when status changes. |
+| `tickets` | `id`, `reference` (auto, e.g. `KF-261021-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_historical`, `assigned_to`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | `is_historical = true` marks seeded past tickets (S1-17). Always set the matching timestamp when status changes. |
 | `classifications` | `ticket_id`, `predicted_department`, `confidence` (0–1), `model_version`, `overridden_by`, `overridden_department`, `created_at` | Keep every decision; never overwrite (needed for the Sprint 3 audit). |
 | `templates` | `department`, `name`, `body`, `updated_by`, timestamps | Reply templates (S1-04, S1-27) |
 | `responses` | `ticket_id`, `template_id`, `tone`, `ai_draft`, `final_text`, `ai_generated`, `sent_by`, `sent_at` | Store the AI draft *and* what the agent actually sent. |
 | `audit_log` | `actor`, `action`, `ticket_id`, `details` (jsonb) | e.g. classify, override, draft, send |
+| `ticket_messages` | `ticket_id`, `author`, `body`, `created_at` | A staff member's "I still need help" message (S2-20). Added only through `reopen_ticket()`. |
 | `approvals` | `ticket_id`, `approver`, `decision`, `decided_at` | Sprint 4 |
 
 ### Who can do what (row-level security, migrations 0003 and 0004)
@@ -139,12 +142,13 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 
 | Table | Read | Create | Update |
 | --- | --- | --- | --- |
-| `profiles` | own row. Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (migration 0005) | automatic when an account is added (trigger) | (none yet) |
+| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | (none yet) |
 | `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all |
 | `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
 | `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
 | `responses` | agents, managers, compliance on visible tickets · **staff only once `sent_at` is set** (never unsent drafts) | agents, managers, on visible tickets | agents, managers |
 | `audit_log` | managers, compliance | anyone signed in, only with `actor = auth.uid()` | nobody (append-only) |
+| `ticket_messages` | anyone who can see the ticket | only through `reopen_ticket()` | nobody |
 | `approvals` | (Sprint 4) | | |
 
 **Rules for writing code against this:**
@@ -157,6 +161,15 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
   ```
   In one step it checks the caller is an agent of the ticket's current department (or a manager), moves the ticket, clears `needs_review`, records the override on the latest classification and writes an `audit_log` entry.
 - **AI drafts are created by the agent**, e.g. when the agent opens a ticket or clicks "Draft reply" (S1-08, S1-13). Staff accounts can't insert into `responses`, so don't generate drafts inside the staff submit form.
+- **Ticket lifecycle (migration 0006, contract 1).** Use these functions, never a plain update: each one checks who is calling and writes its audit entry.
+  ```ts
+  await supabase.rpc("assign_ticket", { p_ticket_id: id });                     // agent: Take ticket (own department, for themselves)
+  await supabase.rpc("assign_ticket", { p_ticket_id: id, p_agent: agentId });   // manager: Assign to an agent of that department
+  await supabase.rpc("confirm_department", { p_ticket_id: id });                // agent or manager: "Department is correct"
+  await supabase.rpc("close_ticket", { p_ticket_id: id });                      // sender ("This solved it"), agent or manager; Answered tickets only
+  await supabase.rpc("reopen_ticket", { p_ticket_id: id, p_message: text });    // sender only ("I still need help"); Answered tickets only
+  ```
+  Who does what: agents take tickets in their own department; a department manager (one with a `department`) assigns, confirms and closes in that department only; a general manager (no department) can do so everywhere; managers still read every ticket. Who confirmed a department is on the latest `classifications` row (`confirmed_by`, `confirmed_at`). Ticket references use South African time.
 - **Sending a reply** (S1-23): update the response (`final_text`, `sent_by`, `sent_at`) and the ticket (`status = 'answered'`, `answered_at`), both as the agent.
 - **Saving a classification** (S1-21): insert it right after inserting the ticket, in the same server action, as the submitting user.
 - **Audit entries:** always set `actor` to the signed-in user's id.
