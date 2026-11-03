@@ -3,11 +3,20 @@
 import { useState } from 'react';
 import ReportPreview from '@/components/reports/ReportPreview';
 
+interface ReportData {
+  department: string;
+  week_start: string;
+  metrics?: Record<string, unknown>;
+  ai_summary?: string;
+  forecast?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export default function ReportsPage() {
   const [department, setDepartment] = useState('Finance');
   const [weekStart, setWeekStart] = useState('2026-11-02');
   const [loading, setLoading] = useState(false);
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerateReport = async (e: React.FormEvent) => {
@@ -29,8 +38,9 @@ export default function ReportsPage() {
       }
 
       setReportData(data.report);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to generate report';
+      setError(message);
     } finally {
       setLoading(false);
     }

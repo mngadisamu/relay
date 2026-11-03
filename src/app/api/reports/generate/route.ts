@@ -85,10 +85,11 @@ export async function POST(request: Request) {
       report: insertedReport,
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Report generation failed:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Internal Server Error';
     return NextResponse.json(
-      { error: err.message || 'Internal Server Error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
