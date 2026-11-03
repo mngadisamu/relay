@@ -7,7 +7,8 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
 import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
-import { rerouteTicket, sendReply } from "./actions";
+import { AiNote } from "@/components/AiNote";
+import { assignTicket, confirmDepartment, rerouteTicket, sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
 
@@ -21,6 +22,7 @@ export type TicketForReply = {
   priority: TicketPriority;
   status: TicketStatus;
   needs_review: boolean;
+  assigned_to: string | null;
   created_at: string;
 };
 
@@ -29,7 +31,10 @@ export type Classification = {
   confidence: number;
   model_version: string;
   overridden_department: string | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
 };
+export type Agent = { id: string; full_name: string };
 export type Submitter = { full_name: string; email: string; depot: string | null };
 export type Draft = { id: number; ai_draft: string | null; tone: Tone; ai_generated: boolean };
 export type SentReply = { final_text: string; sent_at: string; ai_generated: boolean };
@@ -48,6 +53,10 @@ export default function TicketReply({
   ticket,
   templates,
   classification,
+  confirmedByName,
+  viewer,
+  assigneeName,
+  agents,
   submitter,
   initialDraft,
   sentReply,
@@ -55,6 +64,10 @@ export default function TicketReply({
   ticket: TicketForReply;
   templates: string[];
   classification: Classification | null;
+  confirmedByName: string | null;
+  viewer: { id: string; role: string };
+  assigneeName: string | null;
+  agents: Agent[];
   submitter: Submitter | null;
   initialDraft: Draft | null;
   sentReply: SentReply | null;
@@ -73,6 +86,11 @@ export default function TicketReply({
   const [moveTo, setMoveTo] = useState("");
   const [moveError, setMoveError] = useState<string | null>(null);
   const [isMoving, startMoving] = useTransition();
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [isConfirming, startConfirming] = useTransition();
+  const [assignTo, setAssignTo] = useState("");
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [isAssigning, startAssigning] = useTransition();
 
   // Ask the server for a new draft in the chosen tone (S1-08, S1-13, S1-14).
   async function generateDraft(selectedTone: Tone) {
@@ -137,6 +155,30 @@ export default function TicketReply({
     });
   }
 
+  // "Department is correct" (S2-11). The server reloads this page afterwards,
+  // so the Needs review tag disappears and "Confirmed by" appears.
+  function handleConfirm() {
+    setConfirmError(null);
+    startConfirming(async () => {
+      const result = await confirmDepartment(ticket.id);
+      if ("error" in result) setConfirmError(result.error);
+    });
+  }
+
+  // Take ticket (agent, for themselves) or Assign (manager, to the chosen agent) (S2-16).
+  // The server reloads the page afterwards, so the status and "Assigned to" update.
+  function handleAssign(agentId?: string) {
+    if (viewer.role === "manager" && !agentId) {
+      setAssignError("Choose the agent to assign it to.");
+      return;
+    }
+    setAssignError(null);
+    startAssigning(async () => {
+      const result = await assignTicket(ticket.id, agentId);
+      if ("error" in result) setAssignError(result.error);
+    });
+  }
+
   // Move the ticket to another department (S1-25).
   function handleMove() {
     if (!moveTo) {
@@ -154,7 +196,21 @@ export default function TicketReply({
   const status: TicketStatus = sent ? "answered" : ticket.status;
   const secondaryBtn =
     "inline-flex h-[42px] items-center gap-1.5 rounded-md border border-field bg-white px-3.5 text-sm font-medium text-ink hover:bg-page disabled:opacity-60";
-  const busy = isGenerating || isSending || isMoving;
+  const busy = isGenerating || isSending || isMoving || isConfirming || isAssigning;
+
+  // Only the person working on the ticket replies: an agent once it's assigned to
+  // them, a manager once it's assigned to someone. Otherwise Send reply is greyed
+  // out and the reason is shown under it (the server checks the same thing).
+  const sendBlockedReason =
+    viewer.role === "manager"
+      ? ticket.assigned_to
+        ? null
+        : "Assign this ticket to an agent before replying."
+      : !ticket.assigned_to
+        ? "Take this ticket before you reply, so everyone knows you're on it."
+        : ticket.assigned_to !== viewer.id
+          ? `${assigneeName ?? "Another agent"} is working on this ticket, so only they can reply.`
+          : null;
 
   return (
     <main className="mx-auto max-w-[1360px] space-y-4 px-4 pb-12 pt-5 sm:px-6">
@@ -211,10 +267,68 @@ export default function TicketReply({
             </div>
           </section>
 
+          {/* Who is working on it (S2-16) */}
+          <section aria-labelledby="assignment-heading" className="space-y-3 rounded-[10px] border border-line bg-white p-5">
+            <h2 id="assignment-heading" className="text-[15px] font-semibold text-ink">
+              Assignment
+            </h2>
+            <p className="text-sm text-ink">
+              {!ticket.assigned_to
+                ? "Nobody has taken this ticket yet."
+                : ticket.assigned_to === viewer.id
+                  ? "Assigned to you"
+                  : `Assigned to ${assigneeName ?? "another agent"}`}
+            </p>
+
+            {viewer.role === "agent" && !ticket.assigned_to && ticket.status !== "closed" && (
+              <button type="button" onClick={() => handleAssign()} disabled={busy} className={secondaryBtn}>
+                {isAssigning ? "Taking…" : "Take ticket"}
+              </button>
+            )}
+
+            {viewer.role === "manager" && ticket.status !== "closed" && (
+              <div className="space-y-1.5">
+                <label htmlFor="assign-to" className="block text-[13px] font-medium text-ink-2">
+                  {ticket.assigned_to ? "Give it to another agent" : "Assign to an agent"} in {ticket.department}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    id="assign-to"
+                    value={assignTo}
+                    onChange={(e) => setAssignTo(e.target.value)}
+                    disabled={busy || agents.length === 0}
+                    aria-invalid={assignError ? true : undefined}
+                    aria-describedby={assignError ? "assign-error" : undefined}
+                    className="h-[42px] min-w-[160px] flex-1 rounded-md border border-field bg-white px-3 text-sm text-ink"
+                  >
+                    <option value="">{agents.length ? "Choose an agent" : `No agents in ${ticket.department} yet`}</option>
+                    {agents
+                      .filter((a) => a.id !== ticket.assigned_to)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.full_name}
+                        </option>
+                      ))}
+                  </select>
+                  <button type="button" onClick={() => handleAssign(assignTo)} disabled={busy || agents.length === 0} className={secondaryBtn}>
+                    {isAssigning ? "Assigning…" : "Assign"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {assignError && (
+              <p id="assign-error" role="alert" className="text-[13px] text-[#a4231a]">
+                {assignError}
+              </p>
+            )}
+          </section>
+
           <section aria-labelledby="routing-heading" className="space-y-3.5 rounded-[10px] border border-line bg-white p-5">
             <h2 id="routing-heading" className="text-[15px] font-semibold text-ink">
               Routing
             </h2>
+            {classification && <AiNote kind="routing" confidence={classification.confidence} />}
             {classification ? (
               <dl className="grid grid-cols-3 gap-3">
                 <div className="space-y-0.5">
@@ -236,10 +350,31 @@ export default function TicketReply({
             {classification?.overridden_department && (
               <p className="text-[13px] text-ink-2">Moved by an agent to {classification.overridden_department}.</p>
             )}
-            {ticket.needs_review && (
-              <p className="rounded-md bg-[#fff4e0] px-3 py-2.5 text-[13px] leading-[19px] text-[#7a4a00]">
-                The AI wasn&apos;t sure about this one. Check it belongs to {ticket.department}, or move it below.
+            {classification?.confirmed_at && !ticket.needs_review && (
+              <p className="flex items-center gap-1.5 text-[13px] text-ink-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1b6b36" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+                Confirmed by {confirmedByName ?? "a manager"} · {formatWhen(classification.confirmed_at)}
               </p>
+            )}
+            {ticket.needs_review && (
+              <div className="space-y-2.5 rounded-md bg-[#fff4e0] px-3 py-2.5">
+                <p className="text-[13px] leading-[19px] text-[#7a4a00]">
+                  The AI wasn&apos;t sure about this one. If it belongs in {ticket.department}, confirm it; if not, move it below.
+                </p>
+                <button type="button" onClick={handleConfirm} disabled={busy} className={secondaryBtn}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                  {isConfirming ? "Confirming…" : "Department is correct"}
+                </button>
+                {confirmError && (
+                  <p role="alert" className="text-[13px] text-[#a4231a]">
+                    {confirmError}
+                  </p>
+                )}
+              </div>
             )}
 
             {/* Reroute (S1-25) */}
@@ -378,14 +513,26 @@ export default function TicketReply({
                   </button>
                   <p className="text-xs text-muted">Replaces the text above with a fresh draft in the {tone} tone.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={busy || !draft.trim()}
-                  className="h-[42px] rounded-md bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
-                >
-                  {isSending ? "Sending…" : "Send reply"}
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={busy || !draft.trim() || sendBlockedReason !== null}
+                    aria-describedby={sendBlockedReason ? "send-blocked" : undefined}
+                    className={`h-[42px] rounded-md px-5 text-[15px] font-semibold ${
+                      sendBlockedReason
+                        ? "cursor-not-allowed bg-[#e3e6ea] text-[#59626e]"
+                        : "bg-brand text-white hover:bg-brand-dark disabled:opacity-60"
+                    }`}
+                  >
+                    {isSending ? "Sending…" : "Send reply"}
+                  </button>
+                  {sendBlockedReason && (
+                    <p id="send-blocked" className="max-w-[300px] text-right text-xs leading-[18px] text-ink-2">
+                      {sendBlockedReason}
+                    </p>
+                  )}
+                </div>
               </div>
             </>
           )}
