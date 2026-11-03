@@ -36,7 +36,7 @@ export const COMPLIANCE_MENU: MenuItem[] = [
     label: "Audit log",
     href: "/compliance/audit",
     description: "Every routing, draft and send decision, with who made it.",
-    ready: false, // Samukelo, S2-12
+    ready: true, // Samukelo, S2-12
   },
   {
     label: "Flagged replies",
