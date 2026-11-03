@@ -8,7 +8,7 @@ import Link from "next/link";
 import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
 import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 import { AiNote } from "@/components/AiNote";
-import { confirmDepartment, rerouteTicket, sendReply } from "./actions";
+import { assignTicket, confirmDepartment, rerouteTicket, sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
 
@@ -22,6 +22,7 @@ export type TicketForReply = {
   priority: TicketPriority;
   status: TicketStatus;
   needs_review: boolean;
+  assigned_to: string | null;
   created_at: string;
 };
 
@@ -33,6 +34,7 @@ export type Classification = {
   confirmed_by: string | null;
   confirmed_at: string | null;
 };
+export type Agent = { id: string; full_name: string };
 export type Submitter = { full_name: string; email: string; depot: string | null };
 export type Draft = { id: number; ai_draft: string | null; tone: Tone; ai_generated: boolean };
 export type SentReply = { final_text: string; sent_at: string; ai_generated: boolean };
@@ -52,6 +54,9 @@ export default function TicketReply({
   templates,
   classification,
   confirmedByName,
+  viewer,
+  assigneeName,
+  agents,
   submitter,
   initialDraft,
   sentReply,
@@ -60,6 +65,9 @@ export default function TicketReply({
   templates: string[];
   classification: Classification | null;
   confirmedByName: string | null;
+  viewer: { id: string; role: string };
+  assigneeName: string | null;
+  agents: Agent[];
   submitter: Submitter | null;
   initialDraft: Draft | null;
   sentReply: SentReply | null;
@@ -80,6 +88,9 @@ export default function TicketReply({
   const [isMoving, startMoving] = useTransition();
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [isConfirming, startConfirming] = useTransition();
+  const [assignTo, setAssignTo] = useState("");
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [isAssigning, startAssigning] = useTransition();
 
   // Ask the server for a new draft in the chosen tone (S1-08, S1-13, S1-14).
   async function generateDraft(selectedTone: Tone) {
@@ -154,6 +165,20 @@ export default function TicketReply({
     });
   }
 
+  // Take ticket (agent, for themselves) or Assign (manager, to the chosen agent) (S2-16).
+  // The server reloads the page afterwards, so the status and "Assigned to" update.
+  function handleAssign(agentId?: string) {
+    if (viewer.role === "manager" && !agentId) {
+      setAssignError("Choose the agent to assign it to.");
+      return;
+    }
+    setAssignError(null);
+    startAssigning(async () => {
+      const result = await assignTicket(ticket.id, agentId);
+      if ("error" in result) setAssignError(result.error);
+    });
+  }
+
   // Move the ticket to another department (S1-25).
   function handleMove() {
     if (!moveTo) {
@@ -171,7 +196,7 @@ export default function TicketReply({
   const status: TicketStatus = sent ? "answered" : ticket.status;
   const secondaryBtn =
     "inline-flex h-[42px] items-center gap-1.5 rounded-md border border-field bg-white px-3.5 text-sm font-medium text-ink hover:bg-page disabled:opacity-60";
-  const busy = isGenerating || isSending || isMoving || isConfirming;
+  const busy = isGenerating || isSending || isMoving || isConfirming || isAssigning;
 
   return (
     <main className="mx-auto max-w-[1360px] space-y-4 px-4 pb-12 pt-5 sm:px-6">
@@ -226,6 +251,63 @@ export default function TicketReply({
               <p className="text-[13px] text-muted">Request</p>
               <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{ticket.description}</p>
             </div>
+          </section>
+
+          {/* Who is working on it (S2-16) */}
+          <section aria-labelledby="assignment-heading" className="space-y-3 rounded-[10px] border border-line bg-white p-5">
+            <h2 id="assignment-heading" className="text-[15px] font-semibold text-ink">
+              Assignment
+            </h2>
+            <p className="text-sm text-ink">
+              {!ticket.assigned_to
+                ? "Nobody has taken this ticket yet."
+                : ticket.assigned_to === viewer.id
+                  ? "Assigned to you"
+                  : `Assigned to ${assigneeName ?? "another agent"}`}
+            </p>
+
+            {viewer.role === "agent" && !ticket.assigned_to && ticket.status !== "closed" && (
+              <button type="button" onClick={() => handleAssign()} disabled={busy} className={secondaryBtn}>
+                {isAssigning ? "Taking…" : "Take ticket"}
+              </button>
+            )}
+
+            {viewer.role === "manager" && ticket.status !== "closed" && (
+              <div className="space-y-1.5">
+                <label htmlFor="assign-to" className="block text-[13px] font-medium text-ink-2">
+                  {ticket.assigned_to ? "Give it to another agent" : "Assign to an agent"} in {ticket.department}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    id="assign-to"
+                    value={assignTo}
+                    onChange={(e) => setAssignTo(e.target.value)}
+                    disabled={busy || agents.length === 0}
+                    aria-invalid={assignError ? true : undefined}
+                    aria-describedby={assignError ? "assign-error" : undefined}
+                    className="h-[42px] min-w-[160px] flex-1 rounded-md border border-field bg-white px-3 text-sm text-ink"
+                  >
+                    <option value="">{agents.length ? "Choose an agent" : `No agents in ${ticket.department} yet`}</option>
+                    {agents
+                      .filter((a) => a.id !== ticket.assigned_to)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.full_name}
+                        </option>
+                      ))}
+                  </select>
+                  <button type="button" onClick={() => handleAssign(assignTo)} disabled={busy || agents.length === 0} className={secondaryBtn}>
+                    {isAssigning ? "Assigning…" : "Assign"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {assignError && (
+              <p id="assign-error" role="alert" className="text-[13px] text-[#a4231a]">
+                {assignError}
+              </p>
+            )}
           </section>
 
           <section aria-labelledby="routing-heading" className="space-y-3.5 rounded-[10px] border border-line bg-white p-5">
