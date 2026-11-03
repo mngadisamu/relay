@@ -39,14 +39,16 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
     // Who sent it (migration 0005: name, email and depot only).
     supabase.rpc("ticket_submitter", { p_ticket_id: ticket.id }).maybeSingle<Submitter>(),
     // The latest unsent draft, so opening the ticket again doesn't wait for a new AI draft.
+    // Its template's department comes too, so a draft written before the ticket
+    // was moved to another department can be left out below.
     supabase
       .from("responses")
-      .select("id, ai_draft, tone, ai_generated")
+      .select("id, ai_draft, tone, ai_generated, templates(department)")
       .eq("ticket_id", ticket.id)
       .is("sent_at", null)
       .order("created_at", { ascending: false })
       .limit(1)
-      .maybeSingle<Draft>(),
+      .maybeSingle<Draft & { templates: { department: string } | null }>(),
     // The reply that went out, if the ticket has been answered.
     supabase
       .from("responses")
@@ -70,6 +72,13 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
       .maybeSingle<{ full_name: string }>();
     confirmedByName = person?.full_name ?? null;
   }
+
+  // A draft from another department (the ticket was moved after it was written)
+  // would greet the person on behalf of the wrong team, so start a fresh one instead.
+  const currentDraft: Draft | null =
+    draft && (!draft.templates || draft.templates.department === ticket.department)
+      ? { id: draft.id, ai_draft: draft.ai_draft, tone: draft.tone, ai_generated: draft.ai_generated }
+      : null;
 
   // Who it's assigned to (S2-16), and for managers the agents they can assign it to.
   // Agents can read their own department's names, managers everyone's (0006).
@@ -115,7 +124,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         assigneeName={assigneeName}
         agents={agents}
         submitter={submitter ?? null}
-        initialDraft={draft ?? null}
+        initialDraft={currentDraft}
         sentReply={sentReply ?? null}
       />
     </div>
