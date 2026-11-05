@@ -42,7 +42,8 @@ Every piece of AI work is labelled (for example "Routed by AI · 92% sure · an 
 | [Report template](docs/report-template.md) | What the weekly department report contains and where each number comes from |
 | [Design](docs/design/README.md) | Personas, journey map, wireframes, mockups and the style guide |
 | [Sprint 1 stories](docs/sprints/SPRINT1_STORIES.md) · [plan](docs/sprints/Sprint1_Plan.docx) · [dependencies](docs/sprints/Sprint1_Dependencies.pdf) | Sprint 1 stories with their Given / When / Then criteria |
-| Sprint 2+3 plan | Shared by Samukelo: every story by member and day, with its acceptance criteria |
+| [Sprint 2+3 stories](docs/sprints/SPRINT2_3_STORIES.md) · [plan](docs/sprints/Relay%20Sprint%202%2B3%20Plan%20(1).docx) | Every Sprint 2+3 story by member and day, with its acceptance criteria and later decisions |
+| [Forecast](docs/forecast.md) | How the workload forecast works, and the shape the reports and forecast screen build against (contract 4) |
 
 ## Tech stack
 

@@ -43,3 +43,15 @@ export function NeedsReviewTag() {
     </span>
   );
 }
+
+// Purple tag for a sensitive request (migration 0009), e.g. "Sensitive: conduct".
+export function SensitiveTag({ label = "Sensitive" }: { label?: string }) {
+  return (
+    <span className="inline-flex h-[22px] items-center gap-1 rounded bg-[#f1e8fb] px-2 text-xs font-semibold text-[#5b2a86]">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z" />
+      </svg>
+      {label}
+    </span>
+  );
+}

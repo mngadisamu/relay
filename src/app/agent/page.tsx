@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { AgentHeader } from "@/components/AgentHeader";
 import { RoleHeader } from "@/components/RoleHeader";
 import { MANAGER_MENU } from "@/lib/menus";
-import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
+import { SENSITIVE_LABEL, type SensitiveKind } from "@/lib/sensitive";
+import { NeedsReviewTag, PriorityTag, SensitiveTag, StatusPill } from "@/components/StatusPill";
 import { STATUS_LABEL, formatWhen, latestUpdate, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 
 type Ticket = {
@@ -19,6 +20,8 @@ type Ticket = {
   priority: TicketPriority;
   status: TicketStatus;
   needs_review: boolean;
+  is_sensitive: boolean;
+  sensitive_kind: SensitiveKind | null;
   created_at: string;
   assigned_at: string | null;
   answered_at: string | null;
@@ -51,7 +54,7 @@ export default async function AgentInbox({
   const supabase = await createClient();
   let query = supabase
     .from("tickets")
-    .select("id, reference, subject, depot, department, assigned_to, priority, status, needs_review, created_at, assigned_at, answered_at, closed_at")
+    .select("id, reference, subject, depot, department, assigned_to, priority, status, needs_review, is_sensitive, sensitive_kind, created_at, assigned_at, answered_at, closed_at")
     .eq("is_historical", false);
   // Managers can read every ticket (0003); a department manager only needs theirs here.
   if (isManager && profile.department) query = query.eq("department", profile.department);
@@ -169,6 +172,7 @@ export default async function AgentInbox({
                       <Link prefetch href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
                         {t.subject}
                       </Link>
+                      {t.is_sensitive && <SensitiveTag label={t.sensitive_kind ? SENSITIVE_LABEL[t.sensitive_kind].tag : undefined} />}
                       {t.needs_review && <NeedsReviewTag />}
                     </div>
                   </td>
