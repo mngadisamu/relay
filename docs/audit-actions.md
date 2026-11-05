@@ -34,8 +34,8 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 | `role_change` | The manager (Manage users, S2-25) | A role or department changes | no | `user_id`, `from_role`, `to_role`, `from_department`, `to_department` |
 | `insight_generate` | The manager who opens it (`src/lib/insights.ts`, S2-28) | Gemini writes a weekly summary | no | `insight_id`, `department` (or null for all), `week_start`, `ai_generated` (false if the numbers-only fallback was used) |
 | `report_download` | The manager (PDF route, S2-19) | A report PDF is downloaded | no | `report_id` (null for an unsaved preview), `department`, `week_start` |
-| `flag` | The agent who sent the reply (automatic check in `sendReply`, S2-26), or a person | An AI reply is flagged for a second look | yes | `flag_id`, `response_id`, `reason`, `source` (`auto` or `person`) |
-| `flag_resolve` | The compliance officer (Flagged replies, S2-26) | A flag is reviewed | yes | `flag_id`, `outcome` (`ok` or `needs_change`) |
+| `flag` | The agent who sent the reply (automatic check in `sendReply`, `src/lib/flags.ts`), or an agent, manager or compliance officer (Flag button) (`flag_reply()`, migration 0011) | An AI reply is flagged for a second look | yes | `flag_id`, `response_id`, `reason` (`Sent without edits`, `Possible invented detail` or `Flagged by a person`; the written reason stays in `flags.note`, not here), `source` (`auto` or `person`) |
+| `flag_resolve` | The compliance officer (Flagged replies, `resolve_flag()`, migration 0011) | A flag is reviewed | yes | `flag_id`, `outcome` (`ok` or `needs_change`); the note stays in `flags.resolution_note` |
 
 ## How to read it
 

@@ -150,11 +150,12 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0005_ticket_submitter.sql` | `ticket_submitter()`: agents see a sender's name, email and depot | Samukelo |
 | `0006_ticket_lifecycle.sql` | `assigned_to`, `ticket_messages`, assign / confirm / close / reopen functions, profile rules, SAST references | Samukelo |
 | `0007_metrics.sql` | `dashboard_metrics()` and the `insights` table | Mihlali |
-| `0008_reports.sql` | The `reports` table (**on Baphakamise's branch, not merged yet**) | Baphakamise |
+| `0008_reports.sql` | The `reports` table (S2-10) | Baphakamise |
 | `0009_sensitive_requests.sql` | `is_sensitive`, `sensitive_kind`, and "Sensitive" templates for HR, IT and Operations | Samukelo |
 | `0010_daily_ticket_counts.sql` | `daily_ticket_counts()`: tickets per day per department, counted in SQL, for the forecast | Samukelo |
+| `0011_flags.sql` | The `flags` table; `flag_reply()` and `resolve_flag()` (S2-26) | Samukelo |
 
-The next free number is **0011**. Ask Samukelo before writing one.
+The next free number is **0012**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -168,7 +169,8 @@ The next free number is **0011**. Ask Samukelo before writing one.
 | `audit_log` | `actor`, `action`, `ticket_id`, `details` (jsonb) | Every action is listed in [`docs/audit-actions.md`](docs/audit-actions.md) |
 | `ticket_messages` | `ticket_id`, `author`, `body`, `created_at` | A staff member's "I still need help" message (S2-20). Added only through `reopen_ticket()`. |
 | `insights` | weekly AI summaries | Written by S2-28, reused by reports (0007) |
-| `reports` | `department`, `week_start`, `metrics`, `ai_summary`, `forecast` | Saved weekly reports (0008, not merged yet) |
+| `reports` | `department`, `week_start`, `metrics`, `ai_summary`, `forecast` | Saved weekly reports (0008) |
+| `flags` | `response_id`, `ticket_id`, `kind` (`sent_without_edits`, `invented_detail`, `person`), `source` (`auto`, `person`), `note`, `flagged_by`, `resolved_by`, `resolved_at`, `outcome` (`ok`, `needs_change`), `resolution_note` | AI replies marked for a second look (0011). Added only through `flag_reply()`, resolved only through `resolve_flag()` |
 | `approvals` | `ticket_id`, `approver`, `decision`, `decided_at` | Sprint 4 |
 
 ### Who can do what (row-level security)
@@ -186,6 +188,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 | `ticket_messages` | anyone who can see the ticket | only through `reopen_ticket()` | nobody |
 | `insights` | managers | managers | managers |
 | `reports` | managers (0008) | managers | managers |
+| `flags` | agents, managers, compliance, on tickets they can see (never staff) | only through `supabase.rpc("flag_reply", { p_response_id, p_kind, p_note })` (0011) | only through `supabase.rpc("resolve_flag", { p_flag_id, p_outcome, p_note })`, compliance only |
 | `approvals` | (Sprint 4) | | |
 
 ### The four contracts (agreed shapes other stories build against; change them only after agreeing it with the team)
@@ -314,7 +317,8 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ **S2-01** PR checks and Preview env vars · **S2-02** role homes and public home page · **S2-06** ticket lifecycle (0006) · **S2-07** audit actions and AiNote · **S2-11** priority and "Department is correct" · **S2-12** audit log screen · **S2-16** take and assign
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
-- Next: **S2-20** close a ticket · **S2-21** bias test · **S2-25** Manage users · **S2-26** flags · **S2-30** risk report · **S2-31** responsible AI documents
+- ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
+- Next: **S2-25** Manage users · **S2-30** risk report · **S2-31** responsible AI documents
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)
