@@ -37,7 +37,7 @@ export default function ReportsPage() {
         throw new Error(data.error || 'Failed to generate report');
       }
 
-      setReportData(data.report);
+      setReportData(data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to generate report';
       setError(message);
@@ -53,8 +53,9 @@ export default function ReportsPage() {
         
         <form onSubmit={handleGenerateReport} className="flex flex-wrap gap-4 items-end">
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Department</label>
+            <label htmlFor="department" className="block text-xs font-semibold uppercase text-slate-600 mb-1">Department</label>
             <select
+              id="department"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
               className="border border-slate-300 rounded-md p-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
@@ -67,8 +68,9 @@ export default function ReportsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">Week Start (Monday)</label>
+            <label htmlFor="week-start" className="block text-xs font-semibold uppercase text-slate-600 mb-1">Week Start (Monday)</label>
             <input
+              id="week-start"
               type="date"
               value={weekStart}
               onChange={(e) => setWeekStart(e.target.value)}
@@ -81,7 +83,7 @@ export default function ReportsPage() {
             disabled={loading}
             className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50"
           >
-            {loading ? 'Generating AI Report...' : 'Generate & Preview Report'}
+            {loading ? 'Loading…' : 'Preview report'}
           </button>
         </form>
 
