@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import TrendCharts from "./TrendCharts";
 
 // Dashboard (S2-14): four number cards and filters. The numbers come from the
 // database function dashboard_metrics() (see docs/metrics.md). The filters live
@@ -32,6 +33,9 @@ type Metrics = {
       count: number;
     };
   };
+  // For the charts (S2-18), from the same dashboard_metrics() call.
+  weekly?: { week_start: string; tickets: number }[];
+  by_department?: { department: string; tickets: number }[];
 };
 
 type Search = { department?: string; from?: string; to?: string };
@@ -250,6 +254,8 @@ export default async function ManagerDashboard({
                 <Delta amount={metrics.cards.needs_review.change_points} suffix=" points" />
               </MetricCard>
             </ul>
+
+            <TrendCharts weekly={metrics.weekly ?? []} departments={metrics.by_department ?? []} />
 
             <p className="text-xs text-ink-2">
               Changes compare with the previous {metrics.period.days} days.
