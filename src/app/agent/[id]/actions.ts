@@ -34,9 +34,9 @@ export async function sendReply(input: {
   //    in the same cases; this check makes sure it can't be skipped.
   const { data: current } = await supabase
     .from("tickets")
-    .select("assigned_to, is_sensitive")
+    .select("assigned_to, is_sensitive, answered_at")
     .eq("id", input.ticketId)
-    .maybeSingle<{ assigned_to: string | null; is_sensitive: boolean }>();
+    .maybeSingle<{ assigned_to: string | null; is_sensitive: boolean; answered_at: string | null }>();
   if (!current) return { error: "Ticket not found." };
   if (profile.role === "agent" && current.assigned_to !== profile.id) {
     return { error: current.assigned_to ? "This ticket is assigned to someone else." : "Take this ticket before you reply." };
@@ -82,7 +82,12 @@ export async function sendReply(input: {
   // 2. Mark the ticket Answered, with the time (the dashboard uses it in Sprint 2),
   //    and record who sent it in the audit log (Sprint 3 compliance).
   const [{ error: ticketError }] = await Promise.all([
-    supabase.from("tickets").update({ status: "answered", answered_at: now }).eq("id", input.ticketId),
+    // answered_at keeps the FIRST reply's time, so a second reply after "I still need
+    // help" (S2-20) doesn't change the dashboard's time to first reply.
+    supabase
+      .from("tickets")
+      .update({ status: "answered", ...(current.answered_at ? {} : { answered_at: now }) })
+      .eq("id", input.ticketId),
     supabase.from("audit_log").insert({
       actor: profile.id,
       action: "send",
@@ -166,6 +171,26 @@ export async function assignTicket(ticketId: number, agentId?: string): Promise<
   if (error) return { error: "Couldn't assign the ticket: " + error.message };
 
   // The ticket, the inboxes and the staff member's status history all change.
+  revalidatePath("/agent");
+  revalidatePath(`/agent/${ticketId}`);
+  revalidatePath(`/staff/requests/${ticketId}`);
+  revalidatePath("/staff/requests");
+  return { ok: true };
+}
+
+// "Close ticket" on an Answered ticket (S2-20), when the staff member hasn't
+// confirmed it themselves. close_ticket() (migration 0006) checks the agent is
+// in the ticket's department (or a manager) and writes the audit entry.
+export async function closeTicket(ticketId: number): Promise<{ error: string } | { ok: true }> {
+  const profile = await getCurrentProfile();
+  if (!profile || !["agent", "manager"].includes(profile.role)) {
+    return { error: "Only agents and managers can close tickets." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("close_ticket", { p_ticket_id: ticketId });
+  if (error) return { error: "Couldn't close the ticket: " + error.message };
+
   revalidatePath("/agent");
   revalidatePath(`/agent/${ticketId}`);
   revalidatePath(`/staff/requests/${ticketId}`);

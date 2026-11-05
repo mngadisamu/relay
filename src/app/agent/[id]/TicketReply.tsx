@@ -9,7 +9,7 @@ import { NeedsReviewTag, PriorityTag, SensitiveTag, StatusPill } from "@/compone
 import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 import { AiNote } from "@/components/AiNote";
 import { SENSITIVE_LABEL, type SensitiveKind } from "@/lib/sensitive";
-import { assignTicket, confirmDepartment, rerouteTicket, sendReply } from "./actions";
+import { assignTicket, closeTicket, confirmDepartment, rerouteTicket, sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
 
@@ -41,6 +41,7 @@ export type Agent = { id: string; full_name: string };
 export type Submitter = { full_name: string; email: string; depot: string | null };
 export type Draft = { id: number; ai_draft: string | null; tone: Tone; ai_generated: boolean };
 export type SentReply = { final_text: string; sent_at: string; ai_generated: boolean };
+export type FollowUp = { body: string; created_at: string };
 
 // Which template goes with each tone (the page passes them as formal, friendly, urgent).
 // Only used if the draft route can't be reached; normally the server picks the template.
@@ -63,6 +64,8 @@ export default function TicketReply({
   submitter,
   initialDraft,
   sentReply,
+  earlierReply,
+  followUps,
 }: {
   ticket: TicketForReply;
   templates: string[];
@@ -74,6 +77,8 @@ export default function TicketReply({
   submitter: Submitter | null;
   initialDraft: Draft | null;
   sentReply: SentReply | null;
+  earlierReply: SentReply | null;
+  followUps: FollowUp[];
 }) {
   const [tone, setTone] = useState<Tone>(initialDraft?.tone ?? "formal");
   const [draft, setDraft] = useState(initialDraft?.ai_draft ?? "");
@@ -87,6 +92,9 @@ export default function TicketReply({
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<SentReply | null>(sentReply);
   const [isSending, startSending] = useTransition();
+  const [closed, setClosed] = useState(ticket.status === "closed");
+  const [closeError, setCloseError] = useState<string | null>(null);
+  const [isClosing, startClosing] = useTransition();
 
   const [moveTo, setMoveTo] = useState("");
   const [moveError, setMoveError] = useState<string | null>(null);
@@ -186,6 +194,16 @@ export default function TicketReply({
     });
   }
 
+  // "Close ticket" on an Answered ticket (S2-20), for when the staff member hasn't confirmed it.
+  function handleClose() {
+    setCloseError(null);
+    startClosing(async () => {
+      const result = await closeTicket(ticket.id);
+      if ("error" in result) setCloseError(result.error);
+      else setClosed(true);
+    });
+  }
+
   // Move the ticket to another department (S1-25).
   function handleMove() {
     if (!moveTo) {
@@ -200,10 +218,10 @@ export default function TicketReply({
     });
   }
 
-  const status: TicketStatus = sent ? "answered" : ticket.status;
+  const status: TicketStatus = closed ? "closed" : sent ? "answered" : ticket.status;
   const secondaryBtn =
     "inline-flex h-[42px] items-center gap-1.5 rounded-md border border-field bg-white px-3.5 text-sm font-medium text-ink hover:bg-page disabled:opacity-60";
-  const busy = isGenerating || isSending || isMoving || isConfirming || isAssigning;
+  const busy = isGenerating || isSending || isMoving || isConfirming || isAssigning || isClosing;
 
   // Only the person working on the ticket replies: an agent once it's assigned to
   // them, a manager once it's assigned to someone. Otherwise Send reply is greyed
@@ -490,7 +508,7 @@ export default function TicketReply({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12.5l4.5 4.5L19 7.5" />
                 </svg>
-                Reply sent {formatWhen(sent.sent_at)}. The ticket is Answered.
+                Reply sent {formatWhen(sent.sent_at)}. The ticket is {closed ? "Closed" : "Answered"}.
               </p>
               <div className="space-y-1">
                 <p className="text-[13px] text-muted">What the staff member received</p>
@@ -498,9 +516,45 @@ export default function TicketReply({
                   {sent.final_text}
                 </p>
               </div>
+              {/* S2-20: the staff member normally confirms with "This solved it"; the agent can close it too. */}
+              {!closed && (
+                <div className="flex flex-wrap items-center gap-3 border-t border-line-soft pt-3">
+                  <button type="button" onClick={handleClose} disabled={busy} className={secondaryBtn}>
+                    {isClosing ? "Closing…" : "Close ticket"}
+                  </button>
+                  <p className="text-[13px] text-muted">
+                    Close it once the problem is sorted. {submitter?.full_name ?? "The staff member"} can also close it with &ldquo;This solved it&rdquo;.
+                  </p>
+                </div>
+              )}
+              {closeError && (
+                <p role="alert" className="text-[13px] text-[#a4231a]">
+                  {closeError}
+                </p>
+              )}
             </div>
           ) : (
             <>
+              {/* Reopened (S2-20): what the staff member says is still wrong, above the reply box. */}
+              {followUps.length > 0 && (
+                <div className="space-y-2 rounded-md border border-[#f1d2b8] bg-[#fff6ee] px-3.5 py-3">
+                  <p className="text-[13px] font-semibold text-[#8a3b00]">
+                    {submitter?.full_name ?? "The staff member"} still needs help
+                  </p>
+                  {followUps.map((f, i) => (
+                    <div key={i} className="space-y-0.5">
+                      <p className="text-[12px] text-muted">{formatWhen(f.created_at)}</p>
+                      <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{f.body}</p>
+                    </div>
+                  ))}
+                  {earlierReply && (
+                    <details className="border-t border-[#f1d2b8] pt-2 text-[13px] text-ink-2">
+                      <summary className="cursor-pointer font-medium">Your earlier reply ({formatWhen(earlierReply.sent_at)})</summary>
+                      <p className="mt-1.5 whitespace-pre-line text-[14px] leading-[21px]">{earlierReply.final_text}</p>
+                    </details>
+                  )}
+                </div>
+              )}
               {/* Sensitive request (0009): no AI, and a personal reply. */}
               {ticket.is_sensitive && (
                 <div role="note" className="space-y-1 rounded-md border border-[#dcc8f2] bg-[#f8f3fd] px-3.5 py-3 text-[13px] leading-[19px] text-[#46206b]">

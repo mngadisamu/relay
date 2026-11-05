@@ -5,7 +5,7 @@ import { TONES, loadTemplates, templateForTone } from "@/lib/reply-templates";
 import { AgentHeader } from "@/components/AgentHeader";
 import { RoleHeader } from "@/components/RoleHeader";
 import { MANAGER_MENU } from "@/lib/menus";
-import TicketReply, { type Agent, type Classification, type Draft, type SentReply, type Submitter, type TicketForReply } from "./TicketReply";
+import TicketReply, { type Agent, type Classification, type Draft, type FollowUp, type SentReply, type Submitter, type TicketForReply } from "./TicketReply";
 
 // Ticket view for agents (S1-13, S1-14, S1-23, S1-25, mockup screen 7).
 // Loads the ticket on the server as the signed-in agent, so row-level security
@@ -27,7 +27,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   if (!ticket) notFound();
 
   // Everything else about the ticket, fetched at the same time rather than one after another.
-  const [{ data: classification }, { data: submitter }, { data: draft }, { data: sentReply }] = await Promise.all([
+  const [{ data: classification }, { data: submitter }, { data: draft }, { data: sentReply }, { data: followUpRows }] = await Promise.all([
     // The latest routing decision, for the Routing panel.
     supabase
       .from("classifications")
@@ -58,6 +58,8 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
       .order("sent_at", { ascending: false })
       .limit(1)
       .maybeSingle<SentReply>(),
+    // "I still need help" messages from the staff member (S2-20), oldest first.
+    supabase.from("ticket_messages").select("body, created_at").eq("ticket_id", ticket.id).order("created_at", { ascending: true }),
   ]);
 
   // Who confirmed the department (S2-11). Agents can read the names of people in
@@ -125,7 +127,11 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         agents={agents}
         submitter={submitter ?? null}
         initialDraft={currentDraft}
-        sentReply={sentReply ?? null}
+        // A reopened ticket (S2-20) needs a new reply, so the reply box opens again;
+        // the earlier reply and the staff member's message are shown above it.
+        sentReply={ticket.status === "answered" || ticket.status === "closed" ? (sentReply ?? null) : null}
+        earlierReply={sentReply ?? null}
+        followUps={(followUpRows ?? []) as FollowUp[]}
       />
     </div>
   );
