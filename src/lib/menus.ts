@@ -15,7 +15,7 @@ export const MANAGER_MENU: MenuItem[] = [
     label: "Dashboard",
     href: "/manager/dashboard",
     description: "Ticket numbers, reply times and trends by department.",
-    ready: false, // Mihlali, S2-14
+    ready: true, // Mihlali, S2-14
   },
   {
     label: "Reports",
