@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { classify } from "@/lib/classifier";
 import { getCurrentProfile } from "@/lib/auth";
+import { checkSensitive, departmentFor, priorityFor } from "@/lib/sensitive";
 
 export type Field = "subject" | "description" | "depot" | "priority";
 
@@ -50,12 +51,32 @@ export async function submitRequest(
   // 1. Work out the department with the trained model (S1-21). It runs right here
   //    on the server in a few milliseconds; calling our own /api/classify over the
   //    network used to add a second or more to every submit.
-  const { department, confidence, modelVersion, needsReview } = classify(subject, description);
+  const { department: modelDepartment, confidence, modelVersion, needsReview: modelNeedsReview } = classify(subject, description);
+
+  // 1b. Sensitive requests (harassment, someone at risk, injuries and crime, security,
+  //     health) follow fixed rules instead (src/lib/sensitive.ts): each kind decides
+  //     its department and lowest priority, e.g. harassment always goes to HR.
+  const check = checkSensitive(subject, description);
+  const department = check.sensitive ? departmentFor(check.kind, modelDepartment) : modelDepartment;
+  const routedByRule = department !== modelDepartment;
+  // The rule decided, so there's nothing for an agent to double-check about the department.
+  const needsReview = routedByRule ? false : modelNeedsReview;
+  const finalPriority = check.sensitive ? priorityFor(check.kind, priority) : priority;
 
   // 2. Save the ticket. submitted_by must be the signed-in user (RLS requires it).
   const { data: ticket, error } = await supabase
     .from("tickets")
-    .insert({ submitted_by: profile.id, subject, description, depot, priority, department, needs_review: needsReview })
+    .insert({
+      submitted_by: profile.id,
+      subject,
+      description,
+      depot,
+      priority: finalPriority,
+      department,
+      needs_review: needsReview,
+      is_sensitive: check.sensitive,
+      sensitive_kind: check.sensitive ? check.kind : null,
+    })
     .select("id, reference, created_at")
     .single();
   if (error || !ticket) {
@@ -68,7 +89,7 @@ export async function submitRequest(
   const [{ error: classifyError }, { error: auditError }] = await Promise.all([
     supabase.from("classifications").insert({
       ticket_id: ticket.id,
-      predicted_department: department,
+      predicted_department: modelDepartment, // what the model chose, kept even when the rule moved it
       confidence,
       model_version: modelVersion,
     }),
@@ -76,7 +97,14 @@ export async function submitRequest(
       actor: profile.id,
       action: "classify",
       ticket_id: ticket.id,
-      details: { department, confidence, model_version: modelVersion, needs_review: needsReview },
+      details: {
+        department,
+        confidence,
+        model_version: modelVersion,
+        needs_review: needsReview,
+        sensitive: check.sensitive ? check.kind : null,
+        routed_by_rule: routedByRule,
+      },
     }),
   ]);
   if (classifyError) console.error("Could not save the classification:", classifyError);

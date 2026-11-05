@@ -1,10 +1,10 @@
 # AGENTS.md: context for AI assistants working on Relay
 
-> **For the AI reading this:** you are helping one member of a four-person student team build Relay during the CAPACITI AI Bootcamp. Read this whole file before suggesting anything. It tells you what the project is, what already exists, what each person owns, the rules the team follows, and the mistakes already made. Then read the user's story in [`docs/sprints/SPRINT1_STORIES.md`](docs/sprints/SPRINT1_STORIES.md).
+> **For the AI reading this:** you are helping one member of a four-person student team build Relay during the CAPACITI AI Bootcamp. Read this whole file before suggesting anything. It tells you what the project is, what already exists, what each person owns, the rules the team follows, and the mistakes already made. Then read the user's story in [`docs/sprints/SPRINT2_3_STORIES.md`](docs/sprints/SPRINT2_3_STORIES.md).
 >
-> **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT1_STORIES.md`, and then say which story you're working on. A starter prompt is at the end of this file.
+> **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT2_3_STORIES.md` and the contract your story uses (section 5), and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Tue 3 Nov 2026 (Sprint 2+3, day 2).
+Last updated: Thu 5 Nov 2026 (Sprint 2+3, day 4).
 
 ---
 
@@ -12,41 +12,44 @@ Last updated: Tue 3 Nov 2026 (Sprint 2+3, day 2).
 
 **Relay** is an AI-powered internal help desk for **Kopano Freight**, a fictional Johannesburg logistics company (about 350 staff: head office, two depots, drivers). Staff send requests to HR, IT, Finance or Operations. Relay:
 
-1. **Classifies** each request to a department (ML classifier). Sprint 1.
+1. **Classifies** each request to a department (ML classifier), and marks **sensitive** requests with fixed rules. Sprint 1, plus a rule added in Sprint 2+3.
 2. **Drafts a reply** with AI in a chosen tone, which an agent edits and sends. Sprint 1.
-3. Later sprints: analytics dashboard and reports (Sprint 2), workload forecasting and AI risk/compliance (Sprint 3), workflow automation, approvals and deployment showcase (Sprint 4). Sprint 2 starts with the Sprint 1 carry-over (Manage users, assigning and closing tickets, priority on submit, manager and compliance menus). Owners for Sprints 2–4 are chosen at each sprint's planning; features rotate. The full list is in the Jira epics.
+3. **Tracks the whole journey:** take, assign, confirm, close, reopen. Sprint 2+3 carry-over.
+4. **Analytics dashboard, weekly reports, workload forecast, and AI risk and compliance** (audit log, flags, risk report). Sprint 2+3.
+5. Workflow automation, approvals and the deployment showcase. Sprint 4.
 
-The bootcamp runs **8 weeks as 4 two-week sprints**. Work is graded on technical delivery *and* professional skills (documentation, teamwork, presentation, responsible AI).
+The bootcamp runs **8 weeks**. Work is graded on technical delivery *and* professional skills (documentation, teamwork, presentation, responsible AI).
 
-| Sprint | Dates | Modules |
-| --- | --- | --- |
-| 1 | 19–30 Oct 2026 | Ticket classification · AI response generator |
-| 2 | 2–13 Nov 2026 | Analytics dashboard · Automated reporting |
-| 3 | 16–27 Nov 2026 | Workload forecasting · AI risk and compliance |
-| 4 | 30 Nov–11 Dec 2026 | Workflow automation · Deployment and showcase |
+| Sprint | Dates | Modules | Status |
+| --- | --- | --- | --- |
+| 1 | 19–30 Oct 2026 | Ticket classification · AI response generator | Done |
+| 2 + 3 | 2–13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | **In progress** |
+| 4 | to be confirmed | Workflow automation · Deployment and showcase | |
+
+Sprints 2 and 3 were combined into one two-week sprint by the programme.
 
 - **Repo:** https://github.com/mngadisamu/relay
 - **Live site:** https://relay-gilt-nine.vercel.app (auto-deploys on every merge to `main`)
-- **Tracking:** Jira project *Roadmap Planning* (key `SCRUM`), plus the Completion column in `docs/sprints/Sprint1_Plan.docx`
+- **Sprint plan:** `docs/sprints/Relay Sprint 2+3 Plan (1).docx` (every story by day, how to build it, and the Completion column). The same stories for AI tools: [`docs/sprints/SPRINT2_3_STORIES.md`](docs/sprints/SPRINT2_3_STORIES.md).
 
 ---
 
 ## 2. Team and ownership
 
-**Respect ownership.** Help the user with *their* stories. Don't rewrite files another member owns. If their story needs a change in someone else's area, tell the user to agree it with that person at stand-up first.
+**Respect ownership.** Help the user with *their* stories. Don't rewrite files another member owns. If their story needs a change in someone else's area, tell the user to agree it with that person first (a message is enough), and say so in the PR.
 
-| Member | Sprint 1 feature | Owns (mainly) | Stories |
-| --- | --- | --- | --- |
-| **Samukelo** (team lead, BA) | F1 · Platform foundation | `supabase/migrations/`, `src/lib/supabase/`, `src/lib/auth.ts`, `src/middleware.ts`, login and role home pages, `docs/` | S1-01 ✅, S1-05 ✅, S1-09 ✅, S1-15 ✅, S1-20 ✅, S1-24 |
-| **Elzel** | F2 · Ticket data and ML classifier | `data/`, `ml/`, `supabase/seed/`, `src/app/api/classify/`, classifier code | S1-02, S1-06, S1-10, S1-16, S1-17, S1-21, S1-25 |
-| **Mihlali** | F3 · Staff request portal (UI/UX) | Design system and shared UI components, submit form, My requests pages, role menu | S1-03, S1-07, S1-11, S1-12, S1-18, S1-22, S1-26 |
-| **Baphakamise** | F4 · AI response generator and agent inbox | Agent inbox, ticket view, template library, AI drafting route | S1-04, S1-08, S1-13, S1-14, S1-19, S1-23, S1-27, S1-28 |
+| Member | Sprint 2+3 feature | Owns (mainly) |
+| --- | --- | --- |
+| **Samukelo** (team lead, BA) | Platform, Sprint 1 carry-over, AI risk and compliance | `supabase/migrations/`, `src/lib/supabase/`, `src/lib/auth.ts`, `src/lib/sensitive.ts`, `src/middleware.ts`, login, home and role home pages, `src/app/compliance/`, `docs/` |
+| **Elzel** | Workload forecasting | `data/`, `ml/`, `supabase/seed/`, `src/app/api/classify/`, `src/lib/classifier.ts`, `src/lib/forecast.ts`, the forecast screen |
+| **Mihlali** | Analytics dashboard | Design system and shared UI (`src/components/ui/`, `StatusPill.tsx`), the staff pages (`src/app/staff/`), the dashboard, `src/lib/insights.ts` |
+| **Baphakamise** | Automated reporting | Agent inbox, ticket view and template library (`src/app/agent/`), the AI drafting route, the reports pages and PDF |
 
-**Shared files.** Announce changes at stand-up before editing: `src/app/layout.tsx`, `src/app/globals.css`, `package.json` (adding packages), `src/components/RoleHome.tsx`, `src/lib/auth.ts`, `src/middleware.ts`.
+**Shared files.** Announce changes before editing: `src/app/layout.tsx`, `src/app/globals.css`, `package.json` (adding packages), `src/components/RoleHome.tsx`, `src/lib/auth.ts`, `src/middleware.ts`. In **`src/lib/menus.ts`**, each owner only changes their own menu item (`ready: true` in the PR that adds the page).
 
-**Database changes always go through Samukelo** as a new numbered migration (see section 6).
+**Database changes always go through Samukelo** as a new numbered migration (section 6).
 
-**Review rotation** (one approval needed per PR): Samukelo → Elzel → Mihlali → Baphakamise → Samukelo. The arrow means "is reviewed by".
+**Review rotation** (one approval needed per PR): Samukelo → Elzel → Mihlali → Baphakamise → Samukelo. The arrow means "is reviewed by". Samukelo also reviews every migration.
 
 ---
 
@@ -54,18 +57,19 @@ The bootcamp runs **8 weeks as 4 two-week sprints**. Work is graded on technical
 
 | Layer | Choice | Notes |
 | --- | --- | --- |
-| Framework | **Next.js 15.5** (App Router), **React 19**, **TypeScript** | `src/` directory, import alias `@/*` → `src/*` |
-| Styling | **Tailwind CSS v4** | Theme colours `bg-background`, `text-foreground` come from `globals.css`. shadcn/ui components are in `src/components/ui/` (S1-12). |
+| Framework | **Next.js 15.5** (App Router), **React 19**, **TypeScript** | `src/` directory, import alias `@/*` → `src/*`. Install with `npm ci` so everyone gets exactly these versions. |
+| Styling | **Tailwind CSS v4** with **shadcn/ui** | Relay's colours are in `globals.css` (`text-ink`, `text-ink-2`, `text-muted`, `bg-page`, `border-line`, `bg-brand`, `bg-navy`…); shadcn components are in `src/components/ui/`. Don't use Tailwind's default `slate-*` or `blue-*` colours. |
 | Database and auth | **Supabase** (Postgres + Auth) via `@supabase/ssr` 0.12 and `@supabase/supabase-js` 2.x | Email and password sign-in. Row-level security (RLS) is on for every table. |
-| Hosting | **Vercel** (team "Team AI", project `relay`) | Env vars set in Vercel. Every PR gets a preview URL. |
-| ML classifier | TF-IDF + logistic regression, trained in **Google Colab** (Python/scikit-learn), exported to **JSON**, run in TypeScript inside a Next.js route | No Python server in production |
-| Generative AI | **Google Gemini API** | Key is server-side only (`GEMINI_API_KEY`). No Gemini SDK installed yet (Baphakamise adds it, after announcing it at stand-up). |
+| Hosting | **Vercel** (team "Team AI", project `relay`) | Env vars set in Vercel for Production **and** Preview. Every PR gets a preview link. |
+| Checks | **GitHub check** (`.github/workflows/check.yml`) and the **Vercel build** | Both run on every PR and are **required**: lint, type-check and build must pass before a PR can be merged. |
+| ML classifier | TF-IDF + logistic regression, trained in **Google Colab** (Python/scikit-learn), exported to **JSON**, run in TypeScript on the server | No Python server in production |
+| Generative AI | **Google Gemini API** via `@google/genai`, model `gemini-2.5-flash` | Key is server-side only (`GEMINI_API_KEY`). Sensitive requests are never sent to it (section 5). |
 
 **Environment variables** (`.env.example` lists them; values live in each person's `.env.local` and in Vercel, and are **never committed**):
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=      # Supabase "publishable" key
-SUPABASE_SERVICE_ROLE_KEY=          # Supabase "secret" key: bypasses RLS, server/scripts only
+SUPABASE_SERVICE_ROLE_KEY=          # Supabase "secret" key: bypasses RLS, local seed script ONLY, never app code
 GEMINI_API_KEY=                     # server only, never prefix with NEXT_PUBLIC_
 ```
 
@@ -78,46 +82,56 @@ src/
 ├── middleware.ts                 Runs before every page: refreshes the session, sends signed-out users to /login
 ├── lib/
 │   ├── auth.ts                   Role type, HOME_FOR_ROLE map, getCurrentProfile(), requireRole()
-│   └── supabase/
-│       ├── client.ts             createClient() for browser ("use client") components
-│       ├── server.ts             createClient() for server components, server actions, route handlers
-│       └── middleware.ts         updateSession(): used by src/middleware.ts
+│   ├── classifier.ts             The trained classifier, run in TypeScript (S1-21)
+│   ├── sensitive.ts              Sensitive request rules: five kinds, their department and priority (migration 0009)
+│   ├── menus.ts                  Manager and compliance menus; each item is ready: true once its page is merged
+│   ├── daily-history.ts          loadDailyHistory(): past tickets per day, for the forecast (migration 0010)
+│   ├── reply-templates.ts        Loads reply templates from the database (S1-27); templates.ts is the fallback text
+│   └── supabase/                 createClient() for the browser (client.ts), the server (server.ts) and middleware
 ├── components/
-│   ├── RoleHeader.tsx            Top bar for managers and compliance: logo, role menu, Sign out (S2-02)
-│   └── RoleHome.tsx              Manager and compliance home: menu bar plus a card per page (S2-02)
+│   ├── AgentHeader.tsx           Agent top bar: Inbox, Templates
+│   ├── RoleHeader.tsx            Manager and compliance top bar (S2-02); pass current="/path" on each page
+│   ├── RoleHome.tsx              Manager and compliance home: a card per menu item (S2-02)
+│   ├── AiNote.tsx                The AI transparency note: routing, draft, summary, forecast (S2-07)
+│   ├── StatusPill.tsx            Status, priority, Needs review and Sensitive tags
+│   ├── BrandMark.tsx, NavigationProgress.tsx, RoutingIllustration.tsx (public home page)
+│   └── ui/                       shadcn/ui: button, card, input, label, textarea
 └── app/
-    ├── layout.tsx                Root layout (suppressHydrationWarning for browser extensions)
-    ├── page.tsx                  Public placeholder home page
-    ├── login/page.tsx            Sign-in form (client component, useActionState)
-    ├── login/actions.ts          signIn() and signOut() server actions
+    ├── page.tsx                  Public home page (S2-02)
+    ├── login/                    Sign-in form and the signIn() / signOut() server actions
     ├── home/page.tsx             Redirects a signed-in user to their role's home
-    ├── staff/ agent/ manager/ compliance/page.tsx   Role home placeholders; each guarded by requireRole()
-    └── api/classify/route.ts     POST classify API: runs the trained model (src/lib/classifier.ts, S1-21)
-supabase/migrations/
-├── 0001_initial_schema.sql       All tables, enums, RLS switched on
-├── 0002_profiles_on_signup.sql   Trigger: new auth user → profiles row (role staff); policy: read own profile
-├── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
-├── 0004_team_policies.sql        RLS for ticket updates, classifications, templates, responses, audit_log + reroute_ticket()
-├── 0005_ticket_submitter.sql     ticket_submitter(): agents see the sender's name, email and depot for tickets they can see
-└── 0006_ticket_lifecycle.sql     assigned_to, ticket_messages, assign/confirm/close/reopen functions, profile rules, SAST references (S2-06)
-docs/  GETTING_STARTED.md · architecture.md (sections 1–4 done in S1-20; 5–7 come in S1-24) · sprints/ (plan .docx, dependencies .pdf, stories .md)
+    ├── staff/                    Submit a request (priority, sensitive rule) · My requests · request detail with status history
+    ├── agent/                    Inbox (Mine filter, Assigned to; managers see it as Tickets) · ticket view (take, assign,
+    │                             confirm, move, AI draft, send) · template library
+    ├── manager/page.tsx          Manager home (dashboard, reports, forecast, Manage users coming this sprint)
+    ├── compliance/               Compliance home · audit log with filters, ticket history and CSV export (S2-12)
+    └── api/                      classify (S1-21) · generate-draft (AI drafts; skips Gemini for sensitive tickets)
+supabase/migrations/              Applied in order in the Supabase SQL Editor (section 5)
+supabase/seed/                    templates.sql (reply templates) · seed_historical.mjs (the year of past tickets)
+ml/notebooks/                     relay_classifier.ipynb (training) · S2-03_daily_history.ipynb (daily counts for the forecast)
+ml/model/                         classifier-model.json and its results
+data/processed/                   combined_tickets.csv (the past tickets) · daily_counts.csv (per day per department)
+docs/                             architecture.md · audit-actions.md · metrics.md · forecast.md · report-template.md · design/ · sprints/
 ```
 
-**Public paths** (no sign-in needed): `/`, `/login` and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`).
+**Public paths** (no sign-in needed): `/`, `/login` and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
 
-**Test accounts** in Supabase: `staff@relay.test` (role staff) and `agent@relay.test` (role agent, department IT). Passwords are shared privately by Samukelo. **Never put them in code, docs or chat logs.**
+**Test accounts** in Supabase (passwords are shared privately by Samukelo; **never put them in code, docs or chat logs**):
 
-**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. Samukelo adds accounts in the Supabase dashboard and sets their role and department. Need a test account with another role? Ask him. Don't build a sign-up page: a **Manage users** screen (managers add users and set roles) is planned for the start of Sprint 2.
+| Account | Role |
+| --- | --- |
+| `staff@relay.test`, `staff2@relay.test` | Staff |
+| `agent@relay.test` | Agent, IT |
+| `manager@relay.test` | Manager with no department (a general manager: sees and acts on every department) |
+| `compliance@relay.test` | Compliance |
 
-**Ticket privacy (S1-15, merged):** migration `0003_tickets_privacy.sql` adds RLS policies on `tickets`:
-- users read the tickets they submitted;
-- agents read tickets in their own department;
-- managers and compliance read all tickets;
-- users insert tickets only with `submitted_by = auth.uid()`.
+Need an agent for HR, Finance or Operations, or a department manager? Ask Samukelo.
 
-It also adds the SQL helpers `public.current_user_role()` and `public.current_user_department()` (use them in new policies). In the app, protect a page with `await requireRole(["agent"])` from `@/lib/auth`: signed-out users go to `/login`, other roles go back to their own home.
+**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. Until **Manage users** (S2-25, Tue 10 Nov) lands, Samukelo adds accounts in the Supabase dashboard and sets their role and department. Don't build a sign-up page.
 
-**Test data in Supabase:** three tickets (two from `staff@relay.test`, IT and HR; one from `staff2@relay.test`, IT), plus a third account `staff2@relay.test` (role staff). Use them to test inboxes and lists.
+**Data in Supabase:**
+- **15,579 past tickets** (`is_historical = true`), 19 Oct 2025 to 18 Oct 2026, about 3,900 per department, loaded by `supabase/seed/seed_historical.mjs` (S1-17). They feed the dashboard, reports and forecast. Their dates, depots and priorities were **assigned** with a realistic pattern, not recorded (see `data/README.md`).
+- **Live tickets** (`is_historical = false`): the team's test requests. Inboxes and My requests show **only live tickets** (`.eq("is_historical", false)`).
 
 ---
 
@@ -125,68 +139,109 @@ It also adds the SQL helpers `public.current_user_role()` and `public.current_us
 
 **Enums:** `user_role` = staff, agent, manager, compliance · `department` = HR, IT, Finance, Operations · `ticket_status` = received, assigned, answered, closed · `ticket_priority` = low, medium, high, urgent · `reply_tone` = formal, friendly, urgent
 
+### Migrations
+
+| File | What it does | Owner |
+| --- | --- | --- |
+| `0001_initial_schema.sql` | All tables and enums; RLS switched on | Samukelo |
+| `0002_profiles_on_signup.sql` | New account → profile row (role staff); read your own profile | Samukelo |
+| `0003_tickets_privacy.sql` | Who reads and creates tickets; `current_user_role()` and `current_user_department()` helpers | Samukelo |
+| `0004_team_policies.sql` | Rules for ticket updates, classifications, templates, responses, audit log; `reroute_ticket()` | Samukelo |
+| `0005_ticket_submitter.sql` | `ticket_submitter()`: agents see a sender's name, email and depot | Samukelo |
+| `0006_ticket_lifecycle.sql` | `assigned_to`, `ticket_messages`, assign / confirm / close / reopen functions, profile rules, SAST references | Samukelo |
+| `0007_metrics.sql` | `dashboard_metrics()` and the `insights` table | Mihlali |
+| `0008_reports.sql` | The `reports` table (**on Baphakamise's branch, not merged yet**) | Baphakamise |
+| `0009_sensitive_requests.sql` | `is_sensitive`, `sensitive_kind`, and "Sensitive" templates for HR, IT and Operations | Samukelo |
+| `0010_daily_ticket_counts.sql` | `daily_ticket_counts()`: tickets per day per department, counted in SQL, for the forecast | Samukelo |
+
+The next free number is **0011**. Ask Samukelo before writing one.
+
+### Tables
+
 | Table | Key columns | Notes |
 | --- | --- | --- |
-| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically when Samukelo adds an account (role `staff`). Agents and managers have a `department`. |
-| `tickets` | `id`, `reference` (auto, e.g. `KF-261021-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_historical`, `assigned_to`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | `is_historical = true` marks seeded past tickets (S1-17). Always set the matching timestamp when status changes. |
-| `classifications` | `ticket_id`, `predicted_department`, `confidence` (0–1), `model_version`, `overridden_by`, `overridden_department`, `created_at` | Keep every decision; never overwrite (needed for the Sprint 3 audit). |
-| `templates` | `department`, `name`, `body`, `updated_by`, timestamps | Reply templates (S1-04, S1-27) |
-| `responses` | `ticket_id`, `template_id`, `tone`, `ai_draft`, `final_text`, `ai_generated`, `sent_by`, `sent_at` | Store the AI draft *and* what the agent actually sent. |
-| `audit_log` | `actor`, `action`, `ticket_id`, `details` (jsonb) | e.g. classify, override, draft, send |
+| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically when an account is added (role `staff`). Agents and managers have a `department`; a manager without one is a general manager. |
+| `tickets` | `id`, `reference` (auto, SAST date, e.g. `KF-261105-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_sensitive`, `sensitive_kind`, `is_historical`, `assigned_to`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | Always set the matching timestamp when status changes (the lifecycle functions do it for you). |
+| `classifications` | `ticket_id`, `predicted_department`, `confidence` (0–1), `model_version`, `overridden_by`, `overridden_department`, `confirmed_by`, `confirmed_at`, `created_at` | Keep every decision; never overwrite. `predicted_department` is the model's own choice, even when the sensitive rule sent the ticket elsewhere. |
+| `templates` | `department`, `name`, `body`, `updated_by`, timestamps | Formal, Friendly, Urgent per department (the AI picks the one matching the tone), plus "Sensitive" for HR, IT and Operations |
+| `responses` | `ticket_id`, `template_id`, `tone`, `ai_draft`, `final_text`, `ai_generated`, `sent_by`, `sent_at` | Store the AI draft *and* what the agent actually sent |
+| `audit_log` | `actor`, `action`, `ticket_id`, `details` (jsonb) | Every action is listed in [`docs/audit-actions.md`](docs/audit-actions.md) |
 | `ticket_messages` | `ticket_id`, `author`, `body`, `created_at` | A staff member's "I still need help" message (S2-20). Added only through `reopen_ticket()`. |
+| `insights` | weekly AI summaries | Written by S2-28, reused by reports (0007) |
+| `reports` | `department`, `week_start`, `metrics`, `ai_summary`, `forecast` | Saved weekly reports (0008, not merged yet) |
 | `approvals` | `ticket_id`, `approver`, `decision`, `decided_at` | Sprint 4 |
 
-### Who can do what (row-level security, migrations 0003 and 0004)
+### Who can do what (row-level security)
 
 RLS is **on** for every table. These rules are the whole permission model. If a query returns **no rows or a "row-level security" error**, check this table first.
 
 | Table | Read | Create | Update |
 | --- | --- | --- | --- |
-| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | (none yet) |
-| `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all |
+| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | (none yet; S2-25) |
+| `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all. Prefer the lifecycle functions below. |
 | `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
 | `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
 | `responses` | agents, managers, compliance on visible tickets · **staff only once `sent_at` is set** (never unsent drafts) | agents, managers, on visible tickets | agents, managers |
 | `audit_log` | managers, compliance | anyone signed in, only with `actor = auth.uid()` | nobody (append-only) |
 | `ticket_messages` | anyone who can see the ticket | only through `reopen_ticket()` | nobody |
+| `insights` | managers | managers | managers |
+| `reports` | managers (0008) | managers | managers |
 | `approvals` | (Sprint 4) | | |
 
-**Rules for writing code against this:**
-- **Re-routing a ticket to another department** (S1-25): use the database function, not a plain update. A plain update is refused, because the agent can no longer see the ticket afterwards:
-  ```ts
-  const { error } = await supabase.rpc("reroute_ticket", {
-    p_ticket_id: ticketId,
-    p_department: "HR",
-  });
-  ```
-  In one step it checks the caller is an agent of the ticket's current department (or a manager), moves the ticket, clears `needs_review`, records the override on the latest classification and writes an `audit_log` entry.
-- **AI drafts are created by the agent**, e.g. when the agent opens a ticket or clicks "Draft reply" (S1-08, S1-13). Staff accounts can't insert into `responses`, so don't generate drafts inside the staff submit form.
-- **Ticket lifecycle (migration 0006, contract 1).** Use these functions, never a plain update: each one checks who is calling and writes its audit entry.
-  ```ts
-  await supabase.rpc("assign_ticket", { p_ticket_id: id });                     // agent: Take ticket (own department, for themselves)
-  await supabase.rpc("assign_ticket", { p_ticket_id: id, p_agent: agentId });   // manager: Assign to an agent of that department
-  await supabase.rpc("confirm_department", { p_ticket_id: id });                // agent or manager: "Department is correct"
-  await supabase.rpc("close_ticket", { p_ticket_id: id });                      // sender ("This solved it"), agent or manager; Answered tickets only
-  await supabase.rpc("reopen_ticket", { p_ticket_id: id, p_message: text });    // sender only ("I still need help"); Answered tickets only
-  ```
-  Who does what: agents take tickets in their own department; a department manager (one with a `department`) assigns, confirms and closes in that department only; a general manager (no department) can do so everywhere; managers still read every ticket. Who confirmed a department is on the latest `classifications` row (`confirmed_by`, `confirmed_at`). Ticket references use South African time.
-- **Sending a reply** (S1-23): update the response (`final_text`, `sent_by`, `sent_at`) and the ticket (`status = 'answered'`, `answered_at`), both as the agent.
+### The four contracts (agreed shapes other stories build against; change them only after agreeing it with the team)
+
+1. **Lifecycle** (migration 0006, Samukelo). Use these functions, never a plain update: each one checks who is calling and writes its audit entry.
+   ```ts
+   await supabase.rpc("assign_ticket", { p_ticket_id: id });                     // agent: Take ticket (own department, for themselves)
+   await supabase.rpc("assign_ticket", { p_ticket_id: id, p_agent: agentId });   // manager: Assign to an agent of that department
+   await supabase.rpc("confirm_department", { p_ticket_id: id });                // agent or manager: "Department is correct"
+   await supabase.rpc("close_ticket", { p_ticket_id: id });                      // sender ("This solved it"), agent or manager; Answered tickets only
+   await supabase.rpc("reopen_ticket", { p_ticket_id: id, p_message: text });    // sender only ("I still need help"); Answered tickets only
+   await supabase.rpc("reroute_ticket", { p_ticket_id: id, p_department: "HR" }); // agent or manager: move to another department (0004)
+   ```
+   **Who does what:** agents take tickets in their own department; a department manager assigns, confirms and closes in their department only; a general manager can do so everywhere; managers still read every ticket. **Only the assigned agent (or a manager, once it's assigned) can send a reply**, checked in the reply box and in `sendReply`.
+2. **Metrics** ([`docs/metrics.md`](docs/metrics.md), migration 0007, Mihlali): `supabase.rpc("dashboard_metrics", { p_from, p_to, p_department })` returns the dashboard's JSON (cards, weekly, daily…). It runs as the caller, so the ticket rules decide what each person sees.
+3. **Audit actions and AiNote** ([`docs/audit-actions.md`](docs/audit-actions.md), Samukelo): every audit action and what goes in `details`; add new actions there in the same PR. Every piece of AI output shows `<AiNote kind="routing" confidence={c} />`, `"draft"`, `"summary"` or `"forecast"`.
+4. **Forecast** ([`docs/forecast.md`](docs/forecast.md), Elzel): `forecast(history, { department, asOf, days })` in `src/lib/forecast.ts`. It learns from the **past tickets only**, takes the history and `asOf` as inputs (no clock, no `generatedAt`), and uses the last 8 weeks of the history plus a month-end factor. The app loads the history with `loadDailyHistory(supabase, department)` from `src/lib/daily-history.ts`, which calls `daily_ticket_counts()` (migration 0010).
+
+### Sensitive requests (migration 0009, `src/lib/sensitive.ts`)
+
+Every new request is checked with plain word rules (not the AI model), which set `tickets.is_sensitive` and `sensitive_kind`:
+
+| Kind | For example | Goes to | Lowest priority |
+| --- | --- | --- | --- |
+| `conduct` | harassment, bullying, discrimination, threats | HR | High |
+| `wellbeing` | self-harm, suicidal thoughts, domestic violence | HR | Urgent |
+| `incident` | injury, accident, hijacking, robbery, collision, spill, drunk driving | the AI's choice (usually Operations) | Urgent |
+| `security` | hacked account, lost or stolen device, phishing | IT | High |
+| `personal` | health, pregnancy, bereavement, disciplinary, dismissal | HR | the person's choice |
+
+A sensitive ticket's text is **never sent to Gemini** (the draft route uses the department's "Sensitive" template instead), and **its reply can't be sent unchanged** (checked in the reply box and in `sendReply`). Keep these rules when you touch the submit action, the draft route or the reply box. To add words, add them to the rule, then send a sample request of that kind and an everyday request with a similar word, and check only the first is marked.
+
+### Other rules for code that touches the database
+
+- **Payroll belongs to HR** (decided Thu 5 Nov): tax deductions and salary banking details are HR requests, so the classifier sending them to HR is correct.
+- **AI drafts are created by the agent** (when they open a ticket or click "Write a new AI draft"). Staff can't insert into `responses`.
 - **Saving a classification** (S1-21): insert it right after inserting the ticket, in the same server action, as the submitting user.
-- **Audit entries:** always set `actor` to the signed-in user's id. Every action and what goes in `details` is listed in [`docs/audit-actions.md`](docs/audit-actions.md) (contract 3); add new actions there in the same PR.
-- Need a permission that isn't here? Ask Samukelo for a new migration. Don't turn RLS off, and don't use the service-role key in app code.
+- **Audit entries:** always set `actor` to the signed-in user's id.
+- **Supabase returns at most 1,000 rows per request**, and the Table Editor's export stops short too. Don't fetch thousands of tickets to count them in the app: count in SQL (a database function) and fetch the result.
+- Need a permission that isn't here? Ask Samukelo for a new migration. Don't turn RLS off, and **never use the secret (service-role) key in app code**.
 
 ---
 
 ## 6. How to write code here (conventions)
 
-- **Supabase client:** use `createClient` from `@/lib/supabase/server` in server components, server actions and route handlers, and from `@/lib/supabase/client` only in `"use client"` components. **Never** use `SUPABASE_SERVICE_ROLE_KEY` in app code. The only exception is one-off scripts (e.g. the S1-17 seed script) run locally.
-- **Who is signed in:** call `getCurrentProfile()` from `@/lib/auth`. It returns `{ email, fullName, role, department }` or `null`. To restrict a page to certain roles, call `await requireRole([...])` at the top of the page; it returns the profile. For role-based redirects use `HOME_FOR_ROLE`.
-- **Forms:** use **server actions** (`"use server"` in an `actions.ts` file next to the page), with `useActionState` in the client form for errors and pending state. See `src/app/login/` as the reference pattern.
-- **Redirects:** redirect **straight to the final page**. Don't redirect from a server action to a page that redirects again: that chain made sign-in take ~40 s in dev (fixed in S1-09).
-- **Secrets:** API keys only in server code (server actions, route handlers). Nothing secret gets a `NEXT_PUBLIC_` prefix.
-- **AI output must be labelled** and editable by a person before sending. Use `<AiNote kind="routing" confidence={c} />`, `"draft"`, `"summary"` or `"forecast"` from `@/components/AiNote` so the wording is the same everywhere. Store both the draft and the final text.
-- **Accessibility (WCAG 2.1 AA):** every input has a `<label htmlFor>`; status is shown in **text and colour**, not colour alone; errors use `role="alert"`; screens work at **360 px** width.
-- **Database changes:** never edit an applied migration. Add the next numbered file in `supabase/migrations/` (e.g. `0005_...sql`), with comments explaining each part, and run it in the Supabase SQL Editor. Samukelo owns migrations.
+- **Supabase client:** `createClient` from `@/lib/supabase/server` in server components, server actions and route handlers; from `@/lib/supabase/client` only in `"use client"` components. Create it **inside** the function, never at the top of a file. **Never** use `SUPABASE_SERVICE_ROLE_KEY` in app code; the only exception is the local seed script.
+- **Who is signed in:** `getCurrentProfile()` from `@/lib/auth` returns `{ id, email, fullName, role, department }` or `null`. Protect a page with `await requireRole([...])` at the top; it returns the profile. A page that needs `requireRole` must be a **server** page; put interactive parts in a separate `"use client"` component.
+- **Routes under `/api` are public** (the middleware lets signed-out people through), so every route handler starts with `getCurrentProfile()` and checks the role before doing anything. A server action next to the page is usually simpler than an `/api` route.
+- **Forms:** server actions (`"use server"` in an `actions.ts` next to the page), with `useActionState` in the client form. See `src/app/login/` as the reference pattern.
+- **Pages for managers and compliance** live under `/manager/...` or `/compliance/...`, use `<RoleHeader … current="/manager/your-page" />`, and set their item to `ready: true` in `src/lib/menus.ts`.
+- **Redirects:** redirect **straight to the final page**. A server action that redirects to a page that redirects again made sign-in take ~40 s (S1-09).
+- **Times:** stored in UTC; always shown in **South African time** (`timeZone: "Africa/Johannesburg"`, see `formatWhen()` in `src/app/staff/status.ts`). Never use `timezone('Africa/Johannesburg', now())` as a column default: it saves times 2 hours wrong. Use `default now()`.
+- **Secrets:** API keys only in server code. Nothing secret gets a `NEXT_PUBLIC_` prefix.
+- **AI output must be labelled** (`AiNote`) and editable by a person before it counts. Store both the draft and the final text.
+- **Accessibility (WCAG 2.1 AA):** every input has a `<label htmlFor>` matching its `id`; status is shown in **text and colour**, not colour alone; errors use `role="alert"`; screens work at **360 px** width.
+- **Database changes:** never edit a migration that has been run. Add the next numbered file in `supabase/migrations/`, with comments explaining each part, safe to run twice where possible (`if not exists`), and run it in the Supabase SQL Editor. Samukelo owns migrations.
 - **Comments:** short and plain, explaining *why*. The team is learning, and the code will be presented to a panel.
 - **Before saying "done":** `npx tsc --noEmit` and `npm run lint` pass, and each Given / When / Then scenario has been tested by hand.
 
@@ -200,21 +255,22 @@ Response: { "department": "HR" | "IT" | "Finance" | "Operations",
             "needsReview": boolean,    // true when confidence < 0.6
             "modelVersion": string }   // e.g. "tfidf-logreg-v2"
 ```
-Mihlali's form and Baphakamise's inbox build against the stub now. Elzel's real model (S1-21) replaces the inside of the route **without changing this shape**.
+The submit form calls `classify()` from `src/lib/classifier.ts` directly (faster than calling the route), then applies the sensitive rule.
 
 ---
 
 ## 7. Team workflow (Git and GitHub)
 
-1. `git checkout main` → `git pull`
-2. `git checkout -b feature/S1-xx-short-name` (use `docs/` or `fix/` instead of `feature/` where it fits)
+1. `git checkout main`, then `git pull`. **Always start from the latest `main`**: a branch made from an old `main` brings back old code and conflicts.
+2. `git checkout -b feature/S2-xx-short-name` (or `fix/`, `docs/`)
 3. Build and test locally (`npm run dev`, http://localhost:3000)
-4. Commit with the story ID first: `git commit -m "S1-22 Add depot field to submit form"`
-5. `git push -u origin feature/S1-xx-short-name` → open a pull request (fill in the template)
-6. The reviewer tests the **Vercel preview link** against the acceptance criteria and approves
-7. **Squash and merge**, delete the branch, mark the story Done in Jira and the sprint plan
+4. `git status`: check only your story's files changed (restore `tsconfig.json` or `package.json` if they changed by themselves)
+5. `git add` the files, then `git commit -m "S2-xx What changed"` (story ID first)
+6. `git push -u origin feature/S2-xx-short-name`, then open a pull request and fill in the template
+7. Both checks (GitHub and Vercel) must be green; the reviewer tests the **Vercel preview link** against the acceptance criteria and approves
+8. **Squash and merge**, delete the branch, mark the story Done in the sprint plan
 
-`main` is protected: no direct pushes, and one approval is required.
+`main` is protected: no direct pushes, one approval, and both checks required. **Push your branch every day**, even unfinished.
 
 ---
 
@@ -233,55 +289,55 @@ Mihlali's form and Baphakamise's inbox build against the stub now. Elzel's real 
 | `npm.ps1 cannot be loaded because running scripts is disabled` | VS Code terminal is PowerShell. Switch the default profile to **Command Prompt** (terminal **⌄** → *Select Default Profile*). |
 | Prompt shows `C:\WINDOWS\system32>` | Admin Command Prompt. Use a normal one. |
 | `'node' is not recognized` right after installing | Open a **new** terminal window; restart the laptop if needed. |
-| `Module not found: Can't resolve '@/lib/…'` | File is in the wrong folder. VS Code shows `lib \ supabase` on one line when `lib` only contains `supabase`, so new files land in `supabase` by mistake. `@/` means `src/`. |
+| `npm run dev` says **Next.js 16**, or warns "middleware is deprecated" | Something upgraded Next.js (often `npm audit fix --force`). Run `git checkout -- package.json package-lock.json`, then `npm ci`. Never run `npm audit fix --force`. |
+| `git status` shows `tsconfig.json` or `package.json` changed, and you didn't change them | A tool rewrote them. `git restore tsconfig.json` (or the file named) before committing. |
+| The push worked but GitHub offers no pull request | Nothing was committed: `git status` said the files weren't added, or the new files never reached the `relay` folder. Check `git status` and `git log --oneline -1` before pushing. |
+| Build fails with `supabaseKey is required` | A file creates a Supabase client with the secret key at the top of the file. Use `createClient` from `@/lib/supabase/server` inside the function instead (section 6). |
+| A branch shows conflicts in files you never touched | It was made from an old `main`. Make a new branch from the latest `main` and copy only your own files across. |
+| A CSV export or a query returns exactly 500 or 1,000 rows | Supabase limits rows per request. Count in SQL, or use the files in `data/processed/`. |
+| `Module not found: Can't resolve '@/lib/…'` | File is in the wrong folder. `@/` means `src/`. VS Code shows `lib \ supabase` on one line when `lib` only contains `supabase`, so new files can land in `supabase` by mistake. |
 | Hydration error mentioning `data-gr-ext-installed` | Grammarly extension. Already handled in `layout.tsx`. |
 | Supabase SQL Editor says "Success. No rows returned" after an `update` | It always says that. Verify with a `select`. |
+| Supabase warns "UPDATE without a WHERE clause" on a migration | Usually a false alarm from updates inside functions. Check each `update` has a `where`, then run it. |
+| A migration says a column "already exists" | It was run before. Check what's there with a `select` before running anything again; ask Samukelo. |
 | Server action button does nothing after files were moved or added | Restart `npm run dev` and hard-refresh (Ctrl+Shift+R). |
 | `curl: (7) Failed to connect to localhost port 3000` | The app isn't running. Start `npm run dev` first. |
 | Pasting a file path into the SQL Editor | Paste the file's **contents**, not its path. |
 
 ---
 
-## 9. Each member's next steps (Sprint 1)
+## 9. Each member's stories (Sprint 2+3)
 
-Full acceptance criteria are in [`docs/sprints/SPRINT1_STORIES.md`](docs/sprints/SPRINT1_STORIES.md). Dependencies are in `docs/sprints/Sprint1_Dependencies.pdf`.
+Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs/sprints/SPRINT2_3_STORIES.md). Status as of Thu 5 Nov.
 
-### Elzel: data and classifier
-- **S1-02 / S1-06:** the Kaggle *IT Service Ticket Classification* dataset goes in `data/raw/`. Map its categories to HR / IT / Finance / Operations, and write synthetic HR, Finance and Operations tickets in Kopano Freight's context (depots, drivers, fuel cards, payslips, trucks). Columns: `subject, description, department, priority, depot, created_at` (dates spread over the last 12 months), `source` (real/synthetic). Add a data dictionary.
-- **S1-10 / S1-16:** train in Colab. Report accuracy **separately** on held-out *real* tickets and on synthetic ones, with a confusion matrix (target ≥ 85% on real). Export JSON to `ml/model/` containing `version`, `classes`, `vocabulary` (term → index), `idf`, `coef` (classes × terms), `intercept`, and the preprocessing settings (lowercase, n-grams, stop words) so TypeScript can reproduce them exactly. Save the notebook in `ml/notebooks/`.
-- **S1-17:** a local seed script in `supabase/seed/` inserts historical tickets with `is_historical = true` and their original `created_at`. It must be safe to run twice (no duplicates). This is the one place the service-role key may be used, from `.env.local`, never committed.
-- **S1-21:** replace the stub inside `src/app/api/classify/route.ts` with TF-IDF + logistic regression inference from the JSON. Keep the contract. Respond in under 1 s. Save each result to `classifications` with `model_version` (allowed by migration 0004).
-- **S1-25:** confidence < 0.6 sets `tickets.needs_review = true` when the ticket is inserted. An agent changes the department with `supabase.rpc("reroute_ticket", …)` (section 5), which also records the override and the audit entry.
+### Samukelo: platform, carry-over, risk and compliance
+- ✅ **S2-01** PR checks and Preview env vars · **S2-02** role homes and public home page · **S2-06** ticket lifecycle (0006) · **S2-07** audit actions and AiNote · **S2-11** priority and "Department is correct" · **S2-12** audit log screen · **S2-16** take and assign
+- ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
+- ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
+- Next: **S2-20** close a ticket · **S2-21** bias test · **S2-25** Manage users · **S2-26** flags · **S2-30** risk report · **S2-31** responsible AI documents
 
-### Mihlali: staff portal and design
-- **S1-03 / S1-07 / S1-11:** personas (staff, agent, manager, compliance), a journey map, and low-fidelity wireframes for login, submit request, My requests, request detail, agent inbox, ticket view and template library. Then a classmate review.
-- **S1-12:** shadcn/ui setup (`npx shadcn@latest init`), with colours, type and spacing. It changes `globals.css` and adds `src/components/ui/`, so announce it at stand-up first and keep `--background` / `--foreground` working.
-- **S1-18:** a menu that shows only the pages for the user's role (use `getCurrentProfile()`). Staff: Submit request, My requests. Agent: Inbox, Templates. Contrast must meet WCAG AA.
-- **S1-22:** submit form (subject, description, depot) as a server action. Insert into `tickets` with `submitted_by` = current user id (RLS requires it), get the department from the classify logic, and show the reference number and department. Must work at 360 px, with labelled fields and a clear error for an empty description. Build against the stub until S1-21.
-- **S1-26:** My requests list (newest first; status in words and colour) and a detail page (department, status history, reply once sent). S1-15's RLS already limits staff to their own tickets, so a plain `select` from `tickets` returns only theirs.
+### Elzel: workload forecasting
+- ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)
+- Next: **S2-08** forecast method in `src/lib/forecast.ts`, built against [`docs/forecast.md`](docs/forecast.md) (its HR example is the first test) · S2-13 range · S2-17 backtest · S2-22 method note · S2-27 forecast view · S2-32 callout and staffing hint
 
-### Baphakamise: AI replies and agent inbox
-- **S1-04:** at least 3 reply templates per department. Get the Gemini API key from Google AI Studio and keep it **only** in `.env.local` and Vercel.
-- **S1-08 / S1-13:** a server-side route or server action that calls Gemini with the ticket plus its department template. If Gemini fails or takes > 10 s, use the template text instead. Save the draft to `responses` as the signed-in agent (allowed by migration 0004). Adding an SDK changes `package.json`, so announce it first. Use a current Gemini Flash model (check AI Studio for the model name).
-- **S1-14:** tone toggle (formal, friendly, urgent) regenerates the draft. The chosen tone is saved with the response.
-- **S1-19:** agent inbox at `/agent` (or a sub-page, guarded with `requireRole(["agent"])`): only the agent's department (S1-15's RLS does the filtering automatically, so a plain `select` from `tickets` is enough), most urgent first then oldest, filter by status, "Needs review" clearly marked.
-- **S1-23:** show the draft labelled "AI-drafted", let the agent edit it, then Send. Sending sets `status = 'answered'` and `answered_at`, and saves `final_text`, `sent_by` and `sent_at` (allowed by migration 0004).
-- **S1-27 / S1-28:** template library screen (view and edit by department), and the sent reply shown on the staff member's request detail (built together with Mihlali).
+### Mihlali: analytics dashboard
+- ✅ **S2-04** metrics shape (`docs/metrics.md`) · **S2-09** `dashboard_metrics()` (0007)
+- Next: **S2-14** number cards and filters at `/manager/dashboard` · S2-18 charts · S2-23 10-second test · S2-28 weekly insights (`src/lib/insights.ts`) · S2-33 insights on the dashboard
 
-### Samukelo: platform
-- **S1-15 ✅** done. **Database rules for the rest of Sprint 1 ✅** (migration 0004, see section 5).
-- **S1-20 ✅** `docs/architecture.md` sections 1–4: diagram, components and why chosen, data model.
-- **S1-24** (Wed 28): sections 5–7: request flow, roles and security, how the design supports Sprints 2–4. Section 5 describes what Mihlali and Baphakamise build, so it's written after their screens land on Tue 27.
+### Baphakamise: automated reporting
+- ✅ **S2-05** report template spec (`docs/report-template.md`)
+- In progress: **S2-10** reports table (0008) and **S2-15** report preview, on `feature/S2-10-reports-migration`: the route must not use the secret key, the page goes under `/manager/reports`, and 0008 needs `default now()` and `public.department`
+- Next: S2-19 PDF download · S2-24 forecast and open-ticket sections (use `forecast(history, …)` from `docs/forecast.md`) · S2-29 saved reports · S2-34 Monday schedule and AI summary
 
 ---
 
 ## 10. Starter prompt for a teammate's AI chat
 
-Copy this, fill in the brackets, and attach `AGENTS.md` and `docs/sprints/SPRINT1_STORIES.md`:
+Copy this, fill in the brackets, and attach `AGENTS.md`, `docs/sprints/SPRINT2_3_STORIES.md` and your story's contract (for example `docs/forecast.md`):
 
 ```
-I'm [name] on the Relay team. Read AGENTS.md and SPRINT1_STORIES.md first.
-I'm working on story [S1-xx]: [paste the story and its Given/When/Then].
+I'm [name] on the Relay team. Read AGENTS.md and SPRINT2_3_STORIES.md first.
+I'm working on story [S2-xx]: [paste the story and its Given/When/Then].
 I'm a beginner on Windows using VS Code and Command Prompt.
 Guide me step by step: tell me which files to create or change and where,
 give complete code I can paste, explain why each part is needed,
