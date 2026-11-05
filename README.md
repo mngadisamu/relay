@@ -1,23 +1,33 @@
 # Relay
 
-**AI-powered internal operations platform for Kopano Freight** · CAPACITI AI Bootcamp (8 weeks)
+**AI-powered internal help desk for Kopano Freight** · CAPACITI AI Bootcamp (8 weeks)
 
-Kopano Freight is a fictional Johannesburg logistics company with about 350 staff across a head office, two depots and a driver workforce. Its internal requests to HR, IT, Finance and Operations arrive through a shared inbox and WhatsApp with no triage. Requests get misrouted, replies are slow and inconsistent, and management has no data on volumes, response times or upcoming surges.
+Kopano Freight is a fictional Johannesburg logistics company with about 350 staff across a head office, two depots and a driver workforce. Its internal requests to HR, IT, Finance and Operations used to arrive through a shared inbox and WhatsApp with no triage. Requests got misrouted, replies were slow and inconsistent, and management had no data on volumes, response times or upcoming surges.
 
-Relay gives staff one place to ask for help. It classifies each request, drafts a reply, tracks performance, forecasts workload, governs its own AI decisions and automates approvals.
+Relay gives staff one place to ask for help. It routes each request to the right team, drafts a reply for a person to check, tracks performance, forecasts workload and keeps a record of every AI decision.
 
 **Live site:** [relay-gilt-nine.vercel.app](https://relay-gilt-nine.vercel.app) (updates automatically on every merge to `main`)
 
 ## Roadmap
 
-| Sprint | Dates | Modules |
-| --- | --- | --- |
-| 1 | 19 Oct – 30 Oct 2026 | Ticket classification · AI response generator |
-| 2 | 2 Nov – 13 Nov 2026 | Analytics dashboard · Automated reporting |
-| 3 | 16 Nov – 27 Nov 2026 | Workload forecasting · AI risk and compliance |
-| 4 | 30 Nov – 11 Dec 2026 | Workflow automation · Deployment and showcase |
+| Sprint | Dates | Modules | Status |
+| --- | --- | --- | --- |
+| 1 | 19 Oct – 30 Oct 2026 | Ticket classification · AI response generator | Done |
+| 2 + 3 | 2 Nov – 13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | **In progress** |
+| 4 | To be confirmed | Workflow automation · Deployment and showcase | |
 
-Backlog and sprints are tracked in Jira (project **SCRUM**). Sprint 1 is in progress.
+Sprints 2 and 3 were combined into one two-week sprint by the programme. It starts with the Sprint 1 carry-over: assigning and closing tickets, priority on submit, manager and compliance homes, and Manage users.
+
+## What Relay does today
+
+| Who | What they can do |
+| --- | --- |
+| **Staff** | Send a request with how urgent it is · Relay routes it to HR, IT, Finance or Operations · follow it in **My requests**, with a reference number, status history and the reply |
+| **Agents** | **Inbox** of their department's tickets, most urgent first, with a **Mine** filter · **Take ticket** · confirm or move the AI's department choice · reply from an **AI draft** in a formal, friendly or urgent tone, edited and checked by them · **Template library** |
+| **Managers** | **Tickets** for their department (all departments for a general manager) · **Assign** tickets to agents · dashboard, reports and forecast coming this sprint |
+| **Compliance** | **Audit log** of every AI decision and human change, with filters, a ticket's whole history and CSV export · flagged replies and risk report coming this sprint |
+
+Every piece of AI work is labelled (for example "Routed by AI · 92% sure · an agent can change it"), and a person can check or change it before it counts.
 
 ## Project documents
 
@@ -25,62 +35,90 @@ Backlog and sprints are tracked in Jira (project **SCRUM**). Sprint 1 is in prog
 | --- | --- |
 | [Getting started](docs/GETTING_STARTED.md) | Set up your laptop, run Relay, and the daily Git workflow |
 | [AGENTS.md](AGENTS.md) | Context for AI assistants: give it to your AI before asking for help with a story |
-| [Sprint 1 stories (text)](docs/sprints/SPRINT1_STORIES.md) | Every Sprint 1 story with its Given / When / Then criteria, readable by AI tools |
-| [Sprint 1 plan](docs/sprints/Sprint1_Plan.docx) | Goal, owners, and every user story with its Given / When / Then acceptance criteria, day by day |
-| [Sprint 1 dependency map](docs/sprints/Sprint1_Dependencies.pdf) | Which story you can't start without, who you're waiting on, and who's waiting on you |
-| [Architecture](docs/architecture.md) | How Relay is built (written in Sprint 1, stories S1-20 and S1-24) |
 | [Contributing](CONTRIBUTING.md) | Branch, commit and pull request rules |
+| [Architecture](docs/architecture.md) | How Relay is built: components, data model, request flow, roles and security |
+| [Audit actions](docs/audit-actions.md) | Every action written to the audit log and what it records (contract 3) |
+| [Dashboard metrics](docs/metrics.md) | The numbers the dashboard, reports and forecast share, and how each is worked out (contract 2) |
+| [Report template](docs/report-template.md) | What the weekly department report contains and where each number comes from |
+| [Design](docs/design/README.md) | Personas, journey map, wireframes, mockups and the style guide |
+| [Sprint 1 stories](docs/sprints/SPRINT1_STORIES.md) · [plan](docs/sprints/Sprint1_Plan.docx) · [dependencies](docs/sprints/Sprint1_Dependencies.pdf) | Sprint 1 stories with their Given / When / Then criteria |
+| Sprint 2+3 plan | Shared by Samukelo: every story by member and day, with its acceptance criteria |
 
 ## Tech stack
 
-- **Next.js 15** (App Router, TypeScript) on **Vercel**
-- **Supabase**: Postgres database, auth with roles, file storage
-- **Tailwind CSS** (shadcn/ui components added in Sprint 1)
-- **ML classifier**: TF-IDF + logistic regression, trained in Google Colab, exported to JSON and run inside a Next.js API route
-- **Gemini API** for response drafting and summaries
+- **Next.js 15.5** (App Router, TypeScript) on **Vercel**
+- **Supabase**: Postgres database, sign-in with roles, row-level security on every table
+- **Tailwind CSS v4** with **shadcn/ui** components in Relay's colours
+- **ML classifier**: TF-IDF + logistic regression, trained in Google Colab, exported to JSON and run in TypeScript on the server (no Python server)
+- **Gemini API** (`gemini-2.5-flash`) for reply drafts and summaries, server-side only
+- **GitHub check** on every pull request: lint, type-check and build must pass before it can be merged
 
 ## Project structure
 
 ```
-src/app/            Pages and API routes
-src/lib/            Shared code (Supabase clients, classifier)
-supabase/migrations Database schema, applied in order
-supabase/seed       Seed scripts for historical tickets
-ml/notebooks        Colab notebooks for training the classifier
-ml/model            Exported model weights (JSON)
-data/raw            Source datasets (Kaggle, synthetic)
-data/processed      Cleaned, merged dataset
-docs/               Architecture document, sprint notes, retros
+src/app/              Pages, server actions and API routes, one folder per role (staff, agent, manager, compliance)
+src/components/       Shared components (menus, AI note, status tags) and shadcn/ui in components/ui
+src/lib/              Shared code: sign-in and roles, Supabase clients, classifier, menus, templates
+supabase/migrations   Database changes, applied in order (0001 onwards); never edit one that has been run
+supabase/seed         Reply templates and the year of past tickets used by the dashboard and forecast
+ml/notebooks          Colab notebooks: classifier training, daily ticket history
+ml/model              The exported classifier (JSON) and its results
+data/raw              Source dataset (Kaggle)
+data/processed        Mapped, synthetic and combined datasets, with a data dictionary
+docs/                 Architecture, contracts, design and sprint documents
 ```
 
 ## Getting started
 
-First time? Follow the full step-by-step guide: **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**. Short version:
+First time? Follow the full step-by-step guide: **[docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)**. Short version, in **Command Prompt** (not PowerShell), one line at a time:
 
-1. Clone the repo and install dependencies:
-   ```bash
-   git clone https://github.com/mngadisamu/relay.git
-   cd relay
-   npm install
-   ```
-2. Copy `.env.example` to `.env.local` and fill in the Supabase and Gemini keys. Samukelo shares them privately; never commit them.
-3. Run the app:
-   ```bash
-   npm run dev
-   ```
-   Open http://localhost:3000.
+```
+git clone https://github.com/mngadisamu/relay.git
+```
+```
+cd relay
+```
+```
+npm ci
+```
 
-Windows users: run commands in **Command Prompt**, not PowerShell. The guide explains why.
+Copy `.env.example` to `.env.local` and fill in the Supabase and Gemini keys. Samukelo shares them privately; never commit them. Then:
+
+```
+npm run dev
+```
+
+Open http://localhost:3000.
+
+Use `npm ci` rather than `npm install` or `npm audit fix --force`: it installs exactly the versions in `package-lock.json`, so everyone runs the same Next.js version.
+
+### Test accounts
+
+Passwords are shared privately by Samukelo. Never put them in code, docs or chat.
+
+| Account | Role |
+| --- | --- |
+| `staff@relay.test`, `staff2@relay.test` | Staff |
+| `agent@relay.test` | Agent, IT department |
+| `manager@relay.test` | Manager (general manager, all departments) |
+| `compliance@relay.test` | Compliance |
+
+There's no sign-up page: accounts are added by a manager (Manage users, this sprint).
 
 ## Working together
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first commit. In short: never push to `main`, work on a branch named after your user story (e.g. `feature/S1-09-sign-in`), and open a pull request that another team member reviews.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first commit. In short:
+
+1. Start every story from the latest `main` (`git checkout main`, then `git pull`), on a branch named after it, e.g. `feature/S2-14-dashboard-cards`.
+2. Commit with the story ID first, push your branch every day, and open a pull request.
+3. The GitHub check and the Vercel preview must both pass, and one teammate approves (review rotation in [AGENTS.md](AGENTS.md)).
+4. Database changes go through Samukelo as a new numbered migration.
 
 ## Team
 
-| Member | Sprint 1 feature | Stories |
+| Member | Sprint 2+3 feature | Sprint 1 feature |
 | --- | --- | --- |
-| Samukelo | F1 · Platform foundation: database, sign-in and roles, architecture | S1-01, S1-05, S1-09, S1-15, S1-20, S1-24 |
-| Elzel | F2 · Ticket data and ML classifier | S1-02, S1-06, S1-10, S1-16, S1-17, S1-21, S1-25 |
-| Mihlali | F3 · Staff request portal (UI/UX) | S1-03, S1-07, S1-11, S1-12, S1-18, S1-22, S1-26 |
-| Baphakamise | F4 · AI response generator and agent inbox | S1-04, S1-08, S1-13, S1-14, S1-19, S1-23, S1-27, S1-28 |
+| Samukelo (team lead, BA) | Platform, Sprint 1 carry-over, AI risk and compliance | F1 · Platform foundation: database, sign-in and roles, architecture |
+| Elzel | Workload forecasting | F2 · Ticket data and ML classifier |
+| Mihlali | Analytics dashboard | F3 · Staff request portal (UI/UX) |
+| Baphakamise | Automated reporting | F4 · AI response generator and agent inbox |
