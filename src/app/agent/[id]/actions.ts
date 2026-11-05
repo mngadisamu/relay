@@ -29,6 +29,35 @@ export async function sendReply(input: {
   const supabase = await createClient();
   const now = new Date().toISOString();
 
+  // 0. Only the person working on the ticket replies: an agent needs it assigned
+  //    to them, a manager needs it assigned to someone. The button is greyed out
+  //    in the same cases; this check makes sure it can't be skipped.
+  const { data: current } = await supabase
+    .from("tickets")
+    .select("assigned_to, is_sensitive")
+    .eq("id", input.ticketId)
+    .maybeSingle<{ assigned_to: string | null; is_sensitive: boolean }>();
+  if (!current) return { error: "Ticket not found." };
+  if (profile.role === "agent" && current.assigned_to !== profile.id) {
+    return { error: current.assigned_to ? "This ticket is assigned to someone else." : "Take this ticket before you reply." };
+  }
+  if (profile.role === "manager" && !current.assigned_to) {
+    return { error: "Assign this ticket to an agent before replying." };
+  }
+
+  // 0b. A sensitive request (migration 0009) needs a personal reply, so the
+  //     starting text can't be sent exactly as it was given.
+  if (current.is_sensitive && input.responseId) {
+    const { data: start } = await supabase
+      .from("responses")
+      .select("ai_draft")
+      .eq("id", input.responseId)
+      .maybeSingle<{ ai_draft: string | null }>();
+    if (start?.ai_draft && start.ai_draft.trim() === text) {
+      return { error: "This is a sensitive request: change the starting text into a personal reply before sending." };
+    }
+  }
+
   // 1. Save the reply. If there's an AI draft, update it so the draft and the
   //    final text sit side by side (needed for the Sprint 3 audit).
   if (input.responseId) {
@@ -97,4 +126,49 @@ export async function rerouteTicket(input: {
   // and say where it went.
   revalidatePath("/agent");
   redirect(`/agent?moved=${encodeURIComponent(input.reference)}&to=${encodeURIComponent(input.department)}`);
+}
+
+// "Department is correct" on a Needs review ticket (S2-11).
+// confirm_department() (migration 0006) clears "Needs review", records who
+// confirmed it on the classification, and writes an audit entry.
+export async function confirmDepartment(ticketId: number): Promise<{ error: string } | { ok: true }> {
+  const profile = await getCurrentProfile();
+  if (!profile || !["agent", "manager"].includes(profile.role)) {
+    return { error: "Only agents and managers can confirm a department." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("confirm_department", { p_ticket_id: ticketId });
+  if (error) return { error: "Couldn't confirm the department: " + error.message };
+
+  // Reload this ticket (tag gone, "Confirmed by" shown) and the inbox.
+  revalidatePath("/agent");
+  revalidatePath(`/agent/${ticketId}`);
+  return { ok: true };
+}
+
+// Take ticket (agent) or Assign (manager) (S2-16).
+// assign_ticket() (migration 0006) checks who may do it, sets assigned_to,
+// moves Received to Assigned with the time, and writes an audit entry.
+// agentId is left out when an agent takes a ticket for themselves.
+export async function assignTicket(ticketId: number, agentId?: string): Promise<{ error: string } | { ok: true }> {
+  const profile = await getCurrentProfile();
+  if (!profile || !["agent", "manager"].includes(profile.role)) {
+    return { error: "Only agents and managers can assign tickets." };
+  }
+  if (profile.role === "manager" && !agentId) return { error: "Choose an agent to assign it to." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("assign_ticket", {
+    p_ticket_id: ticketId,
+    ...(agentId ? { p_agent: agentId } : {}),
+  });
+  if (error) return { error: "Couldn't assign the ticket: " + error.message };
+
+  // The ticket, the inboxes and the staff member's status history all change.
+  revalidatePath("/agent");
+  revalidatePath(`/agent/${ticketId}`);
+  revalidatePath(`/staff/requests/${ticketId}`);
+  revalidatePath("/staff/requests");
+  return { ok: true };
 }

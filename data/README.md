@@ -5,7 +5,7 @@
 | `raw/all_tickets_processed_improved_v3.csv` | S1-02 | Kaggle *IT Service Ticket Classification* dataset, unchanged. Text is already cleaned (lower case, no numbers or punctuation). |
 | `processed/tickets_mapped.csv` | S1-02 | The Kaggle tickets with a Relay department added by `scripts/map_departments.py`. |
 | `processed/synthetic_tickets.csv` | S1-06 | Kopano Freight tickets written by `scripts/make_synthetic.py`, mostly HR, Finance and Operations. |
-| `processed/combined_tickets.csv` | S1-06, S1-17 | **The combined dataset**: real and synthetic tickets together, balanced per department, every ticket with a date, depot and priority. Built by `scripts/combine_tickets.py`; the S1-17 seed script loads it into the database. |
+| `processed/combined_tickets.csv` | S1-06, S1-17 | **The combined dataset**: real and synthetic tickets together, balanced per department, every ticket with a date, depot and priority. Built by `scripts/combine_tickets.py`; loaded into the database by `supabase/seed/seed_historical.mjs` (S1-17). |
 
 Rebuild everything and retrain the model from the repo root:
 
@@ -46,7 +46,7 @@ About 3,900 tickets per department: every synthetic ticket, plus a random sample
 
 | Column | Type | Meaning |
 | --- | --- | --- |
-| `reference` | text, e.g. `KF-260614-H04512` | Unique reference for a past ticket. The `H` marks it as history, so it never clashes with live references. The seed script uses it to avoid duplicates |
+| `reference` | text, e.g. `KF-260614-H04512` | Unique reference for a past ticket. The `H` marks it as history, so it never clashes with live references. `supabase/seed/seed_historical.mjs` uses it to skip tickets already loaded |
 | `subject` | text | Synthetic: the subject as written. Real: the first seven words of the text (Kaggle tickets have no subject) |
 | `description` | text | The ticket text |
 | `department` | HR / IT / Finance / Operations | The correct department |
