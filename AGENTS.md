@@ -85,6 +85,7 @@ src/
 │   ├── classifier.ts             The trained classifier, run in TypeScript (S1-21)
 │   ├── sensitive.ts              Sensitive request rules: five kinds, their department and priority (migration 0009)
 │   ├── menus.ts                  Manager and compliance menus; each item is ready: true once its page is merged
+│   ├── daily-history.ts          loadDailyHistory(): past tickets per day, for the forecast (migration 0010)
 │   ├── reply-templates.ts        Loads reply templates from the database (S1-27); templates.ts is the fallback text
 │   └── supabase/                 createClient() for the browser (client.ts), the server (server.ts) and middleware
 ├── components/
@@ -151,8 +152,9 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0007_metrics.sql` | `dashboard_metrics()` and the `insights` table | Mihlali |
 | `0008_reports.sql` | The `reports` table (**on Baphakamise's branch, not merged yet**) | Baphakamise |
 | `0009_sensitive_requests.sql` | `is_sensitive`, `sensitive_kind`, and "Sensitive" templates for HR, IT and Operations | Samukelo |
+| `0010_daily_ticket_counts.sql` | `daily_ticket_counts()`: tickets per day per department, counted in SQL, for the forecast | Samukelo |
 
-The next free number is **0010**. Ask Samukelo before writing one.
+The next free number is **0011**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -200,7 +202,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
    **Who does what:** agents take tickets in their own department; a department manager assigns, confirms and closes in their department only; a general manager can do so everywhere; managers still read every ticket. **Only the assigned agent (or a manager, once it's assigned) can send a reply**, checked in the reply box and in `sendReply`.
 2. **Metrics** ([`docs/metrics.md`](docs/metrics.md), migration 0007, Mihlali): `supabase.rpc("dashboard_metrics", { p_from, p_to, p_department })` returns the dashboard's JSON (cards, weekly, daily…). It runs as the caller, so the ticket rules decide what each person sees.
 3. **Audit actions and AiNote** ([`docs/audit-actions.md`](docs/audit-actions.md), Samukelo): every audit action and what goes in `details`; add new actions there in the same PR. Every piece of AI output shows `<AiNote kind="routing" confidence={c} />`, `"draft"`, `"summary"` or `"forecast"`.
-4. **Forecast** ([`docs/forecast.md`](docs/forecast.md), Elzel): `forecast(history, { department, asOf, days })` in `src/lib/forecast.ts`. It learns from the **past tickets only**, takes the history and `asOf` as inputs (no clock, no `generatedAt`), and uses the last 8 weeks of the history plus a month-end factor. The app will load the history from a daily-counts database function (Samukelo, migration 0010).
+4. **Forecast** ([`docs/forecast.md`](docs/forecast.md), Elzel): `forecast(history, { department, asOf, days })` in `src/lib/forecast.ts`. It learns from the **past tickets only**, takes the history and `asOf` as inputs (no clock, no `generatedAt`), and uses the last 8 weeks of the history plus a month-end factor. The app loads the history with `loadDailyHistory(supabase, department)` from `src/lib/daily-history.ts`, which calls `daily_ticket_counts()` (migration 0010).
 
 ### Sensitive requests (migration 0009, `src/lib/sensitive.ts`)
 
@@ -218,6 +220,7 @@ A sensitive ticket's text is **never sent to Gemini** (the draft route uses the 
 
 ### Other rules for code that touches the database
 
+- **Payroll belongs to HR** (decided Thu 5 Nov): tax deductions and salary banking details are HR requests, so the classifier sending them to HR is correct.
 - **AI drafts are created by the agent** (when they open a ticket or click "Write a new AI draft"). Staff can't insert into `responses`.
 - **Saving a classification** (S1-21): insert it right after inserting the ticket, in the same server action, as the submitting user.
 - **Audit entries:** always set `actor` to the signed-in user's id.
@@ -310,7 +313,8 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 ### Samukelo: platform, carry-over, risk and compliance
 - ✅ **S2-01** PR checks and Preview env vars · **S2-02** role homes and public home page · **S2-06** ticket lifecycle (0006) · **S2-07** audit actions and AiNote · **S2-11** priority and "Department is correct" · **S2-12** audit log screen · **S2-16** take and assign
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
-- Next: **migration 0010** (daily counts for the forecast, before S2-27) · **S2-20** close a ticket · **S2-21** bias test · **S2-25** Manage users · **S2-26** flags · **S2-30** risk report · **S2-31** responsible AI documents
+- ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
+- Next: **S2-20** close a ticket · **S2-21** bias test · **S2-25** Manage users · **S2-26** flags · **S2-30** risk report · **S2-31** responsible AI documents
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)

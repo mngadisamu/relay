@@ -85,9 +85,18 @@ Use these numbers as the first test: `data/processed/daily_counts.csv` holds exa
 
 - **Notebook and tests:** `data/processed/daily_counts.csv` (one row per day, one column per department), written by the
   S2-03 notebook.
-- **In the app (S2-24, S2-27):** a database function that returns the past tickets per day per department, so a page
-  never has to fetch 15,000 tickets (Supabase returns at most 1,000 rows at a time). Samukelo adds it as the next
-  migration before S2-27. Until then, build and test with the CSV.
+- **In the app (S2-24, S2-27):** `loadDailyHistory(supabase, department)` from `src/lib/daily-history.ts`. It calls the
+  database function `daily_ticket_counts` (migration 0010), which counts the past tickets per day in SQL and returns
+  one row per day in exactly the `DailyCount` shape, so a page never fetches 15,000 tickets (Supabase returns at most
+  1,000 rows at a time). It runs as the signed-in user, so managers count every department.
+
+  ```ts
+  const history = await loadDailyHistory(supabase, "HR"); // 365 days, 19 Oct 2025 to 18 Oct 2026
+  const result = forecast(history, { department: "HR", asOf: "2026-11-05" });
+  ```
+
+  Its numbers match `data/processed/daily_counts.csv` exactly (checked for HR: 365 days, 3,900 tickets, 591 in the
+  last 8 weeks). Import `DailyCount` from `src/lib/daily-history.ts` in `forecast.ts`, so both use one type.
 
 ## Limits (say these to the panel)
 

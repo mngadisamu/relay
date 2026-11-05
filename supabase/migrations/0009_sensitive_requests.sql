@@ -11,7 +11,7 @@
 
 -- 1. The mark on the ticket, and what kind of sensitive request it is.
 --    Set by the submit action; existing tickets stay not sensitive.
-alter table public.tickets
+alter table "public"."tickets"
   add column if not exists is_sensitive boolean not null default false,
   add column if not exists sensitive_kind text
     check (sensitive_kind in ('conduct', 'wellbeing', 'incident', 'security', 'personal'));
