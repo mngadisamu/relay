@@ -9,6 +9,8 @@ import { NeedsReviewTag, PriorityTag, SensitiveTag, StatusPill } from "@/compone
 import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 import { AiNote } from "@/components/AiNote";
 import { SENSITIVE_LABEL, type SensitiveKind } from "@/lib/sensitive";
+import { FlagReply } from "@/components/FlagReply";
+import type { Flag } from "@/lib/flags";
 import { assignTicket, closeTicket, confirmDepartment, rerouteTicket, sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
@@ -40,7 +42,7 @@ export type Classification = {
 export type Agent = { id: string; full_name: string };
 export type Submitter = { full_name: string; email: string; depot: string | null };
 export type Draft = { id: number; ai_draft: string | null; tone: Tone; ai_generated: boolean };
-export type SentReply = { final_text: string; sent_at: string; ai_generated: boolean };
+export type SentReply = { id: number; final_text: string; sent_at: string; ai_generated: boolean; flags: Flag[] };
 export type FollowUp = { body: string; created_at: string };
 
 // Which template goes with each tone (the page passes them as formal, friendly, urgent).
@@ -166,7 +168,7 @@ export default function TicketReply({
     startSending(async () => {
       const result = await sendReply({ ticketId: ticket.id, responseId, finalText: text, tone });
       if ("error" in result) setError(result.error);
-      else setSent({ final_text: text, sent_at: new Date().toISOString(), ai_generated: aiGenerated });
+      else setSent({ id: result.responseId, final_text: text, sent_at: new Date().toISOString(), ai_generated: aiGenerated, flags: result.flags });
     });
   }
 
@@ -516,6 +518,8 @@ export default function TicketReply({
                   {sent.final_text}
                 </p>
               </div>
+              {/* S2-26: automatic flags, and Flag for a second look by compliance. */}
+              <FlagReply responseId={sent.id} flags={sent.flags} />
               {/* S2-20: the staff member normally confirms with "This solved it"; the agent can close it too. */}
               {!closed && (
                 <div className="flex flex-wrap items-center gap-3 border-t border-line-soft pt-3">
