@@ -21,8 +21,8 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 
 | Action | Written by (where) | When | `ticket_id` | `details` |
 | --- | --- | --- | --- | --- |
-| `classify` | The staff member who sent the request (`src/app/staff/actions.ts`) | The AI routes a new request | yes | `department`, `confidence` (0 to 1), `model_version`, `needs_review` |
-| `draft` | The agent (`src/app/api/generate-draft/route.ts`) | An AI draft is made or remade in a tone | yes | `tone`, `ai_generated` (false when the template was used because Gemini failed), `response_id`, `template_id` |
+| `classify` | The staff member who sent the request (`src/app/staff/actions.ts`) | The AI routes a new request | yes | `department` (where it went), `confidence` (0 to 1), `model_version`, `needs_review`, `sensitive` (`conduct`, `wellbeing`, `incident`, `security`, `personal` or null), `routed_by_rule` (true when the sensitive-request rule sent it somewhere other than the AI's choice) |
+| `draft` | The agent (`src/app/api/generate-draft/route.ts`) | An AI draft is made or remade in a tone | yes | `tone`, `ai_generated` (false when the template was used: Gemini failed, or the request is sensitive), `response_id`, `template_id`, `sensitive` (true when the text was kept away from Gemini) |
 | `send` | The agent (`src/app/agent/[id]/actions.ts`) | A reply is sent | yes | `tone`, `response_id`, `edited_ai_draft` (true when the reply started from a saved draft; compare `responses.ai_draft` with `final_text` to see how much changed) |
 | `reroute` | The agent or manager (`reroute_ticket()`, migration 0004) | A ticket is moved to another department | yes | `from`, `to` (departments) |
 | `confirm_department` | The agent or manager (`confirm_department()`, 0006) | "Department is correct" on a Needs review ticket | yes | `department` |

@@ -19,7 +19,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
   const supabase = await createClient();
   const { data: ticket } = await supabase
     .from("tickets")
-    .select("id, reference, subject, description, depot, department, priority, status, needs_review, assigned_to, created_at")
+    .select("id, reference, subject, description, depot, department, priority, status, needs_review, is_sensitive, sensitive_kind, assigned_to, created_at")
     .eq("id", id)
     .maybeSingle<TicketForReply>();
 

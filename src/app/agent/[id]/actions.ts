@@ -34,15 +34,28 @@ export async function sendReply(input: {
   //    in the same cases; this check makes sure it can't be skipped.
   const { data: current } = await supabase
     .from("tickets")
-    .select("assigned_to")
+    .select("assigned_to, is_sensitive")
     .eq("id", input.ticketId)
-    .maybeSingle<{ assigned_to: string | null }>();
+    .maybeSingle<{ assigned_to: string | null; is_sensitive: boolean }>();
   if (!current) return { error: "Ticket not found." };
   if (profile.role === "agent" && current.assigned_to !== profile.id) {
     return { error: current.assigned_to ? "This ticket is assigned to someone else." : "Take this ticket before you reply." };
   }
   if (profile.role === "manager" && !current.assigned_to) {
     return { error: "Assign this ticket to an agent before replying." };
+  }
+
+  // 0b. A sensitive request (migration 0009) needs a personal reply, so the
+  //     starting text can't be sent exactly as it was given.
+  if (current.is_sensitive && input.responseId) {
+    const { data: start } = await supabase
+      .from("responses")
+      .select("ai_draft")
+      .eq("id", input.responseId)
+      .maybeSingle<{ ai_draft: string | null }>();
+    if (start?.ai_draft && start.ai_draft.trim() === text) {
+      return { error: "This is a sensitive request: change the starting text into a personal reply before sending." };
+    }
   }
 
   // 1. Save the reply. If there's an AI draft, update it so the draft and the
