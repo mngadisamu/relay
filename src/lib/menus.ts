@@ -21,7 +21,7 @@ export const MANAGER_MENU: MenuItem[] = [
     label: "Reports",
     href: "/manager/reports",
     description: "Weekly department reports to preview, save and download.",
-    ready: false, // Baphakamise, S2-15
+    ready: true, // Baphakamise, S2-15
   },
   {
     label: "Forecast",
