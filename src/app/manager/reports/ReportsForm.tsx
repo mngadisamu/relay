@@ -16,6 +16,7 @@ export default function ReportsPage() {
   const [department, setDepartment] = useState('Finance');
   const [weekStart, setWeekStart] = useState('2026-11-02');
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +44,33 @@ export default function ReportsPage() {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloading(true);
+    try {
+      const response = await fetch('/api/reports/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ department, weekStart }),
+      });
+
+      if (!response.ok) throw new Error('Failed to generate PDF');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Relay-${department}-${weekStart}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Could not download PDF');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -85,6 +113,17 @@ export default function ReportsPage() {
           >
             {loading ? 'Loading…' : 'Preview report'}
           </button>
+
+          {reportData && (
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={downloading}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50"
+            >
+              {downloading ? 'Downloading...' : 'Download PDF'}
+            </button>
+          )}
         </form>
 
         {error && (
