@@ -5,9 +5,11 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
+import { NeedsReviewTag, PriorityTag, SensitiveTag, StatusPill } from "@/components/StatusPill";
 import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
-import { rerouteTicket, sendReply } from "./actions";
+import { AiNote } from "@/components/AiNote";
+import { SENSITIVE_LABEL, type SensitiveKind } from "@/lib/sensitive";
+import { assignTicket, closeTicket, confirmDepartment, rerouteTicket, sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
 
@@ -21,6 +23,9 @@ export type TicketForReply = {
   priority: TicketPriority;
   status: TicketStatus;
   needs_review: boolean;
+  is_sensitive: boolean;
+  sensitive_kind: SensitiveKind | null;
+  assigned_to: string | null;
   created_at: string;
 };
 
@@ -29,10 +34,14 @@ export type Classification = {
   confidence: number;
   model_version: string;
   overridden_department: string | null;
+  confirmed_by: string | null;
+  confirmed_at: string | null;
 };
+export type Agent = { id: string; full_name: string };
 export type Submitter = { full_name: string; email: string; depot: string | null };
 export type Draft = { id: number; ai_draft: string | null; tone: Tone; ai_generated: boolean };
 export type SentReply = { final_text: string; sent_at: string; ai_generated: boolean };
+export type FollowUp = { body: string; created_at: string };
 
 // Which template goes with each tone (the page passes them as formal, friendly, urgent).
 // Only used if the draft route can't be reached; normally the server picks the template.
@@ -48,19 +57,33 @@ export default function TicketReply({
   ticket,
   templates,
   classification,
+  confirmedByName,
+  viewer,
+  assigneeName,
+  agents,
   submitter,
   initialDraft,
   sentReply,
+  earlierReply,
+  followUps,
 }: {
   ticket: TicketForReply;
   templates: string[];
   classification: Classification | null;
+  confirmedByName: string | null;
+  viewer: { id: string; role: string };
+  assigneeName: string | null;
+  agents: Agent[];
   submitter: Submitter | null;
   initialDraft: Draft | null;
   sentReply: SentReply | null;
+  earlierReply: SentReply | null;
+  followUps: FollowUp[];
 }) {
   const [tone, setTone] = useState<Tone>(initialDraft?.tone ?? "formal");
   const [draft, setDraft] = useState(initialDraft?.ai_draft ?? "");
+  // The text the draft started as, so a sensitive reply can't be sent unchanged (0009).
+  const [draftStart, setDraftStart] = useState(initialDraft?.ai_draft ?? "");
   const [responseId, setResponseId] = useState<number | null>(initialDraft?.id ?? null);
   const [aiGenerated, setAiGenerated] = useState(initialDraft?.ai_generated ?? true);
   // The text from before the last new draft, so the agent can undo it.
@@ -69,10 +92,18 @@ export default function TicketReply({
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState<SentReply | null>(sentReply);
   const [isSending, startSending] = useTransition();
+  const [closed, setClosed] = useState(ticket.status === "closed");
+  const [closeError, setCloseError] = useState<string | null>(null);
+  const [isClosing, startClosing] = useTransition();
 
   const [moveTo, setMoveTo] = useState("");
   const [moveError, setMoveError] = useState<string | null>(null);
   const [isMoving, startMoving] = useTransition();
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [isConfirming, startConfirming] = useTransition();
+  const [assignTo, setAssignTo] = useState("");
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [isAssigning, startAssigning] = useTransition();
 
   // Ask the server for a new draft in the chosen tone (S1-08, S1-13, S1-14).
   async function generateDraft(selectedTone: Tone) {
@@ -91,6 +122,7 @@ export default function TicketReply({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Draft failed");
       setDraft(data.draft);
+      setDraftStart(data.draft);
       setResponseId(data.responseId ?? null);
       setAiGenerated(data.aiGenerated ?? true);
     } catch {
@@ -99,6 +131,7 @@ export default function TicketReply({
         .replaceAll("[Staff Name]", submitter?.full_name ?? "colleague")
         .replaceAll("[Subject]", ticket.subject);
       setDraft(fallbackText);
+      setDraftStart(fallbackText);
       setResponseId(null);
       setAiGenerated(false);
       setError("The AI draft didn't load, so the template is shown instead.");
@@ -137,6 +170,40 @@ export default function TicketReply({
     });
   }
 
+  // "Department is correct" (S2-11). The server reloads this page afterwards,
+  // so the Needs review tag disappears and "Confirmed by" appears.
+  function handleConfirm() {
+    setConfirmError(null);
+    startConfirming(async () => {
+      const result = await confirmDepartment(ticket.id);
+      if ("error" in result) setConfirmError(result.error);
+    });
+  }
+
+  // Take ticket (agent, for themselves) or Assign (manager, to the chosen agent) (S2-16).
+  // The server reloads the page afterwards, so the status and "Assigned to" update.
+  function handleAssign(agentId?: string) {
+    if (viewer.role === "manager" && !agentId) {
+      setAssignError("Choose the agent to assign it to.");
+      return;
+    }
+    setAssignError(null);
+    startAssigning(async () => {
+      const result = await assignTicket(ticket.id, agentId);
+      if ("error" in result) setAssignError(result.error);
+    });
+  }
+
+  // "Close ticket" on an Answered ticket (S2-20), for when the staff member hasn't confirmed it.
+  function handleClose() {
+    setCloseError(null);
+    startClosing(async () => {
+      const result = await closeTicket(ticket.id);
+      if ("error" in result) setCloseError(result.error);
+      else setClosed(true);
+    });
+  }
+
   // Move the ticket to another department (S1-25).
   function handleMove() {
     if (!moveTo) {
@@ -151,10 +218,32 @@ export default function TicketReply({
     });
   }
 
-  const status: TicketStatus = sent ? "answered" : ticket.status;
+  const status: TicketStatus = closed ? "closed" : sent ? "answered" : ticket.status;
   const secondaryBtn =
     "inline-flex h-[42px] items-center gap-1.5 rounded-md border border-field bg-white px-3.5 text-sm font-medium text-ink hover:bg-page disabled:opacity-60";
-  const busy = isGenerating || isSending || isMoving;
+  const busy = isGenerating || isSending || isMoving || isConfirming || isAssigning || isClosing;
+
+  // Only the person working on the ticket replies: an agent once it's assigned to
+  // them, a manager once it's assigned to someone. Otherwise Send reply is greyed
+  // out and the reason is shown under it (the server checks the same thing).
+  const sendBlockedReason =
+    viewer.role === "manager"
+      ? ticket.assigned_to
+        ? null
+        : "Assign this ticket to an agent before replying."
+      : !ticket.assigned_to
+        ? "Take this ticket before you reply, so everyone knows you're on it."
+        : ticket.assigned_to !== viewer.id
+          ? `${assigneeName ?? "Another agent"} is working on this ticket, so only they can reply.`
+          : null;
+  // What kind of sensitive request it is (0009), for the tag and the notice.
+  const sensitive = ticket.sensitive_kind ? SENSITIVE_LABEL[ticket.sensitive_kind] : null;
+  // A sensitive request (0009) needs a personal reply: the starting text can't go out as it is.
+  const sendHint =
+    sendBlockedReason ??
+    (ticket.is_sensitive && draft.trim() === draftStart.trim()
+      ? "Sensitive request: change the starting text into a personal reply before sending."
+      : null);
 
   return (
     <main className="mx-auto max-w-[1360px] space-y-4 px-4 pb-12 pt-5 sm:px-6">
@@ -175,6 +264,7 @@ export default function TicketReply({
               <div className="flex flex-wrap gap-2">
                 <StatusPill status={status} size="sm" />
                 <PriorityTag priority={ticket.priority} />
+                {ticket.is_sensitive && <SensitiveTag label={sensitive?.tag} />}
                 {ticket.needs_review && <NeedsReviewTag />}
               </div>
             </div>
@@ -211,10 +301,68 @@ export default function TicketReply({
             </div>
           </section>
 
+          {/* Who is working on it (S2-16) */}
+          <section aria-labelledby="assignment-heading" className="space-y-3 rounded-[10px] border border-line bg-white p-5">
+            <h2 id="assignment-heading" className="text-[15px] font-semibold text-ink">
+              Assignment
+            </h2>
+            <p className="text-sm text-ink">
+              {!ticket.assigned_to
+                ? "Nobody has taken this ticket yet."
+                : ticket.assigned_to === viewer.id
+                  ? "Assigned to you"
+                  : `Assigned to ${assigneeName ?? "another agent"}`}
+            </p>
+
+            {viewer.role === "agent" && !ticket.assigned_to && ticket.status !== "closed" && (
+              <button type="button" onClick={() => handleAssign()} disabled={busy} className={secondaryBtn}>
+                {isAssigning ? "Taking…" : "Take ticket"}
+              </button>
+            )}
+
+            {viewer.role === "manager" && ticket.status !== "closed" && (
+              <div className="space-y-1.5">
+                <label htmlFor="assign-to" className="block text-[13px] font-medium text-ink-2">
+                  {ticket.assigned_to ? "Give it to another agent" : "Assign to an agent"} in {ticket.department}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    id="assign-to"
+                    value={assignTo}
+                    onChange={(e) => setAssignTo(e.target.value)}
+                    disabled={busy || agents.length === 0}
+                    aria-invalid={assignError ? true : undefined}
+                    aria-describedby={assignError ? "assign-error" : undefined}
+                    className="h-[42px] min-w-[160px] flex-1 rounded-md border border-field bg-white px-3 text-sm text-ink"
+                  >
+                    <option value="">{agents.length ? "Choose an agent" : `No agents in ${ticket.department} yet`}</option>
+                    {agents
+                      .filter((a) => a.id !== ticket.assigned_to)
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.full_name}
+                        </option>
+                      ))}
+                  </select>
+                  <button type="button" onClick={() => handleAssign(assignTo)} disabled={busy || agents.length === 0} className={secondaryBtn}>
+                    {isAssigning ? "Assigning…" : "Assign"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {assignError && (
+              <p id="assign-error" role="alert" className="text-[13px] text-[#a4231a]">
+                {assignError}
+              </p>
+            )}
+          </section>
+
           <section aria-labelledby="routing-heading" className="space-y-3.5 rounded-[10px] border border-line bg-white p-5">
             <h2 id="routing-heading" className="text-[15px] font-semibold text-ink">
               Routing
             </h2>
+            {classification && <AiNote kind="routing" confidence={classification.confidence} />}
             {classification ? (
               <dl className="grid grid-cols-3 gap-3">
                 <div className="space-y-0.5">
@@ -236,10 +384,40 @@ export default function TicketReply({
             {classification?.overridden_department && (
               <p className="text-[13px] text-ink-2">Moved by an agent to {classification.overridden_department}.</p>
             )}
-            {ticket.needs_review && (
-              <p className="rounded-md bg-[#fff4e0] px-3 py-2.5 text-[13px] leading-[19px] text-[#7a4a00]">
-                The AI wasn&apos;t sure about this one. Check it belongs to {ticket.department}, or move it below.
+            {/* The sensitive-request rule (0009) sent it to HR, not the AI's choice. */}
+            {classification &&
+              ticket.is_sensitive &&
+              !classification.overridden_department &&
+              classification.predicted_department !== ticket.department && (
+                <p className="text-[13px] text-ink-2">
+                  Sent to {ticket.department} by the sensitive-request rule (the AI chose {classification.predicted_department}).
+                </p>
+              )}
+            {classification?.confirmed_at && !ticket.needs_review && (
+              <p className="flex items-center gap-1.5 text-[13px] text-ink-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1b6b36" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12.5l4.5 4.5L19 7.5" />
+                </svg>
+                Confirmed by {confirmedByName ?? "a manager"} · {formatWhen(classification.confirmed_at)}
               </p>
+            )}
+            {ticket.needs_review && (
+              <div className="space-y-2.5 rounded-md bg-[#fff4e0] px-3 py-2.5">
+                <p className="text-[13px] leading-[19px] text-[#7a4a00]">
+                  The AI wasn&apos;t sure about this one. If it belongs in {ticket.department}, confirm it; if not, move it below.
+                </p>
+                <button type="button" onClick={handleConfirm} disabled={busy} className={secondaryBtn}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                  </svg>
+                  {isConfirming ? "Confirming…" : "Department is correct"}
+                </button>
+                {confirmError && (
+                  <p role="alert" className="text-[13px] text-[#a4231a]">
+                    {confirmError}
+                  </p>
+                )}
+              </div>
             )}
 
             {/* Reroute (S1-25) */}
@@ -330,7 +508,7 @@ export default function TicketReply({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M5 12.5l4.5 4.5L19 7.5" />
                 </svg>
-                Reply sent {formatWhen(sent.sent_at)}. The ticket is Answered.
+                Reply sent {formatWhen(sent.sent_at)}. The ticket is {closed ? "Closed" : "Answered"}.
               </p>
               <div className="space-y-1">
                 <p className="text-[13px] text-muted">What the staff member received</p>
@@ -338,9 +516,53 @@ export default function TicketReply({
                   {sent.final_text}
                 </p>
               </div>
+              {/* S2-20: the staff member normally confirms with "This solved it"; the agent can close it too. */}
+              {!closed && (
+                <div className="flex flex-wrap items-center gap-3 border-t border-line-soft pt-3">
+                  <button type="button" onClick={handleClose} disabled={busy} className={secondaryBtn}>
+                    {isClosing ? "Closing…" : "Close ticket"}
+                  </button>
+                  <p className="text-[13px] text-muted">
+                    Close it once the problem is sorted. {submitter?.full_name ?? "The staff member"} can also close it with &ldquo;This solved it&rdquo;.
+                  </p>
+                </div>
+              )}
+              {closeError && (
+                <p role="alert" className="text-[13px] text-[#a4231a]">
+                  {closeError}
+                </p>
+              )}
             </div>
           ) : (
             <>
+              {/* Reopened (S2-20): what the staff member says is still wrong, above the reply box. */}
+              {followUps.length > 0 && (
+                <div className="space-y-2 rounded-md border border-[#f1d2b8] bg-[#fff6ee] px-3.5 py-3">
+                  <p className="text-[13px] font-semibold text-[#8a3b00]">
+                    {submitter?.full_name ?? "The staff member"} still needs help
+                  </p>
+                  {followUps.map((f, i) => (
+                    <div key={i} className="space-y-0.5">
+                      <p className="text-[12px] text-muted">{formatWhen(f.created_at)}</p>
+                      <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{f.body}</p>
+                    </div>
+                  ))}
+                  {earlierReply && (
+                    <details className="border-t border-[#f1d2b8] pt-2 text-[13px] text-ink-2">
+                      <summary className="cursor-pointer font-medium">Your earlier reply ({formatWhen(earlierReply.sent_at)})</summary>
+                      <p className="mt-1.5 whitespace-pre-line text-[14px] leading-[21px]">{earlierReply.final_text}</p>
+                    </details>
+                  )}
+                </div>
+              )}
+              {/* Sensitive request (0009): no AI, and a personal reply. */}
+              {ticket.is_sensitive && (
+                <div role="note" className="space-y-1 rounded-md border border-[#dcc8f2] bg-[#f8f3fd] px-3.5 py-3 text-[13px] leading-[19px] text-[#46206b]">
+                  <p className="font-semibold">Sensitive request: handle it with care</p>
+                  <p>{sensitive?.note ?? "Keep it confidential and reply personally."}</p>
+                  <p>Its text isn&apos;t sent to the AI. Start from the template below and make it a personal reply before sending.</p>
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="draft" className="text-[13px] font-medium text-ink-2">
                   Message to {submitter?.full_name ?? "the staff member"} (you can edit it)
@@ -374,18 +596,34 @@ export default function TicketReply({
                       <path d="M20 11a8 8 0 1 0-2.3 5.7" />
                       <path d="M20 5v6h-6" />
                     </svg>
-                    Write a new AI draft
+                    {ticket.is_sensitive ? "Start again from the template" : "Write a new AI draft"}
                   </button>
-                  <p className="text-xs text-muted">Replaces the text above with a fresh draft in the {tone} tone.</p>
+                  <p className="text-xs text-muted">
+                    {ticket.is_sensitive
+                      ? "Replaces the text above with the Sensitive template."
+                      : `Replaces the text above with a fresh draft in the ${tone} tone.`}
+                  </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSend}
-                  disabled={busy || !draft.trim()}
-                  className="h-[42px] rounded-md bg-brand px-5 text-[15px] font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
-                >
-                  {isSending ? "Sending…" : "Send reply"}
-                </button>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    onClick={handleSend}
+                    disabled={busy || !draft.trim() || sendHint !== null}
+                    aria-describedby={sendHint ? "send-blocked" : undefined}
+                    className={`h-[42px] rounded-md px-5 text-[15px] font-semibold ${
+                      sendHint
+                        ? "cursor-not-allowed bg-[#e3e6ea] text-[#59626e]"
+                        : "bg-brand text-white hover:bg-brand-dark disabled:opacity-60"
+                    }`}
+                  >
+                    {isSending ? "Sending…" : "Send reply"}
+                  </button>
+                  {sendHint && (
+                    <p id="send-blocked" className="max-w-[300px] text-right text-xs leading-[18px] text-ink-2">
+                      {sendHint}
+                    </p>
+                  )}
+                </div>
               </div>
             </>
           )}

@@ -27,15 +27,30 @@ export async function POST(request: Request) {
   // Load the ticket here, as the agent, instead of trusting text sent from the browser.
   // Row-level security means this only works for tickets the agent may see.
   const supabase = await createClient();
-  const [{ data: ticket }, { data: submitter }] = await Promise.all([
-    supabase.from("tickets").select("subject, description, department, depot").eq("id", ticketId).maybeSingle(),
+  const [{ data: ticket }, { data: submitter }, { data: followUps }, { data: earlier }] = await Promise.all([
+    supabase.from("tickets").select("subject, description, department, depot, is_sensitive").eq("id", ticketId).maybeSingle(),
     supabase.rpc("ticket_submitter", { p_ticket_id: ticketId }).maybeSingle<{ full_name: string }>(),
+    // If the person said "I still need help" (S2-20), the new draft must answer that, not repeat the first reply.
+    supabase.from("ticket_messages").select("body").eq("ticket_id", ticketId).order("created_at", { ascending: true }),
+    supabase
+      .from("responses")
+      .select("final_text")
+      .eq("ticket_id", ticketId)
+      .not("sent_at", "is", null)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ final_text: string }>(),
   ]);
   if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
 
   // The department's template for this tone, read from the database every time (S1-27),
   // so a template saved in the Template library is used by the very next draft.
-  const saved = templateForTone(await loadTemplates(supabase, ticket.department ?? "IT"), tone);
+  const departmentTemplates = await loadTemplates(supabase, ticket.department ?? "IT");
+  // A sensitive request starts from the Sensitive template (migration 0009) when its
+  // department has one, otherwise from the Formal one, whatever tone was picked.
+  const saved = ticket.is_sensitive
+    ? (departmentTemplates.find((t) => t.name === "Sensitive") ?? templateForTone(departmentTemplates, "formal"))
+    : templateForTone(departmentTemplates, tone);
   const templateText = saved?.body ?? "";
 
   const staffName = submitter?.full_name ?? "colleague";
@@ -55,28 +70,44 @@ Their request (subject, then details):
 "${ticket.subject}"
 "${ticket.description}"
 
+${
+  followUps && followUps.length > 0
+    ? `This request was answered before, but the person says it still isn't sorted.
+Your team's earlier reply:
+"${earlier?.final_text ?? ""}"
+What they say is still wrong (oldest first):
+${followUps.map((f) => `"${f.body}"`).join("\n")}
+Reply to what is still wrong. Don't repeat the earlier reply.
+`
+    : ""
+}
 Write only the reply text: polite, clear and short (under 150 words). Use South African English.
 Don't promise anything the template doesn't, don't invent names, numbers or dates, and leave no [placeholders].
 Sign off as "${profile.fullName}, ${ticket.department} team".
 `;
 
   // Gemini first; if it fails or takes over 10 seconds, use the template (S1-13).
+  // Sensitive requests are never sent to Gemini: a harassment or injury report
+  // shouldn't leave Relay for an outside AI service (POPIA). They go straight to
+  // the template below, and the agent writes the reply from it.
   let draftText = "";
   let aiGenerated = true;
-  try {
-    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Gemini timeout")), 10_000));
-    const result = await Promise.race([
-      ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        // No "thinking" step: a short reply doesn't need it, and it made drafts take several seconds.
-        config: { thinkingConfig: { thinkingBudget: 0 } },
-      }),
-      timeout,
-    ]);
-    draftText = result.text?.trim() ?? "";
-  } catch (error) {
-    console.warn("Gemini failed or timed out, using the template instead:", error);
+  if (!ticket.is_sensitive) {
+    try {
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Gemini timeout")), 10_000));
+      const result = await Promise.race([
+        ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+          // No "thinking" step: a short reply doesn't need it, and it made drafts take several seconds.
+          config: { thinkingConfig: { thinkingBudget: 0 } },
+        }),
+        timeout,
+      ]);
+      draftText = result.text?.trim() ?? "";
+    } catch (error) {
+      console.warn("Gemini failed or timed out, using the template instead:", error);
+    }
   }
   if (!draftText) {
     draftText = template || "Thank you for your request. We are looking into it and will get back to you soon.";
@@ -98,7 +129,7 @@ Sign off as "${profile.fullName}, ${ticket.department} team".
     actor: profile.id,
     action: "draft",
     ticket_id: ticketId,
-    details: { tone, ai_generated: aiGenerated, response_id: data.id, template_id: saved?.id ?? null },
+    details: { tone, ai_generated: aiGenerated, response_id: data.id, template_id: saved?.id ?? null, sensitive: Boolean(ticket.is_sensitive) },
   });
 
   return NextResponse.json({ draft: draftText, responseId: data.id, aiGenerated });

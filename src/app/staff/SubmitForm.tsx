@@ -163,6 +163,33 @@ function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
         <FieldError id="depot-error" message={errors.depot} />
       </div>
 
+      {/* How urgent it is (S2-11). Medium unless the person says otherwise. */}
+      <div className="space-y-1.5">
+        <label htmlFor="priority" className="block text-sm font-medium text-ink">
+          How urgent is it?
+        </label>
+        <select
+          id="priority"
+          name="priority"
+          defaultValue={values?.priority || "medium"}
+          className={`${fieldClass(!!errors.priority)} h-12`}
+          aria-describedby={errors.priority ? "priority-error" : "priority-hint"}
+          aria-invalid={errors.priority ? true : undefined}
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+        {errors.priority ? (
+          <FieldError id="priority-error" message={errors.priority} />
+        ) : (
+          <p id="priority-hint" className="text-sm leading-5 text-muted">
+            Choose Urgent only if work has stopped, for example a truck can&apos;t leave.
+          </p>
+        )}
+      </div>
+
       <button
         type="submit"
         disabled={isPending}
