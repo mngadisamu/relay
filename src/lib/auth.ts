@@ -8,7 +8,7 @@ export type Role = "staff" | "agent" | "manager" | "compliance";
 export const HOME_FOR_ROLE: Record<Role, string> = {
   staff: "/staff",
   agent: "/agent",
-  manager: "/manager",
+  manager: "/manager/dashboard", // managers start on the dashboard (no separate home page)
   compliance: "/compliance",
 };
 
