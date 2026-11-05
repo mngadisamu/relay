@@ -99,7 +99,9 @@ supabase/migrations/
 ├── 0003_tickets_privacy.sql      RLS on tickets (read own / department / all; insert as self) + role helper functions
 ├── 0004_team_policies.sql        RLS for ticket updates, classifications, templates, responses, audit_log + reroute_ticket()
 ├── 0005_ticket_submitter.sql     ticket_submitter(): agents see the sender's name, email and depot for tickets they can see
-└── 0006_ticket_lifecycle.sql     assigned_to, ticket_messages, assign/confirm/close/reopen functions, profile rules, SAST references (S2-06)
+├── 0006_ticket_lifecycle.sql     assigned_to, ticket_messages, assign/confirm/close/reopen functions, profile rules, SAST references (S2-06)
+├── 0007_metrics.sql              dashboard_metrics() and the insights table (S2-09, Mihlali)
+└── 0009_sensitive_requests.sql   tickets.is_sensitive / sensitive_kind, and "Sensitive" templates for HR, IT and Operations (0008 is Baphakamise's reports table)
 docs/  GETTING_STARTED.md · architecture.md (sections 1–4 done in S1-20; 5–7 come in S1-24) · sprints/ (plan .docx, dependencies .pdf, stories .md)
 ```
 
@@ -128,7 +130,7 @@ It also adds the SQL helpers `public.current_user_role()` and `public.current_us
 | Table | Key columns | Notes |
 | --- | --- | --- |
 | `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically when Samukelo adds an account (role `staff`). Agents and managers have a `department`. |
-| `tickets` | `id`, `reference` (auto, e.g. `KF-261021-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_historical`, `assigned_to`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | `is_historical = true` marks seeded past tickets (S1-17). Always set the matching timestamp when status changes. |
+| `tickets` | `id`, `reference` (auto, e.g. `KF-261021-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_sensitive`, `sensitive_kind`, `is_historical`, `assigned_to`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | `is_historical = true` marks seeded past tickets (S1-17). Always set the matching timestamp when status changes. |
 | `classifications` | `ticket_id`, `predicted_department`, `confidence` (0–1), `model_version`, `overridden_by`, `overridden_department`, `created_at` | Keep every decision; never overwrite (needed for the Sprint 3 audit). |
 | `templates` | `department`, `name`, `body`, `updated_by`, timestamps | Reply templates (S1-04, S1-27) |
 | `responses` | `ticket_id`, `template_id`, `tone`, `ai_draft`, `final_text`, `ai_generated`, `sent_by`, `sent_at` | Store the AI draft *and* what the agent actually sent. |
@@ -170,6 +172,17 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
   await supabase.rpc("reopen_ticket", { p_ticket_id: id, p_message: text });    // sender only ("I still need help"); Answered tickets only
   ```
   Who does what: agents take tickets in their own department; a department manager (one with a `department`) assigns, confirms and closes in that department only; a general manager (no department) can do so everywhere; managers still read every ticket. Who confirmed a department is on the latest `classifications` row (`confirmed_by`, `confirmed_at`). Ticket references use South African time.
+- **Sensitive requests (migration 0009).** `src/lib/sensitive.ts` checks every new request with plain word rules and sets `tickets.is_sensitive` and `sensitive_kind`:
+
+  | Kind | For example | Goes to | Lowest priority |
+  | --- | --- | --- | --- |
+  | `conduct` | harassment, bullying, discrimination, threats | HR | High |
+  | `wellbeing` | self-harm, suicidal thoughts, domestic violence | HR | Urgent |
+  | `incident` | injury, accident, hijacking, robbery, collision, spill, drunk driving | the AI's choice (usually Operations) | Urgent |
+  | `security` | hacked account, lost or stolen device, phishing | IT | High |
+  | `personal` | health, pregnancy, bereavement, disciplinary, dismissal | HR | the person's choice |
+
+  A sensitive ticket's text is **never sent to Gemini**: the draft route uses the department's "Sensitive" template instead. Its reply can't be sent unchanged (checked in the reply box and in `sendReply`). Keep these rules when you touch the submit action, the draft route or the reply box. To add words, add them to the rule, then send a sample request for that kind and one everyday request with a similar word, and check only the first is marked.
 - **Sending a reply** (S1-23): update the response (`final_text`, `sent_by`, `sent_at`) and the ticket (`status = 'answered'`, `answered_at`), both as the agent.
 - **Saving a classification** (S1-21): insert it right after inserting the ticket, in the same server action, as the submitting user.
 - **Audit entries:** always set `actor` to the signed-in user's id. Every action and what goes in `details` is listed in [`docs/audit-actions.md`](docs/audit-actions.md) (contract 3); add new actions there in the same PR.

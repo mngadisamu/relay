@@ -5,9 +5,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
+import { NeedsReviewTag, PriorityTag, SensitiveTag, StatusPill } from "@/components/StatusPill";
 import { formatWhen, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 import { AiNote } from "@/components/AiNote";
+import { SENSITIVE_LABEL, type SensitiveKind } from "@/lib/sensitive";
 import { assignTicket, confirmDepartment, rerouteTicket, sendReply } from "./actions";
 
 type Tone = "formal" | "friendly" | "urgent";
@@ -22,6 +23,8 @@ export type TicketForReply = {
   priority: TicketPriority;
   status: TicketStatus;
   needs_review: boolean;
+  is_sensitive: boolean;
+  sensitive_kind: SensitiveKind | null;
   assigned_to: string | null;
   created_at: string;
 };
@@ -74,6 +77,8 @@ export default function TicketReply({
 }) {
   const [tone, setTone] = useState<Tone>(initialDraft?.tone ?? "formal");
   const [draft, setDraft] = useState(initialDraft?.ai_draft ?? "");
+  // The text the draft started as, so a sensitive reply can't be sent unchanged (0009).
+  const [draftStart, setDraftStart] = useState(initialDraft?.ai_draft ?? "");
   const [responseId, setResponseId] = useState<number | null>(initialDraft?.id ?? null);
   const [aiGenerated, setAiGenerated] = useState(initialDraft?.ai_generated ?? true);
   // The text from before the last new draft, so the agent can undo it.
@@ -109,6 +114,7 @@ export default function TicketReply({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Draft failed");
       setDraft(data.draft);
+      setDraftStart(data.draft);
       setResponseId(data.responseId ?? null);
       setAiGenerated(data.aiGenerated ?? true);
     } catch {
@@ -117,6 +123,7 @@ export default function TicketReply({
         .replaceAll("[Staff Name]", submitter?.full_name ?? "colleague")
         .replaceAll("[Subject]", ticket.subject);
       setDraft(fallbackText);
+      setDraftStart(fallbackText);
       setResponseId(null);
       setAiGenerated(false);
       setError("The AI draft didn't load, so the template is shown instead.");
@@ -211,6 +218,14 @@ export default function TicketReply({
         : ticket.assigned_to !== viewer.id
           ? `${assigneeName ?? "Another agent"} is working on this ticket, so only they can reply.`
           : null;
+  // What kind of sensitive request it is (0009), for the tag and the notice.
+  const sensitive = ticket.sensitive_kind ? SENSITIVE_LABEL[ticket.sensitive_kind] : null;
+  // A sensitive request (0009) needs a personal reply: the starting text can't go out as it is.
+  const sendHint =
+    sendBlockedReason ??
+    (ticket.is_sensitive && draft.trim() === draftStart.trim()
+      ? "Sensitive request: change the starting text into a personal reply before sending."
+      : null);
 
   return (
     <main className="mx-auto max-w-[1360px] space-y-4 px-4 pb-12 pt-5 sm:px-6">
@@ -231,6 +246,7 @@ export default function TicketReply({
               <div className="flex flex-wrap gap-2">
                 <StatusPill status={status} size="sm" />
                 <PriorityTag priority={ticket.priority} />
+                {ticket.is_sensitive && <SensitiveTag label={sensitive?.tag} />}
                 {ticket.needs_review && <NeedsReviewTag />}
               </div>
             </div>
@@ -350,6 +366,15 @@ export default function TicketReply({
             {classification?.overridden_department && (
               <p className="text-[13px] text-ink-2">Moved by an agent to {classification.overridden_department}.</p>
             )}
+            {/* The sensitive-request rule (0009) sent it to HR, not the AI's choice. */}
+            {classification &&
+              ticket.is_sensitive &&
+              !classification.overridden_department &&
+              classification.predicted_department !== ticket.department && (
+                <p className="text-[13px] text-ink-2">
+                  Sent to {ticket.department} by the sensitive-request rule (the AI chose {classification.predicted_department}).
+                </p>
+              )}
             {classification?.confirmed_at && !ticket.needs_review && (
               <p className="flex items-center gap-1.5 text-[13px] text-ink-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1b6b36" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -476,6 +501,14 @@ export default function TicketReply({
             </div>
           ) : (
             <>
+              {/* Sensitive request (0009): no AI, and a personal reply. */}
+              {ticket.is_sensitive && (
+                <div role="note" className="space-y-1 rounded-md border border-[#dcc8f2] bg-[#f8f3fd] px-3.5 py-3 text-[13px] leading-[19px] text-[#46206b]">
+                  <p className="font-semibold">Sensitive request: handle it with care</p>
+                  <p>{sensitive?.note ?? "Keep it confidential and reply personally."}</p>
+                  <p>Its text isn&apos;t sent to the AI. Start from the template below and make it a personal reply before sending.</p>
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="draft" className="text-[13px] font-medium text-ink-2">
                   Message to {submitter?.full_name ?? "the staff member"} (you can edit it)
@@ -509,27 +542,31 @@ export default function TicketReply({
                       <path d="M20 11a8 8 0 1 0-2.3 5.7" />
                       <path d="M20 5v6h-6" />
                     </svg>
-                    Write a new AI draft
+                    {ticket.is_sensitive ? "Start again from the template" : "Write a new AI draft"}
                   </button>
-                  <p className="text-xs text-muted">Replaces the text above with a fresh draft in the {tone} tone.</p>
+                  <p className="text-xs text-muted">
+                    {ticket.is_sensitive
+                      ? "Replaces the text above with the Sensitive template."
+                      : `Replaces the text above with a fresh draft in the ${tone} tone.`}
+                  </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <button
                     type="button"
                     onClick={handleSend}
-                    disabled={busy || !draft.trim() || sendBlockedReason !== null}
-                    aria-describedby={sendBlockedReason ? "send-blocked" : undefined}
+                    disabled={busy || !draft.trim() || sendHint !== null}
+                    aria-describedby={sendHint ? "send-blocked" : undefined}
                     className={`h-[42px] rounded-md px-5 text-[15px] font-semibold ${
-                      sendBlockedReason
+                      sendHint
                         ? "cursor-not-allowed bg-[#e3e6ea] text-[#59626e]"
                         : "bg-brand text-white hover:bg-brand-dark disabled:opacity-60"
                     }`}
                   >
                     {isSending ? "Sending…" : "Send reply"}
                   </button>
-                  {sendBlockedReason && (
+                  {sendHint && (
                     <p id="send-blocked" className="max-w-[300px] text-right text-xs leading-[18px] text-ink-2">
-                      {sendBlockedReason}
+                      {sendHint}
                     </p>
                   )}
                 </div>
