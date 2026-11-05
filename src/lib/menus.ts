@@ -48,7 +48,7 @@ export const COMPLIANCE_MENU: MenuItem[] = [
     label: "Flagged replies",
     href: "/compliance/flags",
     description: "AI-drafted replies that need a second look.",
-    ready: false, // Samukelo, S2-26
+    ready: true, // Samukelo, S2-26
   },
   {
     label: "Risk report",

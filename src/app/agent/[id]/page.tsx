@@ -5,6 +5,7 @@ import { TONES, loadTemplates, templateForTone } from "@/lib/reply-templates";
 import { AgentHeader } from "@/components/AgentHeader";
 import { RoleHeader } from "@/components/RoleHeader";
 import { MANAGER_MENU } from "@/lib/menus";
+import { FLAG_COLUMNS, type Flag } from "@/lib/flags";
 import TicketReply, { type Agent, type Classification, type Draft, type FollowUp, type SentReply, type Submitter, type TicketForReply } from "./TicketReply";
 
 // Ticket view for agents (S1-13, S1-14, S1-23, S1-25, mockup screen 7).
@@ -52,15 +53,22 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
     // The reply that went out, if the ticket has been answered.
     supabase
       .from("responses")
-      .select("final_text, sent_at, ai_generated")
+      .select("id, final_text, sent_at, ai_generated")
       .eq("ticket_id", ticket.id)
       .not("sent_at", "is", null)
       .order("sent_at", { ascending: false })
       .limit(1)
-      .maybeSingle<SentReply>(),
+      .maybeSingle<Omit<SentReply, "flags">>(),
     // "I still need help" messages from the staff member (S2-20), oldest first.
     supabase.from("ticket_messages").select("body, created_at").eq("ticket_id", ticket.id).order("created_at", { ascending: true }),
   ]);
+
+  // Flags on the sent reply (S2-26, migration 0011), shown under it.
+  let sent: SentReply | null = null;
+  if (sentReply) {
+    const { data: flagRows } = await supabase.from("flags").select(FLAG_COLUMNS).eq("response_id", sentReply.id).order("created_at");
+    sent = { ...sentReply, flags: (flagRows ?? []) as Flag[] };
+  }
 
   // Who confirmed the department (S2-11). Agents can read the names of people in
   // their own department (migration 0006); a general manager's name isn't visible
@@ -129,8 +137,8 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
         initialDraft={currentDraft}
         // A reopened ticket (S2-20) needs a new reply, so the reply box opens again;
         // the earlier reply and the staff member's message are shown above it.
-        sentReply={ticket.status === "answered" || ticket.status === "closed" ? (sentReply ?? null) : null}
-        earlierReply={sentReply ?? null}
+        sentReply={ticket.status === "answered" || ticket.status === "closed" ? sent : null}
+        earlierReply={sent}
         followUps={(followUpRows ?? []) as FollowUp[]}
       />
     </div>
