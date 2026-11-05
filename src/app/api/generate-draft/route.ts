@@ -27,9 +27,19 @@ export async function POST(request: Request) {
   // Load the ticket here, as the agent, instead of trusting text sent from the browser.
   // Row-level security means this only works for tickets the agent may see.
   const supabase = await createClient();
-  const [{ data: ticket }, { data: submitter }] = await Promise.all([
+  const [{ data: ticket }, { data: submitter }, { data: followUps }, { data: earlier }] = await Promise.all([
     supabase.from("tickets").select("subject, description, department, depot, is_sensitive").eq("id", ticketId).maybeSingle(),
     supabase.rpc("ticket_submitter", { p_ticket_id: ticketId }).maybeSingle<{ full_name: string }>(),
+    // If the person said "I still need help" (S2-20), the new draft must answer that, not repeat the first reply.
+    supabase.from("ticket_messages").select("body").eq("ticket_id", ticketId).order("created_at", { ascending: true }),
+    supabase
+      .from("responses")
+      .select("final_text")
+      .eq("ticket_id", ticketId)
+      .not("sent_at", "is", null)
+      .order("sent_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ final_text: string }>(),
   ]);
   if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
 
@@ -60,6 +70,17 @@ Their request (subject, then details):
 "${ticket.subject}"
 "${ticket.description}"
 
+${
+  followUps && followUps.length > 0
+    ? `This request was answered before, but the person says it still isn't sorted.
+Your team's earlier reply:
+"${earlier?.final_text ?? ""}"
+What they say is still wrong (oldest first):
+${followUps.map((f) => `"${f.body}"`).join("\n")}
+Reply to what is still wrong. Don't repeat the earlier reply.
+`
+    : ""
+}
 Write only the reply text: polite, clear and short (under 150 words). Use South African English.
 Don't promise anything the template doesn't, don't invent names, numbers or dates, and leave no [placeholders].
 Sign off as "${profile.fullName}, ${ticket.department} team".
