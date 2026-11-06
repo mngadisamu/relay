@@ -10,7 +10,14 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 export type RiskMetrics = {
   from: string;
   to: string;
-  drafts: { drafted: number; sent: number; sent_unchanged: number; pct_unchanged: number | null };
+  drafts: {
+    drafted: number;
+    sent: number;
+    sent_unchanged: number;
+    pct_unchanged: number | null;
+    ai_unavailable?: number; // Gemini didn't answer, so the template was given (0016)
+    sensitive_kept?: number; // template on purpose: sensitive request (0016)
+  };
   routing: {
     routed: number;
     changed: number;
@@ -70,7 +77,9 @@ export function riskRows(m: RiskMetrics) {
     {
       label: "Replies drafted by AI",
       value: String(m.drafts.drafted),
-      note: `${m.drafts.sent} AI-drafted replies were sent in this period.`,
+      note: `${m.drafts.sent} AI-drafted replies were sent in this period.${
+        m.drafts.ai_unavailable ? ` ${m.drafts.ai_unavailable} more drafts were the plain template, because the AI didn't answer.` : ""
+      }`,
     },
     {
       label: "Sent without edits",
@@ -98,6 +107,16 @@ export function riskRows(m: RiskMetrics) {
       note: "Harassment, wellbeing, incidents, security and personal matters: their text never went to the AI.",
     },
   ];
+}
+
+// A warning when Gemini didn't answer for some drafts in the range: agents got
+// the plain template instead, so "0 AI drafts" can mean the AI is down, over
+// its daily limit, or its model name has changed, not that nobody used it.
+export function aiUnavailableWarning(m: RiskMetrics) {
+  const n = m.drafts.ai_unavailable ?? 0;
+  if (n === 0) return null;
+  const total = n + m.drafts.drafted;
+  return `The AI didn't answer for ${n} of ${total} drafts in this period, so agents got the plain template instead. Check the Gemini key, its daily limit and the model name in the draft route.`;
 }
 
 // The bias test (S2-21, docs/responsible-ai/bias-test.md). Update this when
