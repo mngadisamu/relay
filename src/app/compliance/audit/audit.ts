@@ -19,6 +19,8 @@ export const ACTION_LABEL: Record<string, string> = {
   template_edit: "Template edited",
   user_create: "Person added",
   role_change: "Role changed",
+  user_deactivate: "Person removed",
+  user_reactivate: "Person brought back",
   insight_generate: "Weekly summary",
   report_download: "Report downloaded",
   flag: "Reply flagged",
@@ -165,6 +167,10 @@ export function summarize(action: string, d: Record<string, unknown>, names: Map
       return `Added ${person("user_id")} as ${text("role")}${d.department ? ` in ${text("department")}` : ""}`;
     case "role_change":
       return `Changed ${person("user_id")} from ${text("from_role")} to ${text("to_role")}${d.to_department ? ` in ${text("to_department")}` : ""}`;
+    case "user_deactivate":
+      return `Removed ${person("user_id")} from Relay${Number(d.tickets_returned) > 0 ? ` (${text("tickets_returned")} open tickets back to the inbox)` : ""}`;
+    case "user_reactivate":
+      return `Brought ${person("user_id")} back as ${text("role")}${d.department ? ` in ${text("department")}` : ""}`;
     case "insight_generate":
       return `Weekly summary for ${d.department ? text("department") : "all departments"}${d.ai_generated === false ? " (numbers only, AI unavailable)" : ", written by AI"}`;
     case "report_download":

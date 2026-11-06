@@ -33,10 +33,12 @@ export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, department")
+    .select("full_name, role, department, active")
     .eq("id", claims.sub)
     .single();
-  if (!profile) return null;
+  // Someone removed from Relay (S2-35) counts as signed out, even if an old
+  // sign-in is still in their browser.
+  if (!profile || !profile.active) return null;
 
   return {
     id: claims.sub,

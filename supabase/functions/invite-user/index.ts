@@ -52,8 +52,10 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await admin.auth.getUser(token);
   if (userError || !userData.user) return reply(401, { error: "Sign in first" });
 
-  const { data: me } = await asCaller.from("profiles").select("role").eq("id", userData.user.id).single();
-  if (me?.role !== "manager") return reply(403, { error: "Only managers can add people" });
+  // A manager who has been removed from Relay (S2-35, migration 0013) may still
+  // hold a sign-in token for up to an hour, so "active" is checked too.
+  const { data: me } = await asCaller.from("profiles").select("role, active").eq("id", userData.user.id).single();
+  if (me?.role !== "manager" || !me.active) return reply(403, { error: "Only managers can add people" });
 
   // 2. Check what was sent before inviting anyone.
   const body = await req.json().catch(() => null);

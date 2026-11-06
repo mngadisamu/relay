@@ -38,6 +38,7 @@ Every piece of AI work is labelled (for example "Routed by AI · 92% sure · an 
 | [Contributing](CONTRIBUTING.md) | Branch, commit and pull request rules |
 | [Architecture](docs/architecture.md) | How Relay is built: components, data model, request flow, roles and security |
 | [Audit actions](docs/audit-actions.md) | Every action written to the audit log and what it records (contract 3) |
+| [Security](docs/security.md) | Who can manage whose account, where each rule is enforced, Supabase settings to check, and the plan for many companies |
 | [Dashboard metrics](docs/metrics.md) | The numbers the dashboard, reports and forecast share, and how each is worked out (contract 2) |
 | [Report template](docs/report-template.md) | What the weekly department report contains and where each number comes from |
 | [Design](docs/design/README.md) | Personas, journey map, wireframes, mockups and the style guide |

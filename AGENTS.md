@@ -128,7 +128,7 @@ docs/                             architecture.md · audit-actions.md · metrics
 
 Need an agent for HR, Finance or Operations, or a department manager? Ask Samukelo.
 
-**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). Don't build a sign-up page.
+**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). People who leave are **removed, not deleted** (S2-35, "Remove from Relay"): they can't sign in, but their name stays on their tickets, replies and audit entries. A department manager removes staff and their own department's agents; a general manager removes anyone; nobody removes themselves, and there is always at least one general manager. When listing people to pick from (e.g. Assign), add `.eq("active", true)`. Don't build a sign-up page.
 
 **Data in Supabase:**
 - **15,579 past tickets** (`is_historical = true`), 19 Oct 2025 to 18 Oct 2026, about 3,900 per department, loaded by `supabase/seed/seed_historical.mjs` (S1-17). They feed the dashboard, reports and forecast. Their dates, depots and priorities were **assigned** with a realistic pattern, not recorded (see `data/README.md`).
@@ -156,14 +156,15 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0010_daily_ticket_counts.sql` | `daily_ticket_counts()`: tickets per day per department, counted in SQL, for the forecast | Samukelo |
 | `0011_flags.sql` | The `flags` table; `flag_reply()` and `resolve_flag()` (S2-26) | Samukelo |
 | `0012_manage_users.sql` | `list_people()` and `set_user_role()` for Manage users (S2-25) | Samukelo |
+| `0013_deactivate_users.sql` | `profiles.active`; `deactivate_user()` and `reactivate_user()`; removed people get no role in the rules and can't be assigned (S2-35) | Samukelo |
 
-The next free number is **0013**. Ask Samukelo before writing one.
+The next free number is **0014**. Ask Samukelo before writing one.
 
 ### Tables
 
 | Table | Key columns | Notes |
 | --- | --- | --- |
-| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically when an account is added (role `staff`). Agents and managers have a `department`; a manager without one is a general manager. |
+| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at`, `active`, `deactivated_at`, `deactivated_by` | Created automatically when an account is added (role `staff`). Agents and managers have a `department`; a manager without one is a general manager. `active = false` means they left (S2-35): never delete a profile, their history needs it. |
 | `tickets` | `id`, `reference` (auto, SAST date, e.g. `KF-261105-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_sensitive`, `sensitive_kind`, `is_historical`, `assigned_to`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | Always set the matching timestamp when status changes (the lifecycle functions do it for you). |
 | `classifications` | `ticket_id`, `predicted_department`, `confidence` (0–1), `model_version`, `overridden_by`, `overridden_department`, `confirmed_by`, `confirmed_at`, `created_at` | Keep every decision; never overwrite. `predicted_department` is the model's own choice, even when the sensitive rule sent the ticket elsewhere. |
 | `templates` | `department`, `name`, `body`, `updated_by`, timestamps | Formal, Friendly, Urgent per department (the AI picks the one matching the tone), plus "Sensitive" for HR, IT and Operations |
@@ -320,7 +321,7 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
 - ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
-- ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`)
+- ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`) · **S2-35** remove people who leave (0013)
 - Next: **S2-30** risk report · **S2-31** responsible AI documents
 
 ### Elzel: workload forecasting
