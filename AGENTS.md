@@ -103,10 +103,11 @@ src/
     ├── staff/                    Submit a request (priority, sensitive rule) · My requests · request detail with status history
     ├── agent/                    Inbox (Mine filter, Assigned to; managers see it as Tickets) · ticket view (take, assign,
     │                             confirm, move, AI draft, send) · template library
-    ├── manager/page.tsx          Manager home (dashboard, reports, forecast, Manage users coming this sprint)
+    ├── manager/                  Manager home · dashboard · reports · Manage users (S2-25)
     ├── compliance/               Compliance home · audit log with filters, ticket history and CSV export (S2-12)
     └── api/                      classify (S1-21) · generate-draft (AI drafts; skips Gemini for sensitive tickets)
 supabase/migrations/              Applied in order in the Supabase SQL Editor (section 5)
+supabase/functions/invite-user/   Edge Function that sends Manage users invites (deployed in the Supabase dashboard; Deno, not Next.js)
 supabase/seed/                    templates.sql (reply templates) · seed_historical.mjs (the year of past tickets)
 ml/notebooks/                     relay_classifier.ipynb (training) · S2-03_daily_history.ipynb (daily counts for the forecast)
 ml/model/                         classifier-model.json and its results
@@ -114,7 +115,7 @@ data/processed/                   combined_tickets.csv (the past tickets) · dai
 docs/                             architecture.md · audit-actions.md · metrics.md · forecast.md · report-template.md · design/ · sprints/
 ```
 
-**Public paths** (no sign-in needed): `/`, `/login` and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
+**Public paths** (no sign-in needed): `/`, `/login`, `/auth/confirm` and `/auth/link-expired` (the invite link, S2-25), and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
 
 **Test accounts** in Supabase (passwords are shared privately by Samukelo; **never put them in code, docs or chat logs**):
 
@@ -127,7 +128,7 @@ docs/                             architecture.md · audit-actions.md · metrics
 
 Need an agent for HR, Finance or Operations, or a department manager? Ask Samukelo.
 
-**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. Until **Manage users** (S2-25, Tue 10 Nov) lands, Samukelo adds accounts in the Supabase dashboard and sets their role and department. Don't build a sign-up page.
+**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). Don't build a sign-up page.
 
 **Data in Supabase:**
 - **15,579 past tickets** (`is_historical = true`), 19 Oct 2025 to 18 Oct 2026, about 3,900 per department, loaded by `supabase/seed/seed_historical.mjs` (S1-17). They feed the dashboard, reports and forecast. Their dates, depots and priorities were **assigned** with a realistic pattern, not recorded (see `data/README.md`).
@@ -154,8 +155,9 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0009_sensitive_requests.sql` | `is_sensitive`, `sensitive_kind`, and "Sensitive" templates for HR, IT and Operations | Samukelo |
 | `0010_daily_ticket_counts.sql` | `daily_ticket_counts()`: tickets per day per department, counted in SQL, for the forecast | Samukelo |
 | `0011_flags.sql` | The `flags` table; `flag_reply()` and `resolve_flag()` (S2-26) | Samukelo |
+| `0012_manage_users.sql` | `list_people()` and `set_user_role()` for Manage users (S2-25) | Samukelo |
 
-The next free number is **0012**. Ask Samukelo before writing one.
+The next free number is **0013**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -179,7 +181,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 
 | Table | Read | Create | Update |
 | --- | --- | --- | --- |
-| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | (none yet; S2-25) |
+| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | only through `supabase.rpc("set_user_role", { p_user_id, p_role, p_department })` (0012): managers, never their own role; a department manager only staff and their own department's agents |
 | `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all. Prefer the lifecycle functions below. |
 | `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
 | `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
@@ -318,7 +320,8 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
 - ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
-- Next: **S2-25** Manage users · **S2-30** risk report · **S2-31** responsible AI documents
+- ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`)
+- Next: **S2-30** risk report · **S2-31** responsible AI documents
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)

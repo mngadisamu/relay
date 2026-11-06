@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Pages anyone can open without signing in.
-const PUBLIC_PATHS = ["/", "/login"];
+// Pages anyone can open without signing in. /auth/... is where an invite
+// email's link lands, before the person has a session (S2-25).
+const PUBLIC_PATHS = ["/", "/login", "/auth/confirm", "/auth/link-expired"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
