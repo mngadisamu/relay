@@ -4,14 +4,7 @@ import type { MenuItem } from "@/components/RoleHeader";
 // in the same pull request that adds the page, so the menu never links to a
 // page that doesn't exist yet.
 
-// The order of the manager's top bar. Managers land on Dashboard (HOME_FOR_ROLE).
 export const MANAGER_MENU: MenuItem[] = [
-  {
-    label: "Dashboard",
-    href: "/manager/dashboard",
-    description: "Ticket numbers, reply times and trends by department.",
-    ready: true, // Mihlali, S2-14
-  },
   {
     label: "Tickets",
     href: "/agent",
@@ -19,10 +12,16 @@ export const MANAGER_MENU: MenuItem[] = [
     ready: true, // Samukelo, S2-16
   },
   {
-    label: "Manage users",
-    href: "/manager/users",
-    description: "Add staff and agents, and set their role and department.",
-    ready: false, // Samukelo, S2-25
+    label: "Dashboard",
+    href: "/manager/dashboard",
+    description: "Ticket numbers, reply times and trends by department.",
+    ready: true, // Mihlali, S2-14
+  },
+  {
+    label: "Reports",
+    href: "/manager/reports",
+    description: "Weekly department reports to preview, save and download.",
+    ready: true, // Baphakamise, S2-15
   },
   {
     label: "Forecast",
@@ -31,10 +30,10 @@ export const MANAGER_MENU: MenuItem[] = [
     ready: false, // Elzel, S2-27
   },
   {
-    label: "Reports",
-    href: "/manager/reports",
-    description: "Weekly department reports to preview, save and download.",
-    ready: true, // Baphakamise, S2-15
+    label: "Manage users",
+    href: "/manager/users",
+    description: "Add staff and agents, and set their role and department.",
+    ready: true, // Samukelo, S2-25
   },
 ];
 

@@ -30,8 +30,8 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 | `close` | The sender, agent or manager (`close_ticket()`, 0006) | "This solved it", or Close ticket | yes | `closed_by_role` (`staff`, `agent` or `manager`) |
 | `reopen` *(added by 0006)* | The sender (`reopen_ticket()`, 0006) | "I still need help" | yes | `message_id` (row in `ticket_messages`) |
 | `template_edit` | The agent or manager (`src/app/agent/templates/actions.ts`) | A reply template is saved | no | `template_id`, `department`, `name` |
-| `user_create` | The manager (Manage users, S2-25) | A person is added | no | `user_id`, `role`, `department` (no email: it's in `auth.users`) |
-| `role_change` | The manager (Manage users, S2-25) | A role or department changes | no | `user_id`, `from_role`, `to_role`, `from_department`, `to_department` |
+| `user_create` | The manager (Manage users, S2-25: the invite-user Edge Function calls `set_user_role()`, migration 0012, as the manager) | A person is added | no | `user_id`, `role`, `department` (no email: it's in `auth.users`) |
+| `role_change` | The manager (Manage users, S2-25: `set_user_role()`, migration 0012) | A role or department changes | no | `user_id`, `from_role`, `to_role`, `from_department`, `to_department` |
 | `insight_generate` | The manager who opens it (`src/lib/insights.ts`, S2-28) | Gemini writes a weekly summary | no | `insight_id`, `department` (or null for all), `week_start`, `ai_generated` (false if the numbers-only fallback was used) |
 | `report_download` | The manager (PDF route, S2-19) | A report PDF is downloaded | no | `report_id` (null for an unsaved preview), `department`, `week_start` |
 | `flag` | The agent who sent the reply (automatic check in `sendReply`, `src/lib/flags.ts`), or an agent, manager or compliance officer (Flag button) (`flag_reply()`, migration 0011) | An AI reply is flagged for a second look | yes | `flag_id`, `response_id`, `reason` (`Sent without edits`, `Possible invented detail` or `Flagged by a person`; the written reason stays in `flags.note`, not here), `source` (`auto` or `person`) |
