@@ -104,7 +104,7 @@ src/
     ├── agent/                    Inbox (Mine filter, Assigned to; managers see it as Tickets) · ticket view (take, assign,
     │                             confirm, move, AI draft, send) · template library
     ├── manager/                  Manager home · dashboard · reports · Manage users (S2-25)
-    ├── compliance/               Compliance home · audit log with filters, ticket history and CSV export (S2-12)
+    ├── compliance/               Compliance home · audit log (S2-12) · Flagged replies (S2-26) · Risk report and PDF (S2-30)
     └── api/                      classify (S1-21) · generate-draft (AI drafts; skips Gemini for sensitive tickets)
 supabase/migrations/              Applied in order in the Supabase SQL Editor (section 5)
 supabase/functions/invite-user/   Edge Function that sends Manage users invites (deployed in the Supabase dashboard; Deno, not Next.js)
@@ -157,8 +157,9 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0011_flags.sql` | The `flags` table; `flag_reply()` and `resolve_flag()` (S2-26) | Samukelo |
 | `0012_manage_users.sql` | `list_people()` and `set_user_role()` for Manage users (S2-25) | Samukelo |
 | `0013_deactivate_users.sql` | `profiles.active`; `deactivate_user()` and `reactivate_user()`; removed people get no role in the rules and can't be assigned (S2-35) | Samukelo |
+| `0014_risk_metrics.sql` | `risk_metrics()`: the Risk report's numbers, counted in SQL (S2-30) | Samukelo |
 
-The next free number is **0014**. Ask Samukelo before writing one.
+The next free number is **0015**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -322,7 +323,8 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
 - ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
 - ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`) · **S2-35** remove people who leave (0013)
-- Next: **S2-30** risk report · **S2-31** responsible AI documents
+- ✅ **S2-30** risk report (0014, `src/lib/risk.ts`, `/compliance/risk`)
+- Next: **S2-31** responsible AI documents · S2-21 Gemini drafts part (Mon)
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)

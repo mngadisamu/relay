@@ -23,6 +23,7 @@ export const ACTION_LABEL: Record<string, string> = {
   user_reactivate: "Person brought back",
   insight_generate: "Weekly summary",
   report_download: "Report downloaded",
+  risk_report_download: "Risk report downloaded",
   flag: "Reply flagged",
   flag_resolve: "Flag reviewed",
 };
@@ -167,6 +168,8 @@ export function summarize(action: string, d: Record<string, unknown>, names: Map
       return `Added ${person("user_id")} as ${text("role")}${d.department ? ` in ${text("department")}` : ""}`;
     case "role_change":
       return `Changed ${person("user_id")} from ${text("from_role")} to ${text("to_role")}${d.to_department ? ` in ${text("to_department")}` : ""}`;
+    case "risk_report_download":
+      return `Downloaded the risk report for ${text("from")} to ${text("to")}`;
     case "user_deactivate":
       return `Removed ${person("user_id")} from Relay${Number(d.tickets_returned) > 0 ? ` (${text("tickets_returned")} open tickets back to the inbox)` : ""}`;
     case "user_reactivate":
