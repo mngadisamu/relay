@@ -14,7 +14,9 @@ export default async function ManageUsersPage() {
   // Everyone, with their email (list_people(), migration 0012: managers only).
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_people");
-  const people = (data ?? []) as Person[];
+  const everyone = (data ?? []) as Person[];
+  const people = everyone.filter((p) => p.active);
+  const left = everyone.filter((p) => !p.active); // removed from Relay (S2-35)
 
   return (
     <div className="min-h-screen bg-page">
@@ -48,6 +50,24 @@ export default async function ManageUsersPage() {
             </ul>
           )}
         </section>
+
+        {left.length > 0 && (
+          <section aria-labelledby="left-heading" className="space-y-3">
+            <div className="space-y-1">
+              <h2 id="left-heading" className="text-lg font-semibold text-ink">
+                Left Relay ({left.length})
+              </h2>
+              <p className="text-sm text-ink-2">
+                They can&apos;t sign in. Their tickets, replies and audit history stay, so nothing is lost.
+              </p>
+            </div>
+            <ul className="divide-y divide-line-soft rounded-[10px] border border-line bg-white">
+              {left.map((p) => (
+                <PersonRow key={p.id} person={p} isMe={false} />
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
     </div>
   );

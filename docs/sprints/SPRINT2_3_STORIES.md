@@ -490,3 +490,21 @@ As a manager, I want reports made automatically every Monday with a written summ
   **When** a manager first opens it\
   **Then** the AI summary (S2-28) is added and saved, labelled as written by AI\
   **And** running the job once by hand in the SQL Editor makes four reports (for the demo)
+
+### S2-35 · Remove people who leave (Fri 6 Nov, added by Samukelo)
+
+As a manager, I want to remove people who leave the company, so that they can't sign in, while their history stays for compliance.
+
+- **Given** Sipho, an IT agent, has left\
+  **When** a general manager clicks **Remove from Relay** and confirms\
+  **Then** Sipho can't sign in, tickets he took but hadn't answered go back to the IT inbox\
+  **And** his name still shows on his past tickets, replies and audit entries
+- **Given** a department manager\
+  **When** they try to remove a manager, compliance officer or another department's agent\
+  **Then** it is refused; only a general manager can
+- **Given** any manager\
+  **When** they try to remove themselves, or the last general manager\
+  **Then** it is refused, so someone can always manage everyone else
+- **Given** a person was removed by mistake\
+  **When** a manager clicks **Bring back**\
+  **Then** they can sign in again with the same role and password, and both steps are in the audit log

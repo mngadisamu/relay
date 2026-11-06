@@ -75,6 +75,34 @@ export async function addPerson(_prev: PeopleFormState, formData: FormData): Pro
   return { done: `${fullName} was added and an invite email is on its way to ${email}.`, stamp: Date.now() };
 }
 
+// "Remove from Relay" (S2-35): switches the account off, never deletes it.
+// deactivate_user() (migration 0013) checks who may, ends their sign-in and
+// sends their unanswered tickets back to the inbox.
+export async function removePerson(userId: string): Promise<PeopleFormState> {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== "manager") return { error: "Only managers can remove people." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("deactivate_user", { p_user_id: userId });
+  if (error) return { error: error.message, stamp: Date.now() };
+
+  revalidatePath("/manager/users");
+  return { done: "Removed. They can't sign in any more, and their open tickets are back in the inbox.", stamp: Date.now() };
+}
+
+// "Bring back": the same role and department, and their old password works again.
+export async function bringBack(userId: string): Promise<PeopleFormState> {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== "manager") return { error: "Only managers can bring people back." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reactivate_user", { p_user_id: userId });
+  if (error) return { error: error.message, stamp: Date.now() };
+
+  revalidatePath("/manager/users");
+  return { done: "Back in Relay, with the same role.", stamp: Date.now() };
+}
+
 // "Save" on one person in the list.
 export async function changeRole(userId: string, _prev: PeopleFormState, formData: FormData): Promise<PeopleFormState> {
   const profile = await getCurrentProfile();
