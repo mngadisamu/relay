@@ -14,7 +14,10 @@ export default async function ManageUsersPage() {
   // Everyone, with their email (list_people(), migration 0012: managers only).
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("list_people");
-  const everyone = (data ?? []) as Person[];
+  // Depots come from profiles (managers can read every profile, 0006).
+  const { data: depots } = await supabase.from("profiles").select("id, depot");
+  const depotOf = new Map((depots ?? []).map((d) => [d.id as string, d.depot as string | null]));
+  const everyone = ((data ?? []) as Person[]).map((p) => ({ ...p, depot: depotOf.get(p.id) ?? null }));
   const people = everyone.filter((p) => p.active);
   const left = everyone.filter((p) => !p.active); // removed from Relay (S2-35)
 

@@ -34,6 +34,9 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 | `role_change` | The manager (Manage users, S2-25: `set_user_role()`, migration 0012) | A role or department changes | no | `user_id`, `from_role`, `to_role`, `from_department`, `to_department` |
 | `user_deactivate` | The manager (Manage users, "Remove from Relay", S2-35: `deactivate_user()`, migration 0013) | A person who left is switched off: they can't sign in, and their unanswered tickets go back to the inbox | no | `user_id`, `role`, `department`, `tickets_returned` |
 | `user_reactivate` | The manager (Manage users, "Bring back", S2-35: `reactivate_user()`, migration 0013) | A removed person is switched back on, with the role they had | no | `user_id`, `role`, `department` |
+| `user_update` | The manager (Manage users, "Edit details", S2-36: `update_user_details()`, migration 0015) | A person's name or depot changed | no | `user_id`, `changed` (the fields, e.g. `["full_name", "depot"]`; never the old or new values) |
+| `user_email_change` | The manager (Manage users, "Edit details", S2-36: the invite-user Edge Function) | A person's sign-in email changed | no | `user_id` (never the address) |
+| `password_reset_sent` | The manager (Manage users, "Send password reset", S2-36: `reset_email_for()`, migration 0015) | A "choose a new password" link was sent to someone | no | `user_id` |
 | `insight_generate` | The manager who opens it (`src/lib/insights.ts`, S2-28) | Gemini writes a weekly summary | no | `insight_id`, `department` (or null for all), `week_start`, `ai_generated` (false if the numbers-only fallback was used) |
 | `report_download` | The manager (PDF route, S2-19) | A report PDF is downloaded | no | `report_id` (null for an unsaved preview), `department`, `week_start` |
 | `risk_report_download` | The compliance officer or manager (Risk report, Export PDF, S2-30) | A risk report PDF is downloaded | no | `from`, `to` |

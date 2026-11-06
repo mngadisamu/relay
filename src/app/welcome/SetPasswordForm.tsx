@@ -6,7 +6,8 @@ import { setPassword, type PasswordState } from "./actions";
 const field =
   "h-11 w-full rounded-md border border-field bg-white px-3 text-sm text-ink focus:outline-2 focus:outline-brand aria-[invalid=true]:border-[#b42318]";
 
-export function SetPasswordForm() {
+// Choose a password: used by Welcome (after an invite) and Reset password.
+export function SetPasswordForm({ submitLabel = "Save password and open Relay" }: { submitLabel?: string }) {
   const [state, action, pending] = useActionState<PasswordState, FormData>(setPassword, {});
   const errorFor = (f: "password" | "confirm") => (state.field === f ? state.error : undefined);
 
@@ -46,7 +47,7 @@ export function SetPasswordForm() {
         )}
       </div>
       <button type="submit" disabled={pending} className="h-11 w-full rounded-md bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60">
-        {pending ? "Saving…" : "Save password and open Relay"}
+        {pending ? "Saving…" : submitLabel}
       </button>
     </form>
   );

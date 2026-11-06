@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Pages anyone can open without signing in. /auth/... is where an invite
 // email's link lands, before the person has a session (S2-25).
-const PUBLIC_PATHS = ["/", "/login", "/auth/confirm", "/auth/link-expired"];
+// /forgot-password asks for a reset email (S2-36). /reset-password is not public:
+// the email's link signs the person in first.
+const PUBLIC_PATHS = ["/", "/login", "/forgot-password", "/auth/confirm", "/auth/link-expired"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });

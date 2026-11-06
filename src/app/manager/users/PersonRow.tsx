@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { changeRole, type PeopleFormState } from "./actions";
 import { ROLE_LABEL, RoleFields } from "./RoleFields";
 import { RemoveButton } from "./RemoveButton";
+import { PersonTools } from "./PersonTools";
 
 export type Person = {
   id: string;
@@ -14,6 +15,7 @@ export type Person = {
   created_at: string;
   active: boolean; // false once removed from Relay (S2-35)
   deactivated_at: string | null;
+  depot?: string | null; // from profiles (S2-36)
 };
 
 const leftOn = (iso: string) =>
@@ -33,8 +35,14 @@ export function PersonRow({ person, isMe }: { person: Person; isMe: boolean }) {
         <p className="text-[13px] text-muted">
           {ROLE_LABEL[person.role] ?? person.role}
           {person.department ? ` · ${person.department}` : ""}
+          {person.depot ? ` · ${person.depot}` : ""}
           {!person.active && person.deactivated_at ? ` · left ${leftOn(person.deactivated_at)}` : ""}
         </p>
+        {person.active && (
+          <div className="pt-2">
+            <PersonTools userId={person.id} fullName={person.full_name ?? ""} email={person.email} depot={person.depot ?? null} isMe={isMe} />
+          </div>
+        )}
       </div>
       {!person.active ? (
         <div className="md:pt-1">
