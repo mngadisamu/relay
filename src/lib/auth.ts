@@ -9,7 +9,7 @@ export const HOME_FOR_ROLE: Record<Role, string> = {
   staff: "/staff",
   agent: "/agent",
   manager: "/manager/dashboard", // managers start on the dashboard (no separate home page)
-  compliance: "/compliance",
+  compliance: "/compliance/audit", // compliance starts on the audit log (no separate home page)
 };
 
 export type CurrentProfile = {

@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { RoleHeader } from "@/components/RoleHeader";
 import { COMPLIANCE_MENU, MANAGER_MENU } from "@/lib/menus";
-import { AI_LABEL_CHECKS, BIAS_SUMMARY, formatDay, loadRiskMetrics, readRange, riskRows } from "@/lib/risk";
+import { AI_LABEL_CHECKS, BIAS_SUMMARY, aiUnavailableWarning, formatDay, loadRiskMetrics, readRange, riskRows } from "@/lib/risk";
 
 // Risk report (S2-30): one page on how Relay's AI is behaving, so the risks
 // are visible and can be shared (Export PDF). The numbers come from
@@ -77,6 +77,15 @@ export default async function RiskReportPage({ searchParams }: { searchParams: P
         {error && (
           <p role="alert" className="rounded-md border border-[#f0c8c3] bg-[#fdf1ef] px-3 py-2.5 text-sm text-[#a4231a]">
             The report couldn&apos;t be loaded: {error}
+          </p>
+        )}
+
+        {metrics && aiUnavailableWarning(metrics) && (
+          <p role="status" className="flex gap-3 rounded-[10px] border border-[#f3d58a] bg-[#fff8e5] px-4 py-3 text-sm leading-6 text-[#5c4300]">
+            <span aria-hidden="true" className="font-bold">!</span>
+            <span>
+              <span className="font-semibold">AI unavailable.</span> {aiUnavailableWarning(metrics)}
+            </span>
           </p>
         )}
 
