@@ -115,7 +115,7 @@ data/processed/                   combined_tickets.csv (the past tickets) · dai
 docs/                             architecture.md · audit-actions.md · metrics.md · forecast.md · report-template.md · design/ · sprints/
 ```
 
-**Public paths** (no sign-in needed): `/`, `/login`, `/auth/confirm` and `/auth/link-expired` (the invite link, S2-25), and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
+**Public paths** (no sign-in needed): `/`, `/login`, `/forgot-password`, `/auth/confirm` and `/auth/link-expired` (the invite and password links, S2-25 and S2-36), and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
 
 **Test accounts** in Supabase (passwords are shared privately by Samukelo; **never put them in code, docs or chat logs**):
 
@@ -128,7 +128,7 @@ docs/                             architecture.md · audit-actions.md · metrics
 
 Need an agent for HR, Finance or Operations, or a department manager? Ask Samukelo.
 
-**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). People who leave are **removed, not deleted** (S2-35, "Remove from Relay"): they can't sign in, but their name stays on their tickets, replies and audit entries. A department manager removes staff and their own department's agents; a general manager removes anyone; nobody removes themselves, and there is always at least one general manager. When listing people to pick from (e.g. Assign), add `.eq("active", true)`. Don't build a sign-up page.
+**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). People who leave are **removed, not deleted** (S2-35, "Remove from Relay"): they can't sign in, but their name stays on their tickets, replies and audit entries. A department manager removes staff and their own department's agents; a general manager removes anyone; nobody removes themselves, and there is always at least one general manager. When listing people to pick from (e.g. Assign), add `.eq("active", true)`. **Forgot your password** (`/forgot-password`) emails a link that opens `/reset-password`; managers can send the same link, and edit a person's name, email and depot, on Manage users (S2-36). Every page before sign-in uses `AuthShell` (`src/components/AuthShell.tsx`). Relay's email designs are in `docs/email-templates/`. Don't build a sign-up page.
 
 **Data in Supabase:**
 - **15,579 past tickets** (`is_historical = true`), 19 Oct 2025 to 18 Oct 2026, about 3,900 per department, loaded by `supabase/seed/seed_historical.mjs` (S1-17). They feed the dashboard, reports and forecast. Their dates, depots and priorities were **assigned** with a realistic pattern, not recorded (see `data/README.md`).
@@ -158,8 +158,9 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0012_manage_users.sql` | `list_people()` and `set_user_role()` for Manage users (S2-25) | Samukelo |
 | `0013_deactivate_users.sql` | `profiles.active`; `deactivate_user()` and `reactivate_user()`; removed people get no role in the rules and can't be assigned (S2-35) | Samukelo |
 | `0014_risk_metrics.sql` | `risk_metrics()`: the Risk report's numbers, counted in SQL (S2-30) | Samukelo |
+| `0015_user_details_and_reset.sql` | `update_user_details()`, `can_manage_user()`, `reset_email_for()` (S2-36) | Samukelo |
 
-The next free number is **0015**. Ask Samukelo before writing one.
+The next free number is **0016**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -323,7 +324,7 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
 - ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
 - ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`) · **S2-35** remove people who leave (0013)
-- ✅ **S2-30** risk report (0014, `src/lib/risk.ts`, `/compliance/risk`)
+- ✅ **S2-30** risk report (0014, `src/lib/risk.ts`, `/compliance/risk`) · **S2-36** edit details, forgot password, designed sign-in pages and emails (0015)
 - Next: **S2-31** responsible AI documents · S2-21 Gemini drafts part (Mon)
 
 ### Elzel: workload forecasting

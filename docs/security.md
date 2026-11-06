@@ -11,6 +11,9 @@ Written Fri 6 Nov 2026, after feedback that account management was the weakest p
 | --- | --- | --- | --- |
 | **General manager** (manager with no department) | Anyone, any role | Anyone except themselves | Anyone except themselves; never the last general manager |
 | **Department manager** | Staff, and agents for their own department | Staff, and their own department's agents | Staff, and their own department's agents |
+
+Updating details (name, email, depot) and sending a password reset follow the same rules (S2-36). A manager can always
+update their own name and depot.
 | **Agent, staff, compliance** | No | No | No |
 
 - **Nobody changes their own role or removes themselves.** A manager can't lock the company out or give themselves more power.
@@ -29,7 +32,8 @@ it holds even if someone calls Supabase directly with their own sign-in and skip
 | Who may add, change or remove whom | `set_user_role()` (0012), `deactivate_user()` and `reactivate_user()` (0013) |
 | A removed person has no role in any rule, can't sign in, loses their open sessions, and can't be assigned tickets | `current_user_role()`, `banned_until`, a trigger on `tickets` (0013); `getCurrentProfile()` and sign-in (app) |
 | Sending an invite needs Supabase's secret key, which never enters Relay's code | The `invite-user` Edge Function holds it inside Supabase and acts as the manager for everything else |
-| Every account change is recorded, and the record can't be edited | `user_create`, `role_change`, `user_deactivate`, `user_reactivate` in `audit_log` (append-only), [audit-actions.md](audit-actions.md) |
+| Updating details and sending a password reset | `update_user_details()`, `can_manage_user()`, `reset_email_for()` (0015); an email change goes through the `invite-user` Edge Function, which asks `can_manage_user()` as the manager first |
+| Every account change is recorded, and the record can't be edited | `user_create`, `role_change`, `user_update`, `user_email_change`, `password_reset_sent`, `user_deactivate`, `user_reactivate` in `audit_log` (append-only), [audit-actions.md](audit-actions.md). Names and emails are never written into the log, only which fields changed |
 
 ## Other protections
 
@@ -39,6 +43,10 @@ it holds even if someone calls Supabase directly with their own sign-in and skip
 - **Sign-in doesn't reveal which emails exist**: a wrong email and a wrong password give the same message. Only someone with
   the right password learns that their account was switched off.
 - **Passwords** are at least 8 characters (the Welcome page). Supabase stores them hashed; Relay never sees or stores them.
+- **Forgot your password** (S2-36) gives the same answer whether or not the email is in Relay, so nobody can use it to find
+  out who works there. The link works once, for an hour, and in any browser; it only opens "Choose a new password". A
+  removed person's link doesn't sign them in. Managers can send the same link from Manage users; they never see or set
+  anyone's password.
 - **Emails are only shown to managers** (`list_people()`, 0012), and never written into the audit log.
 - **Secrets:** the secret (service-role) key is only in the Edge Function's environment and the local seed script, never in
   app code, the browser or Git.
@@ -60,8 +68,9 @@ These live in Supabase, not in Git, so check them after any change to the projec
   compliance before real use (Sprint 4).
 - **A removed person's current sign-in can last up to an hour** in Supabase's own records, but it can't do anything: the rules
   give them no role, and Relay's pages treat them as signed out.
-- **The built-in email only reaches the Supabase team**, a few emails an hour. Real use needs the company's own email server
-  (custom SMTP).
+- **The built-in email only reaches the Supabase team**, a few emails an hour, and its templates can't be edited. Relay's
+  own designs and the Gmail set-up are in [email-templates/README.md](email-templates/README.md); real use needs the
+  company's own email domain.
 - **Rate limits** on sign-in and invites are Supabase's defaults.
 
 ## Later: many companies on one Relay (system admin)

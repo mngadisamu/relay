@@ -19,6 +19,7 @@
 //
 // Relay calls it from src/app/manager/users/actions.ts with:
 //   supabase.functions.invoke("invite-user", { body: { email, fullName, role, department, redirectTo } })
+//   supabase.functions.invoke("invite-user", { body: { action: "update_email", userId, email } })   (S2-36)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -55,10 +56,36 @@ Deno.serve(async (req) => {
   // A manager who has been removed from Relay (S2-35, migration 0013) may still
   // hold a sign-in token for up to an hour, so "active" is checked too.
   const { data: me } = await asCaller.from("profiles").select("role, active").eq("id", userData.user.id).single();
-  if (me?.role !== "manager" || !me.active) return reply(403, { error: "Only managers can add people" });
+  if (me?.role !== "manager" || !me.active) return reply(403, { error: "Only managers can manage people" });
 
-  // 2. Check what was sent before inviting anyone.
   const body = await req.json().catch(() => null);
+
+  // Changing someone's email (S2-36, "Edit details" on Manage users).
+  if (body?.action === "update_email") {
+    const userId = String(body?.userId ?? "");
+    const newEmail = String(body?.email ?? "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return reply(400, { error: "Enter a valid email address", field: "email" });
+
+    // The same rules as everything else on Manage users, asked as the manager (0015).
+    const { data: allowed } = await asCaller.rpc("can_manage_user", { p_user_id: userId });
+    if (allowed !== true) return reply(403, { error: "Only a general manager can change this person's email" });
+
+    // Confirmed straight away: a manager sets a work email, so there is no
+    // "confirm your new address" step. Their password stays the same.
+    const { error: updateError } = await admin.auth.admin.updateUserById(userId, { email: newEmail, email_confirm: true });
+    if (updateError) {
+      const taken = /already|registered|exists/i.test(updateError.message);
+      return reply(400, {
+        error: taken ? "Someone else in Relay already uses this email." : `The email couldn't be changed: ${updateError.message}`,
+        field: taken ? "email" : undefined,
+      });
+    }
+    // Recorded as the manager, without the address (docs/audit-actions.md).
+    await asCaller.from("audit_log").insert({ actor: userData.user.id, action: "user_email_change", details: { user_id: userId } });
+    return reply(200, { ok: true });
+  }
+
+  // 2. Adding a person: check what was sent before inviting anyone.
   const email = String(body?.email ?? "").trim().toLowerCase();
   const fullName = String(body?.fullName ?? "").trim();
   const role = String(body?.role ?? "");
