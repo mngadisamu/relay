@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     history.push({ date: weekStart, tickets: 0 });
   }
 
-  // 3. Generate the 4-week forecast using Elzel's library function
+  // 3. Generate the 4-week forecast using the library function
   const forecastResult = forecast(department, history);
   
   // Format summary projection string for the preview component
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     age_days: Math.floor((now - new Date(t.created_at as string).getTime()) / 86_400_000),
   }));
 
-  return NextResponse.json({
+  const reportPayload = {
     department,
     week_start: weekStart,
     week_end: weekEnd,
@@ -95,5 +95,16 @@ export async function POST(request: Request) {
       days: forecastResult.days,
     },
     oldest_tickets,
-  });
+  };
+
+  // 5. Save/persist generated report to the database (S2-29)
+  await supabase.from("reports").upsert({
+    department,
+    week_start: weekStart,
+    week_end: weekEnd,
+    payload: reportPayload,
+    created_by: profile.id,
+  }, { onConflict: "department, week_start" });
+
+  return NextResponse.json(reportPayload);
 }
