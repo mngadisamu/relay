@@ -1,0 +1,662 @@
+[
+  {
+    "subject": "Annual leave request",
+    "department": "HR",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for contacting HR regarding your annual leave request for the period of 10 to 14 November. We have received your request, and a member of the HR team is currently looking into it.\n\nWe will reply within two working days to confirm if your leave is approved. If we need any additional documents from you, we will let you know what to send.\n\nKind regards,\n\nRelay test agent, HR team",
+        "m": {
+          "words": 75,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for contacting HR about your annual leave request from 10 to 14 November. We have received your request and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need any documents from you, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 64,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for contacting HR about your annual leave request for 10 to 14 November. We have received your request and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need any documents from you, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 62,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for contacting HR regarding your annual leave request from 10 to 14 November. We have received your request, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need any documents from you, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 62,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for contacting HR about \"Annual leave request\". We have received your request for annual leave from 10 to 14 November, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 72,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Overtime missing",
+    "department": "HR",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for contacting HR about your missing overtime. We have received your request regarding the overtime from last month that is not reflected on your payslip, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 77,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for contacting HR about \"Overtime missing\". We have received your request regarding your missing overtime from last month's payslip, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 73,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for contacting HR regarding \"Overtime missing\". We have received your query stating that your overtime from last month is not reflected on your payslip, and a member of the HR team is currently looking into it.\n\nWe will reply within two working days. If we require any supporting documents from you, we will inform you accordingly.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 68,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for contacting HR regarding your query, \"Overtime missing\". We have received your request regarding your overtime from last month not appearing on your payslip, and a member of the HR team is currently looking into it.\n\nWe will reply within two working days. If we need any documents from you, such as a doctor's note or bank confirmation letter, we will inform you of what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 79,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for contacting HR about \"Overtime missing\". We have received your request regarding the missing overtime from last month on your payslip, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team\nKopano Freight",
+        "m": {
+          "words": 75,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Transfer request",
+    "department": "HR",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for contacting HR about your transfer request to a depot closer to your home. We have received your request, and a member of the HR team is currently looking into it.\n\nWe will reply within two working days. If we need any documents from you to process this request, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team\nKopano Freight",
+        "m": {
+          "words": 70,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for contacting HR about \"Transfer request\". We have received your request regarding a transfer to another depot closer to home, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 74,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for contacting HR about your transfer request. We have received your request to transfer to a depot closer to your home, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 73,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for contacting HR regarding your transfer request to a depot closer to your home. We have received your request and a member of the HR team is currently looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 72,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for contacting HR about your transfer request. We have received your request to transfer to a depot closer to your home, and a member of the HR team is looking into it.\n\nWe will reply within two working days. If we need documents from you, such as a doctor's note or bank confirmation letter, we will tell you what to send.\n\nKind regards,\nRelay test agent, HR team",
+        "m": {
+          "words": 73,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Password reset",
+    "department": "IT",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for reporting \"Password reset\". Your request has been logged with the IT team and a technician will look into it.\n\nWe understand that you have forgotten your password and your account is currently locked. We aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 70,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for reporting the issue regarding your password reset and locked account. Your request has been logged with the IT team and a technician will look into it.\n\nWe aim to respond within one working day. If this problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 65,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for reporting your password reset request. Your ticket has been logged with the IT team, and a technician will look into your locked account shortly.\n\nWe aim to respond within one working day. As your account is currently locked and this issue prevents you from working, please reply to this email so we can prioritise your request accordingly.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 70,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for reporting your password reset request. Your issue regarding your forgotten password and locked account has been logged with the IT team, and a technician will look into it.\n\nWe aim to respond within one working day. If this problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 65,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for reporting \"Password reset\". Your request has been logged with the IT team and a technician will look into it.\n\nWe noted that your account is locked after forgetting your password. We aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 67,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "VPN not connecting",
+    "department": "IT",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for reporting \"VPN not connecting\". Your request has been logged with the IT team and a technician will look into it. \n\nWe understand that you are unable to connect to the VPN from home. We aim to respond within one working day. If this problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 70,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for reporting that your VPN is not connecting from home. Your request has been logged with the IT team, and a technician will look into it.\n\nWe aim to respond within one working day. If this problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 64,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for reporting \"VPN not connecting\". Your request has been logged with the IT team and a technician will look into it. \n\nWe aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 57,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for reporting the issue regarding \"VPN not connecting\". Your request has been logged with the IT team, and a technician will look into it.\n\nWe understand that you are unable to connect to the VPN from home. We aim to respond within one working day. If this problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 73,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for reporting that you cannot connect to the VPN from home. Your request has been logged with the IT team and a technician will look into it.\n\nWe aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 63,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Shared folder access",
+    "department": "IT",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for reporting the issue regarding shared folder access. Your request for access to the Finance shared folder for the month-end report has been logged with the IT team, and a technician will look into it.\n\nWe aim to respond within one working day. If this problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 71,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for reporting the issue regarding \"Shared folder access\" for the Finance shared folder for the month-end report. Your request has been logged with the IT team and a technician will look into it.\n\nWe aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 71,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for reporting \"Shared folder access\" regarding your request for access to the Finance shared folder for the month-end report. Your request has been logged with the IT team and a technician will look into it.\n\nWe aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 71,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for reporting your issue regarding \"Shared folder access\". Your request for access to the Finance shared folder for the month-end report has been logged with the IT team, and a technician will look into it.\n\nWe aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 71,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for reporting \"Shared folder access\". Your request regarding access to the Finance shared folder for the month-end report has been logged with the IT team and a technician will look into it.\n\nWe aim to respond within one working day. If the problem stops you from working, please let us know so we can prioritise it.\n\nKind regards,\nRelay test agent, IT team",
+        "m": {
+          "words": 68,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 1,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Fuel card declined",
+    "department": "Finance",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your query regarding your fuel card being declined. The Finance team has received your message and noted that you paid for the diesel yourself. \n\nWe will review this issue against our records and respond within three working days. Please keep the receipt or invoice for the diesel purchase, as we may ask for a copy to process your claim.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 72,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for your query regarding your declined fuel card and paying for diesel yourself. The Finance team has received it and will review it against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 63,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for your query regarding your declined fuel card and the out-of-pocket payment for diesel. The Finance team has received your request and will review it against our records.\n\nWe will respond within three working days. Please keep the receipt or tax invoice for this diesel purchase, as well as any related slips, as we may ask for copies to process your request.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 74,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for your query about the declined fuel card. The Finance team has received your message regarding the pump rejection and your out-of-pocket payment for diesel. We will review this against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies to process your query.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 71,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 3,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your query regarding your declined fuel card. The Finance team has received your message regarding the out-of-pocket payment for diesel and will review it against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies to process your claim.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 67,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Toll claim",
+    "department": "Finance",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your query regarding your toll claim for your trip to Durban. The Finance team has received your request and will review it against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 61,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for your query regarding your toll claim for the trip to Durban. The Finance team has received your request and will review it against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies to process your claim.\n\nKind regards,\nRelay test agent, Finance team\nKopano Freight",
+        "m": {
+          "words": 69,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for your query about your toll claim for the trip to Durban. The Finance team has received it and will review it against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 60,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for your query about your toll claim. The Finance team has received your request regarding the tolls paid on your trip to Durban and will review it against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 65,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your query regarding your toll claim for the trip to Durban. The Finance team has received your request and will review it against our records.\n\nWe will respond within three working days. Please keep any slips or invoices related to this request, as we may ask for copies to process the claim.\n\nKind regards,\nRelay test agent, Finance team",
+        "m": {
+          "words": 65,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Truck broke down",
+    "department": "Operations",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your request regarding \"Truck broke down\". The Operations team has received your report that Truck 14 broke down on the route due to an overheating engine, and we will arrange the next steps.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 67,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 3,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for your request regarding \"Truck broke down\". The Operations team has received your report that Truck 14 broke down on the route due to the engine overheating, and we will arrange the next steps.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 69,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 3,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for your request regarding \"Truck broke down\". The Operations team has received your notification that Truck 14 broke down on the route due to the engine overheating, and we will arrange the next steps.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 67,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 3,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for your request regarding \"Truck broke down\". The Operations team has received your report that Truck 14 broke down on the route due to an overheating engine, and we will arrange the next steps.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 67,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 3,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your request regarding \"Truck broke down\". The Operations team has received your report that Truck 14 broke down on the route due to an overheating engine, and we will arrange the next steps.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 67,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 3,
+          "warm": true
+        }
+      }
+    ]
+  },
+  {
+    "subject": "Safety boots",
+    "department": "Operations",
+    "drafts": [
+      {
+        "label": "Thabo Mokoena",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your request about safety boots and a reflective vest. The Operations team has received it and will arrange the next steps.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 55,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Sarah van der Merwe",
+        "text": "Dear Sarah van der Merwe,\n\nThank you for your request about \"Safety boots\". The Operations team has received it and will arrange the next steps regarding your request for new safety boots and a reflective vest.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 64,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Priya Naidoo",
+        "text": "Dear Priya Naidoo,\n\nThank you for your request about \"Safety boots\". The Operations team has received it and will arrange the next steps regarding your request for new safety boots and a reflective vest.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 62,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Johan Botha",
+        "text": "Dear Johan Botha,\n\nThank you for your request about \"Safety boots\". The Operations team has received it and will arrange the next steps regarding your request for new safety boots and a reflective vest.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 62,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      },
+      {
+        "label": "Thabo Mokoena (2nd run)",
+        "text": "Dear Thabo Mokoena,\n\nThank you for your request regarding safety boots and a reflective vest. The Operations team has received it and will arrange the next steps.\n\nWe will update you within one working day. For any safety concern, please follow the depot safety procedure in the meantime.\n\nKind regards,\nRelay test agent, Operations team",
+        "m": {
+          "words": 55,
+          "usesName": true,
+          "apologises": false,
+          "timeframe": true,
+          "actions": 2,
+          "warm": true
+        }
+      }
+    ]
+  }
+]
