@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT2_3_STORIES.md` and the contract your story uses (section 5), and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Thu 5 Nov 2026 (Sprint 2+3, day 4).
+Last updated: Mon 9 Nov 2026 (Sprint 2+3, day 6).
 
 ---
 
@@ -63,7 +63,7 @@ Sprints 2 and 3 were combined into one two-week sprint by the programme.
 | Hosting | **Vercel** (team "Team AI", project `relay`) | Env vars set in Vercel for Production **and** Preview. Every PR gets a preview link. |
 | Checks | **GitHub check** (`.github/workflows/check.yml`) and the **Vercel build** | Both run on every PR and are **required**: lint, type-check and build must pass before a PR can be merged. |
 | ML classifier | TF-IDF + logistic regression, trained in **Google Colab** (Python/scikit-learn), exported to **JSON**, run in TypeScript on the server | No Python server in production |
-| Generative AI | **Google Gemini API** via `@google/genai`, model `gemini-2.5-flash` | Key is server-side only (`GEMINI_API_KEY`). Sensitive requests are never sent to it (section 5). |
+| Generative AI | **Google Gemini API** via `@google/genai`, model `gemini-3.6-flash` | Key is server-side only (`GEMINI_API_KEY`). Sensitive requests are never sent to it (section 5). `gemini-2.5-flash` is closed to new keys (404): don't use it. |
 
 **Environment variables** (`.env.example` lists them; values live in each person's `.env.local` and in Vercel, and are **never committed**):
 ```
@@ -103,18 +103,19 @@ src/
     ├── staff/                    Submit a request (priority, sensitive rule) · My requests · request detail with status history
     ├── agent/                    Inbox (Mine filter, Assigned to; managers see it as Tickets) · ticket view (take, assign,
     │                             confirm, move, AI draft, send) · template library
-    ├── manager/page.tsx          Manager home (dashboard, reports, forecast, Manage users coming this sprint)
-    ├── compliance/               Compliance home · audit log with filters, ticket history and CSV export (S2-12)
+    ├── manager/                  Manager home · dashboard · reports · Manage users (S2-25)
+    ├── compliance/               Compliance home · audit log (S2-12) · Flagged replies (S2-26) · Risk report and PDF (S2-30)
     └── api/                      classify (S1-21) · generate-draft (AI drafts; skips Gemini for sensitive tickets)
 supabase/migrations/              Applied in order in the Supabase SQL Editor (section 5)
+supabase/functions/invite-user/   Edge Function that sends Manage users invites (deployed in the Supabase dashboard; Deno, not Next.js)
 supabase/seed/                    templates.sql (reply templates) · seed_historical.mjs (the year of past tickets)
 ml/notebooks/                     relay_classifier.ipynb (training) · S2-03_daily_history.ipynb (daily counts for the forecast)
 ml/model/                         classifier-model.json and its results
 data/processed/                   combined_tickets.csv (the past tickets) · daily_counts.csv (per day per department)
-docs/                             architecture.md · audit-actions.md · metrics.md · forecast.md · report-template.md · design/ · sprints/
+docs/                             architecture.md · audit-actions.md · metrics.md · forecast.md · report-template.md · security.md · responsible-ai/ (risk register, POPIA note, prompt notes, bias tests) · design/ · sprints/
 ```
 
-**Public paths** (no sign-in needed): `/`, `/login` and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
+**Public paths** (no sign-in needed): `/`, `/login`, `/forgot-password`, `/auth/confirm` and `/auth/link-expired` (the invite and password links, S2-25 and S2-36), and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
 
 **Test accounts** in Supabase (passwords are shared privately by Samukelo; **never put them in code, docs or chat logs**):
 
@@ -127,7 +128,7 @@ docs/                             architecture.md · audit-actions.md · metrics
 
 Need an agent for HR, Finance or Operations, or a department manager? Ask Samukelo.
 
-**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. Until **Manage users** (S2-25, Tue 10 Nov) lands, Samukelo adds accounts in the Supabase dashboard and sets their role and department. Don't build a sign-up page.
+**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). People who leave are **removed, not deleted** (S2-35, "Remove from Relay"): they can't sign in, but their name stays on their tickets, replies and audit entries. A department manager removes staff and their own department's agents; a general manager removes anyone; nobody removes themselves, and there is always at least one general manager. When listing people to pick from (e.g. Assign), add `.eq("active", true)`. **Forgot your password** (`/forgot-password`) emails a link that opens `/reset-password`; managers can send the same link, and edit a person's name, email and depot, on Manage users (S2-36). Every page before sign-in uses `AuthShell` (`src/components/AuthShell.tsx`). Relay's email designs are in `docs/email-templates/`. Don't build a sign-up page.
 
 **Data in Supabase:**
 - **15,579 past tickets** (`is_historical = true`), 19 Oct 2025 to 18 Oct 2026, about 3,900 per department, loaded by `supabase/seed/seed_historical.mjs` (S1-17). They feed the dashboard, reports and forecast. Their dates, depots and priorities were **assigned** with a realistic pattern, not recorded (see `data/README.md`).
@@ -154,14 +155,19 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0009_sensitive_requests.sql` | `is_sensitive`, `sensitive_kind`, and "Sensitive" templates for HR, IT and Operations | Samukelo |
 | `0010_daily_ticket_counts.sql` | `daily_ticket_counts()`: tickets per day per department, counted in SQL, for the forecast | Samukelo |
 | `0011_flags.sql` | The `flags` table; `flag_reply()` and `resolve_flag()` (S2-26) | Samukelo |
+| `0012_manage_users.sql` | `list_people()` and `set_user_role()` for Manage users (S2-25) | Samukelo |
+| `0013_deactivate_users.sql` | `profiles.active`; `deactivate_user()` and `reactivate_user()`; removed people get no role in the rules and can't be assigned (S2-35) | Samukelo |
+| `0014_risk_metrics.sql` | `risk_metrics()`: the Risk report's numbers, counted in SQL (S2-30) | Samukelo |
+| `0015_user_details_and_reset.sql` | `update_user_details()`, `can_manage_user()`, `reset_email_for()` (S2-36) | Samukelo |
+| `0016_risk_ai_unavailable.sql` | `risk_metrics()` counts drafts where Gemini didn't answer (`ai_unavailable`) and sensitive requests kept from Gemini (`sensitive_kept`) (S2-30) | Samukelo |
 
-The next free number is **0012**. Ask Samukelo before writing one.
+The next free number is **0017**. Ask Samukelo before writing one.
 
 ### Tables
 
 | Table | Key columns | Notes |
 | --- | --- | --- |
-| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at` | Created automatically when an account is added (role `staff`). Agents and managers have a `department`; a manager without one is a general manager. |
+| `profiles` | `id` (= auth user id), `full_name`, `role`, `department`, `depot`, `created_at`, `active`, `deactivated_at`, `deactivated_by` | Created automatically when an account is added (role `staff`). Agents and managers have a `department`; a manager without one is a general manager. `active = false` means they left (S2-35): never delete a profile, their history needs it. |
 | `tickets` | `id`, `reference` (auto, SAST date, e.g. `KF-261105-0042`), `submitted_by`, `subject`, `description`, `depot`, `department`, `priority`, `status`, `needs_review`, `is_sensitive`, `sensitive_kind`, `is_historical`, `assigned_to`, `created_at`, `assigned_at`, `answered_at`, `closed_at` | Always set the matching timestamp when status changes (the lifecycle functions do it for you). |
 | `classifications` | `ticket_id`, `predicted_department`, `confidence` (0–1), `model_version`, `overridden_by`, `overridden_department`, `confirmed_by`, `confirmed_at`, `created_at` | Keep every decision; never overwrite. `predicted_department` is the model's own choice, even when the sensitive rule sent the ticket elsewhere. |
 | `templates` | `department`, `name`, `body`, `updated_by`, timestamps | Formal, Friendly, Urgent per department (the AI picks the one matching the tone), plus "Sensitive" for HR, IT and Operations |
@@ -179,7 +185,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 
 | Table | Read | Create | Update |
 | --- | --- | --- | --- |
-| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | (none yet; S2-25) |
+| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | only through `supabase.rpc("set_user_role", { p_user_id, p_role, p_department })` (0012): managers, never their own role; a department manager only staff and their own department's agents |
 | `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all. Prefer the lifecycle functions below. |
 | `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
 | `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
@@ -318,7 +324,11 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
 - ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
-- Next: **S2-25** Manage users · **S2-30** risk report · **S2-31** responsible AI documents
+- ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`) · **S2-35** remove people who leave (0013)
+- ✅ **S2-30** risk report (0014, `src/lib/risk.ts`, `/compliance/risk`) · **S2-36** edit details, forgot password, designed sign-in pages and emails (0015)
+- ✅ **S2-21** bias test complete: classifier and 50 Gemini drafts (9 Nov), results in `docs/responsible-ai/`
+- In review: **S2-31** responsible AI documents (`docs/responsible-ai/`, with `docs/architecture.md` section 8)
+- Open: Gemini transfer and retention decisions for Kopano Freight (`docs/responsible-ai/popia-note.md`); MFA for managers and compliance (Sprint 4)
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)

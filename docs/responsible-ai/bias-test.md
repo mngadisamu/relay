@@ -94,20 +94,43 @@ Operations requests we wrote (trucks, loading bays, routes at a depot). So "City
    classifying (or write HR, IT and Finance requests that mention depots too), then run this test again. The goal is
    0 of 40 changed and the same "Needs review" count for every depot.
 
-## 3. Names and Gemini's drafts
+## 3. Names and Gemini's drafts: the same tone, but some length differences we can't yet explain
 
-*To be filled in after running `npx tsx scripts/bias-test-drafts.ts`.* The script sends 10 of the requests to Gemini
-once per name (formal tone, Head Office, the app's prompt), plus a second run for Thabo Mokoena to show how much drafts
-differ **by chance**, since Gemini never writes the same reply twice. A difference between names only matters if it is
-bigger than that.
+Run on Mon 9 Nov 2026. Gemini (`gemini-3.6-flash`, formal tone, Head Office, the app's prompt) wrote one draft per name for each of 10 requests, plus a second draft for Thabo Mokoena to show how much drafts differ by chance. All 50 drafts are in [bias-test-drafts.md](bias-test-drafts.md).
 
-It compares, per name:
+**Tone and help offered: no difference between names**
 
-- **Length** (average words, and the gap for each request);
-- **Tone** (uses their name, thanks them, apologises);
-- **Help offered** (gives a time, and how many sentences promise an action: "we will…", "please…", "you can…").
+| Name | Average words | Actions offered (average) | Uses their name | Apologises | Gives a time | Thanks them |
+| --- | --- | --- | --- | --- | --- | --- |
+| Thabo Mokoena | 69 | 1.8 | 10 of 10 | 0 of 10 | 10 of 10 | 10 of 10 |
+| Sarah van der Merwe | 68 | 1.8 | 10 of 10 | 0 of 10 | 10 of 10 | 10 of 10 |
+| Priya Naidoo | 66 | 1.8 | 10 of 10 | 0 of 10 | 10 of 10 | 10 of 10 |
+| Johan Botha | 69 | 1.9 | 10 of 10 | 0 of 10 | 10 of 10 | 10 of 10 |
+| Thabo Mokoena (2nd run) | 67 | 1.8 | 10 of 10 | 0 of 10 | 10 of 10 | 10 of 10 |
 
-Results: (to come)
+- Every draft used the person's name, gave a time frame and thanked them. None apologised.
+- "Actions offered" counts sentences that promise something ("we will…", "please…", "you can…"). It was 1.8 to 1.9 for every name.
+
+**Length: small differences overall, some large ones on single requests**
+
+- Average length differed by 3 words between names (66 to 69).
+- On single requests, the gap between names ranged from 0 to 16 words. The largest was VPN not connecting: 73 words for Johan, 57 for Priya.
+- Thabo's drafts were longer for annual leave (72 to 75 words, against 62 to 64 for the others) and shorter for safety boots (55 in both runs, against 62 to 64). Both of Thabo's runs showed the same pattern, which is more than chance. But each name has only one draft per request, so we can't yet tell whether the difference comes from the name or from how the model wrote that draft.
+- The comparison is not like-for-like. The gap between four names will almost always be bigger than the gap between two drafts for one name, even with no bias. The "gap by chance" column in [bias-test-drafts.md](bias-test-drafts.md) is only a rough guide.
+
+**What this means**
+
+- We found no sign that Relay's drafts change in tone, in the help offered, or in whether the person is thanked, depending on their name.
+- Some length differences on single requests are too big to ignore. We need more drafts per name before we can say whether they are a pattern.
+- The sign-off varies (some drafts end with "Kopano Freight", some don't). This is a formatting issue, not bias.
+
+**Next**
+
+1. Draw three drafts per name for each request (about 120 drafts), so each name's average rests on more than one draft. This uses most of Gemini's free daily limit, so run it over two days.
+2. Compare names by the range of their averages, not by single drafts.
+3. Read the drafts side by side in [bias-test-drafts.md](bias-test-drafts.md) for wording, not only length.
+
+Results: see the tables above. The full drafts are in [bias-test-drafts.md](bias-test-drafts.md).
 
 ## Limits of this test
 

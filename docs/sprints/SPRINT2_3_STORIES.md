@@ -490,3 +490,41 @@ As a manager, I want reports made automatically every Monday with a written summ
   **When** a manager first opens it\
   **Then** the AI summary (S2-28) is added and saved, labelled as written by AI\
   **And** running the job once by hand in the SQL Editor makes four reports (for the demo)
+
+### S2-35 · Remove people who leave (Fri 6 Nov, added by Samukelo)
+
+As a manager, I want to remove people who leave the company, so that they can't sign in, while their history stays for compliance.
+
+- **Given** Sipho, an IT agent, has left\
+  **When** a general manager clicks **Remove from Relay** and confirms\
+  **Then** Sipho can't sign in, tickets he took but hadn't answered go back to the IT inbox\
+  **And** his name still shows on his past tickets, replies and audit entries
+- **Given** a department manager\
+  **When** they try to remove a manager, compliance officer or another department's agent\
+  **Then** it is refused; only a general manager can
+- **Given** any manager\
+  **When** they try to remove themselves, or the last general manager\
+  **Then** it is refused, so someone can always manage everyone else
+- **Given** a person was removed by mistake\
+  **When** a manager clicks **Bring back**\
+  **Then** they can sign in again with the same role and password, and both steps are in the audit log
+
+### S2-36 · Update details and reset passwords (Fri 6 Nov, added by Samukelo)
+
+As a manager, I want to correct a person's details and help them back in when they forget their password; as a staff member, I want to reset my own password without waiting for anyone.
+
+- **Given** I am a manager on Manage users\
+  **When** I open **Edit details** for someone I manage and change their name, email or depot\
+  **Then** the change is saved, they sign in with the new email and the same password, and the audit log says which fields changed
+- **Given** I forgot my password\
+  **When** I click **Forgot your password?**, enter my work email and open the emailed link\
+  **Then** I choose a new password and land on my home page; the page gives the same answer whether or not the email is in Relay
+- **Given** a manager clicks **Send password reset** for someone they manage\
+  **When** that person opens the link, on any device\
+  **Then** they choose a new password; the manager never sees it, and the audit log records that a link was sent
+- **Given** a link was used already or is over an hour old\
+  **When** it is opened\
+  **Then** "This link has expired" offers sign in or a new link
+- **Given** any page before sign-in, and the invite and reset emails\
+  **When** they are opened\
+  **Then** they share Relay's navy route-map design

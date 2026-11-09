@@ -108,6 +108,7 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
       .select("id, full_name")
       .eq("role", "agent")
       .eq("department", ticket.department)
+      .eq("active", true) // people who left can't be assigned (S2-35)
       .order("full_name");
     agents = (people ?? []) as Agent[];
   }

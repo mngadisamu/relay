@@ -19,8 +19,14 @@ export const ACTION_LABEL: Record<string, string> = {
   template_edit: "Template edited",
   user_create: "Person added",
   role_change: "Role changed",
+  user_deactivate: "Person removed",
+  user_update: "Details updated",
+  user_email_change: "Email changed",
+  password_reset_sent: "Password reset sent",
+  user_reactivate: "Person brought back",
   insight_generate: "Weekly summary",
   report_download: "Report downloaded",
+  risk_report_download: "Risk report downloaded",
   flag: "Reply flagged",
   flag_resolve: "Flag reviewed",
 };
@@ -165,6 +171,18 @@ export function summarize(action: string, d: Record<string, unknown>, names: Map
       return `Added ${person("user_id")} as ${text("role")}${d.department ? ` in ${text("department")}` : ""}`;
     case "role_change":
       return `Changed ${person("user_id")} from ${text("from_role")} to ${text("to_role")}${d.to_department ? ` in ${text("to_department")}` : ""}`;
+    case "risk_report_download":
+      return `Downloaded the risk report for ${text("from")} to ${text("to")}`;
+    case "user_update":
+      return `Updated ${person("user_id")}'s ${(Array.isArray(d.changed) ? d.changed : []).map((f) => (f === "full_name" ? "name" : String(f))).join(" and ")}`;
+    case "user_email_change":
+      return `Changed ${person("user_id")}'s sign-in email`;
+    case "password_reset_sent":
+      return `Sent ${person("user_id")} a link to choose a new password`;
+    case "user_deactivate":
+      return `Removed ${person("user_id")} from Relay${Number(d.tickets_returned) > 0 ? ` (${text("tickets_returned")} open tickets back to the inbox)` : ""}`;
+    case "user_reactivate":
+      return `Brought ${person("user_id")} back as ${text("role")}${d.department ? ` in ${text("department")}` : ""}`;
     case "insight_generate":
       return `Weekly summary for ${d.department ? text("department") : "all departments"}${d.ai_generated === false ? " (numbers only, AI unavailable)" : ", written by AI"}`;
     case "report_download":
