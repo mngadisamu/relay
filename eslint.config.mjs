@@ -18,6 +18,7 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "supabase/functions/**", // Deno code that runs in Supabase, not in Next.js
     ],
   },
 ];

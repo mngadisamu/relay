@@ -1,0 +1,39 @@
+# S2-01: checks every pull request before anyone reviews it (G11).
+# If lint, the type-check or the build fails, the PR shows a red cross with the error,
+# so a broken branch can't be approved and merged into main.
+name: Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # npm ci installs exactly what package-lock.json says, like a fresh laptop.
+      - name: Install packages
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      # The build needs the Supabase variables to exist, but never talks to the database,
+      # so placeholders are enough. Real values stay in Vercel and .env.local only.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key

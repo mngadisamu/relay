@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="56" viewBox="0 0 220 56" role="img" aria-labelledby="t">
+  <title id="t">Relay</title>
+  <rect x="0" y="0" width="56" height="56" rx="12" fill="#0f5fb8"/>
+  <g fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.3 28H33.3"/>
+    <path d="M28 20L36 28L28 36"/>
+  </g>
+  <text x="68" y="38" font-family="Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.5" fill="#16191d">Relay</text>
+</svg>

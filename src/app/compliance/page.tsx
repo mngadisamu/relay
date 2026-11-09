@@ -1,15 +1,8 @@
-import { requireRole } from "@/lib/auth";
-import { RoleHome } from "@/components/RoleHome";
+import { redirect } from "next/navigation";
 
-export default async function ComplianceHome() {
-  // Only compliance users may open this page; everyone else goes to their own home.
-  const profile = await requireRole(["compliance"]);
-
-  return (
-    <RoleHome
-      title="Compliance home"
-      description="The AI audit log and risk reports. (Coming in Sprint 3.)"
-      profile={profile}
-    />
-  );
+// Compliance starts on the audit log, so /compliance has no page of its own.
+// Sign-in goes straight to /compliance/audit (HOME_FOR_ROLE in src/lib/auth.ts);
+// this only catches old links and the Relay logo.
+export default function ComplianceHome() {
+  redirect("/compliance/audit");
 }

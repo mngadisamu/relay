@@ -4,7 +4,10 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { AgentHeader } from "@/components/AgentHeader";
-import { NeedsReviewTag, PriorityTag, StatusPill } from "@/components/StatusPill";
+import { RoleHeader } from "@/components/RoleHeader";
+import { MANAGER_MENU } from "@/lib/menus";
+import { SENSITIVE_LABEL, type SensitiveKind } from "@/lib/sensitive";
+import { NeedsReviewTag, PriorityTag, SensitiveTag, StatusPill } from "@/components/StatusPill";
 import { STATUS_LABEL, formatWhen, latestUpdate, type TicketPriority, type TicketStatus } from "@/app/staff/status";
 
 type Ticket = {
@@ -12,9 +15,13 @@ type Ticket = {
   reference: string;
   subject: string;
   depot: string | null;
+  department: string | null;
+  assigned_to: string | null;
   priority: TicketPriority;
   status: TicketStatus;
   needs_review: boolean;
+  is_sensitive: boolean;
+  sensitive_kind: SensitiveKind | null;
   created_at: string;
   assigned_at: string | null;
   answered_at: string | null;
@@ -28,24 +35,44 @@ const PRIORITY_RANK: Record<TicketPriority, number> = { urgent: 0, high: 1, medi
 
 // Agent inbox (S1-19, mockup screen 6): only the agent's department, most urgent
 // first then oldest, a status filter with counts, and "Needs review" clearly marked.
+// S2-16: shows who each ticket is assigned to, and a Mine filter for agents.
+// Managers open it too (Tickets in their menu), so they can assign work:
+// a department manager sees their department, a general manager sees everything.
 export default async function AgentInbox({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; moved?: string; to?: string }>;
+  searchParams: Promise<{ status?: string; mine?: string; moved?: string; to?: string }>;
 }) {
-  const profile = await requireRole(["agent"]);
-  const { status, moved, to } = await searchParams;
+  const profile = await requireRole(["agent", "manager"]);
+  const { status, mine: mineParam, moved, to } = await searchParams;
   const filter = STATUSES.find((s) => s === status);
+  const isManager = profile.role === "manager";
+  const mine = !isManager && mineParam === "1";
 
   // A plain select is enough: row-level security (S1-15) only returns
   // tickets from this agent's department. Seeded history is left out.
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("tickets")
-    .select("id, reference, subject, depot, priority, status, needs_review, created_at, assigned_at, answered_at, closed_at")
+    .select("id, reference, subject, depot, department, assigned_to, priority, status, needs_review, is_sensitive, sensitive_kind, created_at, assigned_at, answered_at, closed_at")
     .eq("is_historical", false);
+  // Managers can read every ticket (0003); a department manager only needs theirs here.
+  if (isManager && profile.department) query = query.eq("department", profile.department);
+  const { data, error } = await query;
 
-  const all = ((data ?? []) as Ticket[]).sort(
+  // Names of the people tickets are assigned to. Agents can read their own
+  // department's names, managers everyone's (migration 0006).
+  const assigneeIds = [...new Set(((data ?? []) as Ticket[]).map((t) => t.assigned_to).filter((id): id is string => !!id))];
+  const names = new Map<string, string>();
+  if (assigneeIds.length > 0) {
+    const { data: people } = await supabase.from("profiles").select("id, full_name").in("id", assigneeIds);
+    for (const p of people ?? []) names.set(p.id as string, p.full_name as string);
+  }
+  const assignedLabel = (t: Ticket) =>
+    !t.assigned_to ? null : t.assigned_to === profile.id ? "You" : (names.get(t.assigned_to) ?? "Another agent");
+
+  const scope = ((data ?? []) as Ticket[]).filter((t) => !mine || t.assigned_to === profile.id);
+  const all = scope.sort(
     (a, b) =>
       PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
@@ -55,15 +82,39 @@ export default async function AgentInbox({
 
   return (
     <div className="min-h-screen bg-page">
-      <AgentHeader profile={profile} current="inbox" />
+      {isManager ? (
+        <RoleHeader profile={profile} home="/manager" menu={MANAGER_MENU} current="/agent" />
+      ) : (
+        <AgentHeader profile={profile} current="inbox" />
+      )}
       <main className="mx-auto max-w-[1360px] space-y-[18px] px-6 pb-12 pt-7">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-[22px] font-semibold text-ink">Inbox</h1>
+            <h1 className="text-[22px] font-semibold text-ink">{isManager ? "Tickets" : "Inbox"}</h1>
             <p className="text-sm text-muted">
-              {profile.department ?? "Your department"} tickets only · most urgent first, then oldest
+              {profile.department ?? "All departments"}
+              {profile.department ? " tickets only" : ""} · most urgent first, then oldest
             </p>
           </div>
+          <div className="flex flex-wrap gap-2">
+          {/* Mine (S2-16): only the tickets this agent has taken or been given. */}
+          {!isManager && (
+            <nav aria-label="Whose tickets" className="flex gap-1 rounded-lg border border-line bg-white p-1">
+              {[false, true].map((m) => (
+                <Link
+                  prefetch
+                  key={String(m)}
+                  href={inboxHref(filter, m)}
+                  aria-current={m === mine ? "page" : undefined}
+                  className={`inline-flex items-center rounded-md px-3 py-[7px] text-sm ${
+                    m === mine ? "bg-brand font-semibold text-white" : "font-medium text-ink-2 hover:bg-page"
+                  }`}
+                >
+                  {m ? "Mine" : "Everyone's"}
+                </Link>
+              ))}
+            </nav>
+          )}
           <nav aria-label="Filter by status" className="flex flex-wrap gap-1 rounded-lg border border-line bg-white p-1">
             {[undefined, ...STATUSES].map((s) => {
               const active = s === filter;
@@ -71,7 +122,7 @@ export default async function AgentInbox({
                 <Link
                   prefetch
                   key={s ?? "all"}
-                  href={s ? `/agent?status=${s}` : "/agent"}
+                  href={inboxHref(s, mine)}
                   aria-current={active ? "page" : undefined}
                   className={`inline-flex items-center gap-1.5 rounded-md px-3 py-[7px] text-sm ${
                     active ? "bg-brand font-semibold text-white" : "font-medium text-ink-2 hover:bg-page"
@@ -83,6 +134,7 @@ export default async function AgentInbox({
               );
             })}
           </nav>
+          </div>
         </div>
 
         {/* Shown after an agent moves a ticket to another department (S1-25). */}
@@ -102,7 +154,7 @@ export default async function AgentInbox({
           <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-[0.4px] text-muted">
-                {["Priority", "Subject", "Reference", "Depot", "Status", "Received", "Last update"].map((h) => (
+                {["Priority", "Subject", "Reference", "Depot", "Status", "Assigned to", "Received", "Last update"].map((h) => (
                   <th key={h} scope="col" className="border-b border-line px-4 py-3 font-semibold">
                     {h}
                   </th>
@@ -120,6 +172,7 @@ export default async function AgentInbox({
                       <Link prefetch href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
                         {t.subject}
                       </Link>
+                      {t.is_sensitive && <SensitiveTag label={t.sensitive_kind ? SENSITIVE_LABEL[t.sensitive_kind].tag : undefined} />}
                       {t.needs_review && <NeedsReviewTag />}
                     </div>
                   </td>
@@ -127,6 +180,9 @@ export default async function AgentInbox({
                   <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">{t.depot ?? "Not given"}</td>
                   <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5">
                     <StatusPill status={t.status} size="sm" />
+                  </td>
+                  <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">
+                    {assignedLabel(t) ?? <span className="text-muted">Nobody yet</span>}
                   </td>
                   <td className="whitespace-nowrap border-b border-line-soft px-4 py-3.5 text-ink-2">
                     <time dateTime={t.created_at}>{formatWhen(t.created_at)}</time>
@@ -149,11 +205,25 @@ export default async function AgentInbox({
           </table>
           {tickets.length === 0 && !error && (
             <p className="px-4 py-8 text-center text-sm text-muted">
-              {filter ? `No ${STATUS_LABEL[filter].toLowerCase()} tickets.` : "No tickets for your department right now."}
+              {mine && !filter
+                ? "Nothing is assigned to you right now. Take a ticket from Everyone's."
+                : filter
+                  ? `No ${STATUS_LABEL[filter].toLowerCase()} tickets.`
+                  : "No tickets for your department right now."}
             </p>
           )}
         </div>
       </main>
     </div>
   );
+}
+
+// The inbox address for a status filter and the Mine switch, kept together so
+// changing one doesn't lose the other.
+function inboxHref(status: TicketStatus | undefined, mine: boolean) {
+  const q = new URLSearchParams();
+  if (status) q.set("status", status);
+  if (mine) q.set("mine", "1");
+  const query = q.toString();
+  return query ? `/agent?${query}` : "/agent";
 }

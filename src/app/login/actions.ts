@@ -25,6 +25,12 @@ export async function signIn(
     password,
   });
 
+  // Removed from Relay (S2-35): Supabase Auth refuses them. Saying so is safe,
+  // because it only shows after the right email and password.
+  if (error?.code === "user_banned") {
+    return { error: "Your Relay account has been switched off. Ask your manager if this is a mistake." };
+  }
+
   if (error) {
     // Same message whether the email or the password is wrong,
     // so nobody can use this form to find out which emails exist.
@@ -34,9 +40,15 @@ export async function signIn(
   // Look up the role now, so we can go straight to the right home page.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, active")
     .eq("id", data.user.id)
     .single();
+
+  // A second check, in case the account was switched off a moment ago.
+  if (profile && !profile.active) {
+    await supabase.auth.signOut();
+    return { error: "Your Relay account has been switched off. Ask your manager if this is a mistake." };
+  }
 
   const role: Role = profile?.role ?? "staff";
   redirect(HOME_FOR_ROLE[role]);

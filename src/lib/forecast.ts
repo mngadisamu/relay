@@ -3,6 +3,7 @@ export type Department = 'HR' | 'IT' | 'Finance' | 'Operations';
 // One row per day for one department, zeros included, SAST dates.
 // Pass history from the first day of the historical period through today.
 // The 19–20 Oct 2026 gap is excluded, since it is not real history.
+// Use the historical period only (see S2-03), so the 19–20 Oct 2026 gap is not in the input.
 export type HistoryDay = {
   date: string;      // 'YYYY-MM-DD'
   tickets: number;
@@ -11,6 +12,7 @@ export type HistoryDay = {
 export type ForecastDay = {
   date: string;        // 'YYYY-MM-DD', SAST
   expected: number;    // one decimal place, never negative
+  expected: number;    // whole number, never negative
   low: number | null;  // filled in S2-13
   high: number | null; // filled in S2-13
 };
@@ -23,6 +25,7 @@ export type Forecast = {
 
 const HORIZON_DAYS = 28;
 const RECENT_DAYS = 14;      // agreed with Samukelo; must start after the historical period ends
+const WEEKDAY_WINDOW_DAYS = 8 * 7;
 const MONTH_END_FROM_DAY = 25;
 
 function addDays(date: string, n: number): string {
@@ -72,6 +75,14 @@ export function forecast(department: Department, history: HistoryDay[]): Forecas
   const sums = new Array<number>(7).fill(0);
   const counts = new Array<number>(7).fill(0);
   for (const h of earlier) {
+  // Weekday averages from the last 8 weeks of history
+  const windowStart = addDays(last, -(WEEKDAY_WINDOW_DAYS - 1));
+  const recent = sorted.filter((h) => h.date >= windowStart);
+  const overall = mean(recent.map((h) => h.tickets));
+
+  const sums = new Array<number>(7).fill(0);
+  const counts = new Array<number>(7).fill(0);
+  for (const h of recent) {
     const w = weekday(h.date);
     sums[w] += h.tickets;
     counts[w] += 1;
@@ -84,12 +95,17 @@ export function forecast(department: Department, history: HistoryDay[]): Forecas
   const shape = weekdayMeans.map((m) => (shapeMean > 0 ? m / shapeMean : 1));
 
   const monthEnd = monthEndFactor(sorted);
+  const weekdayAvg = (w: number) => (counts[w] > 0 ? sums[w] / counts[w] : overall);
+
+  // Month-end factor from the full history: average on the 25th onward vs the rest of the month
+    const monthEnd = monthEndFactor(sorted);
 
   const days: ForecastDay[] = [];
   for (let i = 1; i <= HORIZON_DAYS; i++) {
     const date = addDays(last, i);
     const factor = dayOfMonth(date) >= MONTH_END_FROM_DAY ? monthEnd : 1;
     const expected = Math.max(0, Math.round(shape[weekday(date)] * recentLevel * factor * 10) / 10);
+    const expected = Math.max(0, Math.round(weekdayAvg(weekday(date)) * factor));
     days.push({ date, expected, low: null, high: null });
   }
 

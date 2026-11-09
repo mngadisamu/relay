@@ -1,15 +1,8 @@
-import { requireRole } from "@/lib/auth";
-import { RoleHome } from "@/components/RoleHome";
+import { redirect } from "next/navigation";
 
-export default async function ManagerHome() {
-  // Only manager users may open this page; everyone else goes to their own home.
-  const profile = await requireRole(["manager"]);
-
-  return (
-    <RoleHome
-      title="Manager home"
-      description="Dashboards and approvals. (Coming in Sprints 2 and 4.)"
-      profile={profile}
-    />
-  );
+// Managers start on the dashboard, so /manager has no page of its own.
+// Sign-in goes straight to /manager/dashboard (HOME_FOR_ROLE in src/lib/auth.ts);
+// this only catches old links and the Relay logo.
+export default function ManagerHome() {
+  redirect("/manager/dashboard");
 }
