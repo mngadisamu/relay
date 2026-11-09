@@ -35,6 +35,8 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
     .from("tickets")
     .select("id, reference, subject, description, depot, department, status, created_at, assigned_at, answered_at, closed_at")
     .eq("id", id)
+    // Past (seeded) tickets are never shown as someone's request.
+    .eq("is_historical", false)
     .maybeSingle<Ticket>();
   if (!ticket) notFound();
 
