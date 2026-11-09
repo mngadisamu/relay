@@ -97,7 +97,9 @@ Sign off as "${profile.fullName}, ${ticket.department} team".
       const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Gemini timeout")), 10_000));
       const result = await Promise.race([
         ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          // gemini-2.5-flash is no longer offered to new Gemini keys (Nov 2026), so
+          // every live draft had fallen back to the template (the risk report showed it).
+          model: "gemini-3.6-flash",
           contents: prompt,
           // No "thinking" step: a short reply doesn't need it, and it made drafts take several seconds.
           config: { thinkingConfig: { thinkingBudget: 0 } },

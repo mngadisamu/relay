@@ -52,7 +52,7 @@ Every piece of AI work is labelled (for example "Routed by AI · 92% sure · an 
 - **Supabase**: Postgres database, sign-in with roles, row-level security on every table
 - **Tailwind CSS v4** with **shadcn/ui** components in Relay's colours
 - **ML classifier**: TF-IDF + logistic regression, trained in Google Colab, exported to JSON and run in TypeScript on the server (no Python server)
-- **Gemini API** (`gemini-2.5-flash`) for reply drafts and summaries, server-side only
+- **Gemini API** (`gemini-3.6-flash`) for reply drafts and summaries, server-side only
 - **GitHub check** on every pull request: lint, type-check and build must pass before it can be merged
 
 ## Project structure
