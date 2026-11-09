@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT2_3_STORIES.md` and the contract your story uses (section 5), and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Thu 5 Nov 2026 (Sprint 2+3, day 4).
+Last updated: Mon 9 Nov 2026 (Sprint 2+3, day 6).
 
 ---
 
@@ -63,7 +63,7 @@ Sprints 2 and 3 were combined into one two-week sprint by the programme.
 | Hosting | **Vercel** (team "Team AI", project `relay`) | Env vars set in Vercel for Production **and** Preview. Every PR gets a preview link. |
 | Checks | **GitHub check** (`.github/workflows/check.yml`) and the **Vercel build** | Both run on every PR and are **required**: lint, type-check and build must pass before a PR can be merged. |
 | ML classifier | TF-IDF + logistic regression, trained in **Google Colab** (Python/scikit-learn), exported to **JSON**, run in TypeScript on the server | No Python server in production |
-| Generative AI | **Google Gemini API** via `@google/genai`, model `gemini-2.5-flash` | Key is server-side only (`GEMINI_API_KEY`). Sensitive requests are never sent to it (section 5). |
+| Generative AI | **Google Gemini API** via `@google/genai`, model `gemini-3.6-flash` | Key is server-side only (`GEMINI_API_KEY`). Sensitive requests are never sent to it (section 5). `gemini-2.5-flash` is closed to new keys (404): don't use it. |
 
 **Environment variables** (`.env.example` lists them; values live in each person's `.env.local` and in Vercel, and are **never committed**):
 ```
@@ -112,7 +112,7 @@ supabase/seed/                    templates.sql (reply templates) · seed_histor
 ml/notebooks/                     relay_classifier.ipynb (training) · S2-03_daily_history.ipynb (daily counts for the forecast)
 ml/model/                         classifier-model.json and its results
 data/processed/                   combined_tickets.csv (the past tickets) · daily_counts.csv (per day per department)
-docs/                             architecture.md · audit-actions.md · metrics.md · forecast.md · report-template.md · design/ · sprints/
+docs/                             architecture.md · audit-actions.md · metrics.md · forecast.md · report-template.md · security.md · responsible-ai/ (risk register, POPIA note, prompt notes, bias tests) · design/ · sprints/
 ```
 
 **Public paths** (no sign-in needed): `/`, `/login`, `/forgot-password`, `/auth/confirm` and `/auth/link-expired` (the invite and password links, S2-25 and S2-36), and everything under `/api`. Every other path requires sign-in (`src/lib/supabase/middleware.ts`, `PUBLIC_PATHS`). **A route under `/api` must check who is calling itself** (section 6).
@@ -159,8 +159,9 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0013_deactivate_users.sql` | `profiles.active`; `deactivate_user()` and `reactivate_user()`; removed people get no role in the rules and can't be assigned (S2-35) | Samukelo |
 | `0014_risk_metrics.sql` | `risk_metrics()`: the Risk report's numbers, counted in SQL (S2-30) | Samukelo |
 | `0015_user_details_and_reset.sql` | `update_user_details()`, `can_manage_user()`, `reset_email_for()` (S2-36) | Samukelo |
+| `0016_risk_ai_unavailable.sql` | `risk_metrics()` counts drafts where Gemini didn't answer (`ai_unavailable`) and sensitive requests kept from Gemini (`sensitive_kept`) (S2-30) | Samukelo |
 
-The next free number is **0016**. Ask Samukelo before writing one.
+The next free number is **0017**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -325,7 +326,9 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
 - ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`) · **S2-35** remove people who leave (0013)
 - ✅ **S2-30** risk report (0014, `src/lib/risk.ts`, `/compliance/risk`) · **S2-36** edit details, forgot password, designed sign-in pages and emails (0015)
-- Next: **S2-31** responsible AI documents · S2-21 Gemini drafts part (Mon)
+- ✅ **S2-21** bias test complete: classifier and 50 Gemini drafts (9 Nov), results in `docs/responsible-ai/`
+- In review: **S2-31** responsible AI documents (`docs/responsible-ai/`, with `docs/architecture.md` section 8)
+- Open: Gemini transfer and retention decisions for Kopano Freight (`docs/responsible-ai/popia-note.md`); MFA for managers and compliance (Sprint 4)
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)

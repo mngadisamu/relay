@@ -1,6 +1,6 @@
 # Relay architecture
 
-**Owner:** Samukelo · **Stories:** S1-20 (sections 1–4), S1-24 (sections 5–7) · **Last updated:** 22 Oct 2026
+**Owner:** Samukelo · **Stories:** S1-20 (sections 1–4), S1-24 (sections 5–7), S2-31 (section 8) · **Last updated:** 9 Nov 2026
 
 This document explains how Relay is built: its parts, why each was chosen, and how the data is organised. It is written for assessors, new team members and the Week 8 panel. You shouldn't need to read the code to follow it.
 
@@ -350,4 +350,109 @@ No key or password is committed to GitHub. `.env` files are in `.gitignore` (onl
 | Classifier accuracy is reported separately on real and synthetic tickets | Synthetic data can make a model look better than it is | S1-16 | In progress |
 | Staff never see an unsent AI draft | Only what a person approved reaches staff | Migration 0004 | Built |
 
-**Known limits, handled in Sprint 3:** we haven't yet tested drafts for bias across names, depots or roles; only re-routing writes to the audit log so far; `/api/classify` is open without sign-in; and there's no written POPIA note yet. Sprint 3 (AI Risk and Compliance) covers all four.
+**Known limits (9 Nov 2026):** drafts have been tested for bias across four names (50 drafts), but not yet across roles or with more drafts per name; `/api/classify` is still open without sign-in; and the POPIA note is written, with its open decisions listed for Kopano Freight. The full list, with owners and status, is in [responsible-ai/risk-register.md](responsible-ai/risk-register.md).
+
+---
+
+## 8. Sprint 2 and 3 additions
+
+Sprints 2 and 3 added four tables, three counting functions, and the manager, reports, forecast and compliance screens. Every change is a numbered migration; the list is in [AGENTS.md](../AGENTS.md).
+
+### 8.1 Data model additions
+
+```mermaid
+erDiagram
+    TICKETS ||--o{ TICKET_MESSAGES : "gets follow-ups in"
+    TICKETS ||--o{ FLAGS : "is flagged in"
+    RESPONSES ||--o{ FLAGS : "is checked by"
+    PROFILES ||--o{ FLAGS : "resolves"
+
+    TICKET_MESSAGES {
+        bigint id PK
+        bigint ticket_id FK
+        uuid author FK
+        text body "I still need help"
+        timestamptz created_at
+    }
+    FLAGS {
+        bigint id PK
+        bigint response_id FK
+        bigint ticket_id FK
+        text kind "sent_without_edits, invented_detail, person"
+        text source "auto or person"
+        text outcome "ok or needs_change"
+        uuid resolved_by FK
+    }
+    INSIGHTS {
+        bigint id PK
+        text summary "weekly AI summary (S2-28)"
+    }
+    REPORTS {
+        bigint id PK
+        department department
+        date week_start
+        jsonb metrics
+        text ai_summary
+        jsonb forecast
+    }
+```
+
+| Change | Migration | What it adds | Status (9 Nov) |
+| --- | --- | --- | --- |
+| `tickets.assigned_to`, `ticket_messages`, lifecycle functions | 0006 | Take, assign, confirm, close and reopen, each with an audit entry | Built |
+| `tickets.is_sensitive`, `sensitive_kind`, "Sensitive" templates | 0009 | The sensitive request rules (`src/lib/sensitive.ts`) | Built |
+| `daily_ticket_counts()` | 0010 | Tickets per day per department, counted in SQL, for the forecast | Built |
+| `flags` table, `flag_reply()`, `resolve_flag()` | 0011 | Replies marked for a second look (S2-26) | Built |
+| `profiles.active`, `deactivate_user()`, `reactivate_user()` | 0013 | People who leave are removed, not deleted (S2-35) | Built |
+| `update_user_details()`, `can_manage_user()`, `reset_email_for()` | 0015 | Edit details and password reset (S2-36) | Built |
+| `risk_metrics()` with AI-unavailable counts | 0014, 0016 | The Risk report's numbers, counted in SQL (S2-30) | Built (0016 to run) |
+| `dashboard_metrics()` and `insights` | 0007 | Dashboard numbers (S2-09); the weekly insight is stored here | Dashboard built; weekly insight planned (S2-28) |
+| `reports` | 0008 | Saved weekly reports per department (S2-10) | Table built; preview in progress (S2-15) |
+
+### 8.2 Analytics, reports and the Monday schedule
+
+The dashboard, the risk report and the forecast all read counts that the **database** calculates, so each person sees only what their role allows (row-level security applies to these functions). The Monday schedule is planned: it saves one report per department each week, with the AI summary and the forecast.
+
+```mermaid
+flowchart LR
+    DM["dashboard_metrics()<br/>cards, weekly, daily"] --> DASH["Manager dashboard<br/>/manager/dashboard"]
+    DASH --> REP["Reports preview<br/>/manager/reports"]
+    REP --> PDF["Weekly PDF<br/>(S2-19, planned)"]
+    RM["risk_metrics()"] --> RISK["Risk report and PDF<br/>/compliance/risk"]
+    DTC["daily_ticket_counts()"] --> FC["Forecast method<br/>src/lib/forecast.ts"]
+    FC --> FCV["Forecast view<br/>(planned, S2-27)"]
+    SCHED["Monday schedule<br/>Vercel Cron (planned, S2-34)"] -. "saves a report per department" .-> RTAB[("reports table")]
+    GEM["Gemini<br/>weekly AI summary (planned, S2-28)"] -. "labelled AI summary" .-> RTAB
+    FC -. "forecast, labelled AI" .-> RTAB
+```
+
+- **Solid lines** are built. **Dotted lines** are planned.
+- **Labels:** every AI output on these screens shows its `AiNote` (routing, draft, summary or forecast). The Risk report checks which screens do this (see [responsible-ai/risk-register.md](responsible-ai/risk-register.md), R14).
+- **Status:** the Monday schedule (S2-34) and the weekly AI summary (S2-28) aren't built yet. Until they are, nothing scheduled is sent to anyone.
+
+### 8.3 Forecast
+
+The forecast learns from **past tickets only**. It takes the daily history for one department (from `loadDailyHistory()`, which calls `daily_ticket_counts()`), the date it is run for, and the number of days to predict. It uses the last 8 weeks plus a month-end factor. The method is written in [forecast.md](forecast.md). It is labelled as AI output, and a manager sees a range, not a single number.
+
+Status: the method is in progress (S2-08, Elzel); the backtest against the last 8 weeks (S2-17) and the forecast view (S2-27) are planned.
+
+### 8.4 Where each risk is handled
+
+Each control below is also listed in the [risk register](responsible-ai/risk-register.md), which says who could be harmed and what is still open.
+
+| Control | Where it's handled | Risks |
+| --- | --- | --- |
+| Routing confidence and "Needs review" | Agent ticket view and inbox | R1, R2 |
+| Routing changes recorded, with the AI's original choice | Audit log (`/compliance/audit`); Risk report | R1, R17 |
+| Bias tests | [bias-test.md](responsible-ai/bias-test.md); Risk report section 2 | R3, R4 |
+| Sensitive request rules, Sensitive tag and reply block | `src/lib/sensitive.ts`; agent ticket view; reply box and `sendReply` | R7, R8, R9 |
+| Gemini timeout and fallback to the template | `/api/generate-draft`; Risk report "AI unavailable" warning | R10 |
+| Invented details and sent-without-edits flags | `src/lib/flags.ts`; Flagged replies (`/compliance/flags`) | R5, R6 |
+| AI labels on each screen | `AiNote`; Risk report "AI labels on each screen" | R14 |
+| Row-level security on every table | Migrations 0003, 0004, 0006; [security.md](security.md) | R15 |
+| Account management rules | Manage users (`/manager/users`); [security.md](security.md) | R16, R18 |
+| Append-only audit log | Audit log screen; [audit-actions.md](audit-actions.md) | R17 |
+| Security requests routed to IT, high priority | Sensitive rule for security; agent ticket view | R20 |
+| Risk numbers counted in SQL | `risk_metrics()` (migrations 0014, 0016); Risk report | R21 |
+| Open: sign-in or rate limit on `/api/classify` | Not built | R19 |
+| Open: retention and Gemini transfer decisions | [popia-note.md](responsible-ai/popia-note.md) | R11, R22 |
