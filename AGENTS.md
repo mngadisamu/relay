@@ -63,7 +63,7 @@ Sprints 2 and 3 were combined into one two-week sprint by the programme.
 | Hosting | **Vercel** (team "Team AI", project `relay`) | Env vars set in Vercel for Production **and** Preview. Every PR gets a preview link. |
 | Checks | **GitHub check** (`.github/workflows/check.yml`) and the **Vercel build** | Both run on every PR and are **required**: lint, type-check and build must pass before a PR can be merged. |
 | ML classifier | TF-IDF + logistic regression, trained in **Google Colab** (Python/scikit-learn), exported to **JSON**, run in TypeScript on the server | No Python server in production |
-| Generative AI | **Google Gemini API** via `@google/genai`, model `gemini-2.5-flash` | Key is server-side only (`GEMINI_API_KEY`). Sensitive requests are never sent to it (section 5). |
+| Generative AI | **Google Gemini API** via `@google/genai`, model `gemini-3.6-flash` | Key is server-side only (`GEMINI_API_KEY`). `gemini-2.5-flash` is closed to new keys. A free key allows about 20 calls a day per model. Sensitive requests are never sent to it (section 5). |
 
 **Environment variables** (`.env.example` lists them; values live in each person's `.env.local` and in Vercel, and are **never committed**):
 ```
