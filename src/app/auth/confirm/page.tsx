@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-// Where the invite email's link lands (S2-25). Supabase's own email (the
+// Where the invite email's link (S2-25) and the password reset link (S2-36) land. Supabase's own email (the
 // default template, which can't be edited without our own email server)
 // first checks the link on Supabase's site, then sends the person here with
 // their sign-in in the address after "#". Only the browser can read that part,
@@ -30,17 +30,24 @@ export default function ConfirmInvitePage() {
         const { error } = await supabase.auth.verifyOtp({ type: "invite", token_hash: tokenHash });
         ok = !error;
       }
+      // Where to go next: a password reset link (S2-36) asks for /reset-password;
+      // an invite goes to /welcome. Only these two, so the link can't send
+      // anyone somewhere else.
+      const next = query.get("next") === "/reset-password" || hash.get("type") === "recovery" ? "/reset-password" : "/welcome";
       // A full page load (not a client jump), so the server reads the new cookies.
       // replace(): the link's address, with its sign-in, isn't kept in the history.
-      window.location.replace(ok ? "/welcome" : "/auth/link-expired");
+      window.location.replace(ok ? next : "/auth/link-expired");
     }
     finish();
   }, []);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-page px-4">
-      <p role="status" className="text-[15px] text-ink-2">
-        Opening your invite…
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy px-4">
+      <div aria-hidden="true" className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/5" />
+      <div aria-hidden="true" className="absolute -bottom-32 -left-16 h-80 w-80 rounded-full bg-white/5" />
+      <p role="status" className="relative flex items-center gap-3 text-[15px] font-medium text-white">
+        <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+        Opening Relay…
       </p>
     </main>
   );

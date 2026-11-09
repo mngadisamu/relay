@@ -54,6 +54,6 @@ export const COMPLIANCE_MENU: MenuItem[] = [
     label: "Risk report",
     href: "/compliance/risk",
     description: "How the AI is performing and where it needs watching.",
-    ready: false, // Samukelo, S2-30
+    ready: true, // Samukelo, S2-30
   },
 ];

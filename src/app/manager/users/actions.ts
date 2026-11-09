@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { sendPasswordResetEmail } from "@/lib/password-reset";
 
 // Manage users (S2-25). Adding a person goes through the invite-user Edge
 // Function (it holds the secret key, inside Supabase); changing a role goes
@@ -13,7 +14,7 @@ import { getCurrentProfile } from "@/lib/auth";
 const ROLES = ["staff", "agent", "manager", "compliance"] as const;
 const DEPARTMENTS = ["HR", "IT", "Finance", "Operations"] as const;
 
-type Field = "fullName" | "email" | "role" | "department";
+type Field = "fullName" | "email" | "role" | "department" | "depot";
 export type PeopleFormState = {
   error?: string; // shown above the button
   fieldErrors?: Partial<Record<Field, string>>; // shown under each field
@@ -123,4 +124,66 @@ export async function changeRole(userId: string, _prev: PeopleFormState, formDat
 
   revalidatePath("/manager/users");
   return { done: "Saved. It applies from their next page or sign-in.", stamp: Date.now() };
+}
+
+// "Edit details" (S2-36): name and depot through update_user_details()
+// (migration 0015); a new email through the invite-user Edge Function, because
+// only Supabase's secret key can change an account's email.
+const DEPOTS = ["Head Office", "City Deep depot", "Pomona depot"];
+
+export async function updateDetails(userId: string, currentEmail: string, _prev: PeopleFormState, formData: FormData): Promise<PeopleFormState> {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== "manager") return { error: "Only managers can update people's details." };
+
+  const fullName = String(formData.get("fullName") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const depot = String(formData.get("depot") ?? "");
+  const values = { fullName, email, depot };
+  const failed = (rest: PeopleFormState): PeopleFormState => ({ ...rest, values, stamp: Date.now() });
+
+  const fieldErrors: PeopleFormState["fieldErrors"] = {};
+  if (fullName.length < 2) fieldErrors.fullName = "Enter their full name";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fieldErrors.email = "Enter a valid email address";
+  if (depot && !DEPOTS.includes(depot)) fieldErrors.depot = "Choose a depot from the list";
+  if (Object.keys(fieldErrors).length) return failed({ fieldErrors });
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_user_details", { p_user_id: userId, p_full_name: fullName, p_depot: depot || null });
+  if (error) return failed({ error: error.message });
+
+  if (email !== currentEmail.toLowerCase()) {
+    const { error: emailError } = await supabase.functions.invoke("invite-user", {
+      body: { action: "update_email", userId, email },
+    });
+    if (emailError) {
+      const body = emailError instanceof FunctionsHttpError ? await emailError.context.json().catch(() => null) : null;
+      const message = body?.error ?? "The email couldn't be changed. Check that the invite-user function is deployed.";
+      return failed(body?.field ? { fieldErrors: { email: message } } : { error: `Name and depot saved, but ${message.charAt(0).toLowerCase()}${message.slice(1)}` });
+    }
+  }
+
+  revalidatePath("/manager/users");
+  return { done: "Details saved.", stamp: Date.now() };
+}
+
+// "Send password reset" (S2-36): reset_email_for() checks this manager may
+// manage the person and records it; Supabase sends the link.
+export async function sendReset(userId: string): Promise<PeopleFormState> {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== "manager") return { error: "Only managers can send a password reset." };
+
+  const supabase = await createClient();
+  const { data: email, error } = await supabase.rpc("reset_email_for", { p_user_id: userId });
+  if (error || !email) return { error: error?.message ?? "Person not found.", stamp: Date.now() };
+
+  const { error: sendError } = await sendPasswordResetEmail(String(email));
+  if (sendError) {
+    return {
+      error: /rate|too many|seconds/i.test(sendError.message)
+        ? "Supabase is limiting emails right now. Try again in a minute."
+        : `The email couldn't be sent: ${sendError.message}`,
+      stamp: Date.now(),
+    };
+  }
+  return { done: `A link to choose a new password is on its way to ${email}. It works once, for one hour.`, stamp: Date.now() };
 }

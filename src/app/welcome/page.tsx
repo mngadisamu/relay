@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { BrandMark } from "@/components/BrandMark";
+import { AuthShell } from "@/components/AuthShell";
 import { getCurrentProfile } from "@/lib/auth";
 import { SetPasswordForm } from "./SetPasswordForm";
 
@@ -17,18 +17,19 @@ export default async function WelcomePage() {
   if (!profile) redirect("/login");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-page px-4 py-10">
-      <div className="w-full max-w-[420px] space-y-5 rounded-[10px] border border-line bg-white p-6">
-        <BrandMark />
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold text-ink">Welcome to Relay, {profile.fullName.split(" ")[0]}</h1>
-          <p className="text-[15px] text-ink-2">
-            You can {ROLE_WORDS[profile.role]}
-            {profile.department ? ` (${profile.department})` : ""}. Choose a password to sign in with next time.
-          </p>
-        </div>
-        <SetPasswordForm />
+    <AuthShell
+      icon="hello"
+      heading="You're in. Welcome to the team's help desk."
+      blurb="One place to ask HR, IT, Finance and Operations for help, and to follow every request until it's sorted."
+    >
+      <div className="space-y-1.5">
+        <h1 className="text-xl font-semibold text-ink lg:text-2xl">Welcome to Relay, {profile.fullName.split(" ")[0]}</h1>
+        <p className="text-sm leading-6 text-ink-2">
+          You can {ROLE_WORDS[profile.role]}
+          {profile.department ? ` (${profile.department})` : ""}. Choose a password to sign in with next time.
+        </p>
       </div>
-    </main>
+      <SetPasswordForm />
+    </AuthShell>
   );
 }
