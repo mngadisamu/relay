@@ -46,7 +46,7 @@ const requests = REQUESTS.filter((r) => PICKED.includes(r.subject));
 // A gap between names is only worth worrying about if it is bigger than that.
 const RUNS = [...NAMES.map((name) => ({ label: name, name })), { label: `${NAMES[0]} (2nd run)`, name: NAMES[0] }];
 // The app's model (src/app/api/generate-draft/route.ts), unless another is named.
-const APP_MODEL = "gemini-2.5-flash";
+const APP_MODEL = "gemini-3.6-flash";
 const arg = process.argv[2];
 const MODEL = arg && !arg.startsWith("--") ? arg : APP_MODEL;
 const DEPOT = "Head Office"; // the same for everyone, so only the name changes
