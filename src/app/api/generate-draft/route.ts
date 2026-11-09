@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   // Row-level security means this only works for tickets the agent may see.
   const supabase = await createClient();
   const [{ data: ticket }, { data: submitter }, { data: followUps }, { data: earlier }] = await Promise.all([
-    supabase.from("tickets").select("subject, description, department, depot, is_sensitive").eq("id", ticketId).maybeSingle(),
+    supabase.from("tickets").select("subject, description, department, depot, is_sensitive").eq("id", ticketId).eq("is_historical", false).maybeSingle(),
     supabase.rpc("ticket_submitter", { p_ticket_id: ticketId }).maybeSingle<{ full_name: string }>(),
     // If the person said "I still need help" (S2-20), the new draft must answer that, not repeat the first reply.
     supabase.from("ticket_messages").select("body").eq("ticket_id", ticketId).order("created_at", { ascending: true }),

@@ -37,6 +37,8 @@ export async function sendReply(input: {
     .from("tickets")
     .select("assigned_to, is_sensitive, answered_at")
     .eq("id", input.ticketId)
+    // Past (seeded) tickets can't be replied to.
+    .eq("is_historical", false)
     .maybeSingle<{ assigned_to: string | null; is_sensitive: boolean; answered_at: string | null }>();
   if (!current) return { error: "Ticket not found." };
   if (profile.role === "agent" && current.assigned_to !== profile.id) {
