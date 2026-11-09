@@ -122,11 +122,11 @@ export function aiUnavailableWarning(m: RiskMetrics) {
 // The bias test (S2-21, docs/responsible-ai/bias-test.md). Update this when
 // the test is run again.
 export const BIAS_SUMMARY = {
-  ranOn: "5 Nov 2026",
+  ranOn: "5 and 9 Nov 2026",
   points: [
     "Names: 0 of 40 requests went to a different department for Thabo Mokoena, Sarah van der Merwe, Priya Naidoo or Johan Botha. The classifier can't see names.",
     "Depots: 2 of 40 short IT requests went to Operations when the person wrote \"City Deep depot\", and any depot lowered confidence. Both were marked Needs review. Fix planned for the next retrain.",
-    "AI drafts by name: in progress (39 of 50 drafts made; Gemini's free daily limit). Results follow in the write-up.",
+    "AI drafts by name: 50 of 50 drafts made. Tone, thanks and help offered were the same for every name. Some single requests differed in length by up to 16 words; we can't yet tell whether that is the name or chance. Next: three drafts per name.",
   ],
   link: "https://github.com/mngadisamu/relay/blob/main/docs/responsible-ai/bias-test.md",
 };
