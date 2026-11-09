@@ -11,5 +11,5 @@ Output
 - `generatedAt`: ISO timestamp of the run (not used in the method)
 - `days`: exactly 28 entries, starting the day after the last date in `history` (SAST)
   - `date`: `YYYY-MM-DD`
-  - `expected`: expected tickets that day (whole number)
+  - `expected`: expected tickets that day, one decimal place, never negative
   - `low`, `high`: null until S2-13 adds the range
