@@ -90,7 +90,8 @@ export async function POST(request: Request) {
   const { data: insight } = await supabase
     .from("insights")
     .select("summary, status")
-    .eq("week_start", weekStart)
+    .eq("period_from", weekStart)
+    .eq("period_to", weekEnd)
     .eq("department", department)
     .maybeSingle<{ summary: string | null; status: string }>();
   const aiSummary = insight?.status === "ok" && insight.summary ? insight.summary : null;

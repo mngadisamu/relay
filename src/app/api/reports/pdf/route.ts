@@ -43,10 +43,15 @@ export async function POST(request: Request) {
 
     // 2b. The AI summary saved on the dashboard for this department and week (S2-28).
     // Read here, the same way the report preview reads it, so the PDF and the preview match.
+    // The report covers Monday to the Sunday after, so the summary must cover exactly that period.
+    const periodEnd = new Date(`${weekStart}T00:00:00Z`);
+    periodEnd.setUTCDate(periodEnd.getUTCDate() + 6);
+    const periodEndIso = periodEnd.toISOString().slice(0, 10);
     const { data: insight } = await supabase
       .from('insights')
       .select('summary, status')
-      .eq('week_start', weekStart)
+      .eq('period_from', weekStart)
+      .eq('period_to', periodEndIso)
       .eq('department', department)
       .maybeSingle();
     const hasSummary = insight?.status === 'ok' && !!insight.summary;
