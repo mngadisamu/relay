@@ -78,8 +78,9 @@ export default function ReportPreview({ department, weekStart, reportData }: Rep
       <div className="mb-8">
         <h2 className="text-sm font-bold tracking-wider text-slate-500 uppercase mb-4">Section 2: AI Insights & Summary</h2>
         <div className="bg-slate-50 border-l-4 border-blue-600 p-4 rounded-r-md">
-          {/* The AI summary arrives with S2-28 / S2-34. Until then, say so plainly
-              rather than showing an AI label on text the AI didn't write. */}
+          {/* The summary is the one saved on the dashboard for this department and week
+              (S2-28). Say plainly when there isn't one, rather than showing an AI label
+              on text the AI didn't write. */}
           {reportData?.ai_summary ? (
             <>
               <p className="text-slate-700 italic leading-relaxed">&ldquo;{reportData.ai_summary}&rdquo;</p>
@@ -88,7 +89,9 @@ export default function ReportPreview({ department, weekStart, reportData }: Rep
               </div>
             </>
           ) : (
-            <p className="text-sm text-slate-600">The AI summary of this week is added to the report in a later story (S2-28).</p>
+            <p className="text-sm text-slate-600">
+              No AI summary is saved for this department and week yet. Write it on the Dashboard, then generate the report again.
+            </p>
           )}
         </div>
       </div>
