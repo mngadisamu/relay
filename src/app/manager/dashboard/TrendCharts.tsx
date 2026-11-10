@@ -31,16 +31,30 @@ const short = (iso: string) =>
     timeZone: "UTC",
   });
 
-function weeklySummary(weeks: Week[]) {
+// Weeks start on Monday. A week is finished once its Sunday has passed (asOf is today, SAST).
+const addDays = (iso: string, days: number) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
+// The text summary for screen readers (S2-18). It compares finished weeks only: an
+// unfinished week would make the trend look like a fall.
+function weeklySummary(weeks: Week[], asOf: string) {
   if (weeks.length === 0) return "There is no weekly data for this view.";
-  const first = weeks[0];
-  const last = weeks[weeks.length - 1];
-  const peak = weeks.reduce((a, b) => (b.tickets > a.tickets ? b : a));
+  const finished = weeks.filter((w) => addDays(w.week_start, 6) < asOf);
+  const unfinished = weeks.length - finished.length;
+  const note = unfinished > 0 ? " The current week isn't finished, so it is left out of the comparison." : "";
+  if (finished.length < 2) return `There are not enough finished weeks to compare yet.${note}`;
+
+  const first = finished[0];
+  const last = finished[finished.length - 1];
+  const peak = finished.reduce((a, b) => (b.tickets > a.tickets ? b : a));
   const move =
     last.tickets === first.tickets
       ? `stayed at ${first.tickets} a week`
       : `${last.tickets > first.tickets ? "rose" : "fell"} from ${first.tickets} to ${last.tickets} a week`;
-  return `Over the last ${weeks.length} weeks, tickets ${move}. The busiest week was the week of ${short(peak.week_start)}, with ${peak.tickets} tickets. The latest week may not be finished yet.`;
+  return `Over the last ${finished.length} finished weeks, tickets ${move}. The busiest week was the week of ${short(peak.week_start)}, with ${peak.tickets} tickets.${note}`;
 }
 
 function departmentSummary(depts: Dept[]) {
@@ -122,15 +136,17 @@ const axisText = { fill: TEXT, fontSize: 12 };
 export default function TrendCharts({
   weekly,
   departments,
+  asOf,
 }: {
   weekly: Week[];
   departments: Dept[];
+  asOf: string;
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <ChartCard
         title="Tickets per week (last 12 weeks)"
-        summary={weeklySummary(weekly)}
+        summary={weeklySummary(weekly, asOf)}
         table={
           <NumbersTable
             caption="Tickets per week"

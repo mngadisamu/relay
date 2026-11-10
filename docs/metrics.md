@@ -112,10 +112,10 @@ All numbers come from the `tickets` table.
 | Metric | How it is calculated | Limits |
 | --- | --- | --- |
 | `cards.tickets` | Number of tickets with `created_at` inside the period (SAST days). | Counts every ticket, whatever its status. |
-| `cards.first_reply_hours` | Average of `answered_at − created_at`, in hours, over tickets in the period that have an `answered_at`. `based_on` is how many tickets that is. | Tickets not yet answered are left out, so the number looks better than it is when many are waiting. For the 500 past tickets `answered_at` was assigned when the data was loaded, not recorded. For live tickets it is set when the first reply is sent (checked: it equals the first `responses.sent_at`). |
+| `cards.first_reply_hours` | Average of `answered_at − created_at`, in hours, over tickets in the period that have an `answered_at`. `based_on` is how many tickets that is. | Tickets not yet answered are left out, so the number looks better than it is when many are waiting. For the past tickets (about 15,579) `answered_at` was generated when the data was loaded, not recorded. For live tickets it is set when the first reply is sent (checked: it equals the first `responses.sent_at`). |
 | `cards.open_tickets` | Tickets created in the period whose status is **not** Closed (Received, Assigned or Answered). | It uses the status **now**, not the status on `p_to`, so an old period's open count shrinks as tickets are closed. "Answered" still counts as open until the staff member confirms. |
 | `cards.needs_review` | `value` = tickets in the period with `needs_review = true` ÷ tickets in the period × 100. `count` is the number of tickets. | Clears when an agent confirms the department (S2-06). Under about 20 tickets, one ticket moves the percentage a lot. |
-| `resolution_hours` | Average of `closed_at − created_at`, in hours, over tickets in the period that have a `closed_at`. | The 500 past tickets have `closed_at`, but it was assigned, not recorded. Live tickets have none until S2-06 adds the close step, so a period with only live tickets returns `null`. |
+| `resolution_hours` | Average of `closed_at − created_at`, in hours, over tickets in the period that have a `closed_at`. | The past tickets have `closed_at`, but it was generated, not recorded. Live tickets have none until S2-06 adds the close step, so a period with only live tickets returns `null`. |
 | `by_priority` | Tickets in the period grouped by priority (Low, Medium, High, Urgent). | Every ticket is Medium today, so this is not meaningful until S2-11 lets staff choose a priority. Always return all four keys, with 0 where there are none. |
 | `by_department` | Tickets in the period grouped by department, for the departments the caller can see. | With a department filter this has **one** entry. The dashboard shows the bar chart for all departments when the filter is "All". |
 | `weekly` | Tickets per week for the **12 weeks ending with the week that contains `p_to`**. Weeks start on **Monday** (SAST). Weeks with no tickets show `0`. | Ignores `p_from` (the chart always shows 12 weeks) but respects the department filter. The first and last weeks can be partial if the period doesn't start or end on those days. |
@@ -133,13 +133,15 @@ All numbers come from the `tickets` table.
 
 Not in this function: the 5 oldest open tickets (Baphakamise reads those from `tickets` directly) and the forecast (Elzel's `forecast(department)`).
 
-## What the data looks like today (2 Nov 2026)
+## What the data looks like today (updated 10 Nov 2026)
 
-- 515 tickets in `tickets`: 500 past (`is_historical = true`) created 19 to 30 Oct 2025, and 15 live created 21 to 30 Oct 2026. Nothing exists between them.
-- Only the last two weeks of the 12-week chart have live data, and the only dense data is in 19 to 30 Oct 2025.
-- No ticket has an `assigned_at` yet. Time-to-assign is not a metric until S2-06.
-- All tickets are Medium priority.
+- About 15,579 past tickets (`is_historical = true`), from 19 Oct 2025 to 18 Oct 2026, loaded by `supabase/seed/seed_historical.mjs`. About 3,900 per department. Their dates, depots and priorities were **generated** for the project, not recorded (see `data/README.md`).
+- Live tickets (`is_historical = false`) are the team's test requests. They start after the past tickets end, so the 12-week chart drops sharply at 19 Oct 2026. That drop is in the data, not a real fall in requests. The dashboard says so on the page.
+- Past tickets' `answered_at` and `closed_at` were generated too, so hours to first reply and resolution hours for past periods are illustrative. Live tickets' times are recorded.
+- No ticket has an `assigned_at` recorded yet, so time-to-assign is not a metric until S2-06 is used by live tickets.
+- Priorities for past tickets were assigned, so `by_priority` for past periods is illustrative.
 - With so few live tickets, one ticket moves a percentage a lot. Read the changes with care.
+- The weekly chart's text summary compares finished weeks only (a week is finished once its Sunday has passed).
 
 ## Rules for the AI summary
 
