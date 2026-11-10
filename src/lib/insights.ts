@@ -8,7 +8,10 @@ import { GoogleGenAI } from "@google/genai";
 // Gemini key stays on the server only (never NEXT_PUBLIC_).
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const TIMEOUT_MS = 10_000;
+// How long to wait for Gemini. 10 seconds failed too often in live use (Gemini was
+// slow or overloaded), so the limit is 25 seconds. S2-28 was changed to match; the
+// manager waits on the button, so the wait is acceptable.
+const TIMEOUT_MS = 25_000;
 
 export type InsightResult =
   | { status: "ok"; summary: string }
@@ -77,7 +80,7 @@ export async function generateWeeklyInsight(metrics: unknown, scope: string): Pr
     return { status: "ok", summary };
   } catch (error) {
     console.warn("Gemini failed or timed out; no weekly summary:", error);
-    return { status: "unavailable", summary: null, reason: "Gemini failed or took over 10 seconds." };
+    return { status: "unavailable", summary: null, reason: "Gemini failed or took over 25 seconds." };
   } finally {
     clearTimeout(timer);
   }
