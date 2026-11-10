@@ -2,23 +2,23 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
 import { forecast, Department, HistoryDay } from '@/lib/forecast';
+import { formatDay } from '@/lib/risk';
 import { jsPDF } from 'jspdf';
 
 const DEPARTMENTS = ['HR', 'IT', 'Finance', 'Operations'];
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
-// Colours (RGB) for the PDF: navy for headings, blue for the AI label, grey for small text.
-const NAVY: [number, number, number] = [15, 23, 42];
+// The same look as the Risk report PDF (src/app/compliance/risk/pdf/build.ts): the navy
+// header band, numbered sections, three boxes to a row, and a footer with page numbers.
+const NAVY: [number, number, number] = [11, 61, 115];
+const INK: [number, number, number] = [23, 33, 45];
+const MUTED: [number, number, number] = [91, 103, 117];
+const LINE: [number, number, number] = [221, 226, 232];
+const PANEL: [number, number, number] = [247, 248, 250];
+const AMBER: [number, number, number] = [146, 64, 14];
 const BLUE: [number, number, number] = [29, 78, 216];
-const INK: [number, number, number] = [30, 41, 59];
-const MUTED: [number, number, number] = [100, 116, 139];
-const LINE: [number, number, number] = [226, 232, 240];
-const PANEL: [number, number, number] = [248, 250, 252];
-const AI_BG: [number, number, number] = [239, 246, 255];
-
-const MARGIN = 14;
-const WIDTH = 182; // A4 width (210 mm) minus two 14 mm margins
-const PAGE_BOTTOM = 277; // leave room for the footer
+const LEFT = 14;
+const WIDTH = 182;
 
 type Card = { value?: number | null; previous?: number | null; change_pct?: number | null };
 type Metrics = {
@@ -40,64 +40,39 @@ function show(value: unknown, suffix = ''): string {
 }
 
 function changeText(pct: number | null | undefined): string {
-  if (pct === null || pct === undefined) return 'no comparison';
-  return `${pct > 0 ? '+' : ''}${pct}% vs previous period`;
+  if (pct === null || pct === undefined) return 'No comparison available';
+  return `${pct > 0 ? '+' : ''}${pct}% on the previous period`;
 }
 
-// Starts a new page when the next block would run into the footer.
-function room(doc: jsPDF, y: number, needed: number): number {
-  if (y + needed > PAGE_BOTTOM) {
-    doc.addPage();
-    return 20;
+// The navy band at the top: soft circles, a faint dot grid and curved routes ending in
+// dots, with a brand-blue line underneath (copied from the Risk report so they match).
+function drawHeaderBand(doc: jsPDF) {
+  const H = 34;
+  doc.setFillColor(...NAVY).rect(0, 0, 210, H, 'F');
+  doc.setFillColor(16, 74, 136).circle(186, -6, 30, 'F');
+  doc.setFillColor(22, 86, 152).circle(214, 30, 20, 'F');
+  doc.setFillColor(14, 68, 126).circle(132, 40, 14, 'F');
+  doc.setFillColor(36, 96, 160);
+  for (let gx = 76; gx <= 128; gx += 4) {
+    for (let gy = 5; gy <= 29; gy += 4) doc.circle(gx, gy, 0.35, 'F');
   }
-  return y;
-}
-
-// A section title with a blue rule under it.
-function heading(doc: jsPDF, title: string, y: number): number {
-  y = room(doc, y, 22);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(...NAVY);
-  doc.text(title, MARGIN, y);
-  doc.setDrawColor(...BLUE);
-  doc.setLineWidth(0.6);
-  doc.line(MARGIN, y + 2, MARGIN + WIDTH, y + 2);
-  return y + 9;
-}
-
-// A simple table: navy header row, light stripes, text inside each column.
-function table(doc: jsPDF, y: number, head: string[], widths: number[], rows: string[][]): number {
-  y = room(doc, y, 16);
-  doc.setFillColor(...NAVY);
-  doc.rect(MARGIN, y, WIDTH, 8, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  let x = MARGIN;
-  head.forEach((h, i) => {
-    doc.text(h, x + 3, y + 5.5);
-    x += widths[i];
-  });
-  y += 8;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...INK);
-  rows.forEach((row, index) => {
-    y = room(doc, y, 8);
-    if (index % 2 === 1) {
-      doc.setFillColor(...PANEL);
-      doc.rect(MARGIN, y, WIDTH, 8, 'F');
-    }
-    let cx = MARGIN;
-    row.forEach((cell, i) => {
-      doc.text(cell, cx + 3, y + 5.5, { maxWidth: widths[i] - 6 });
-      cx += widths[i];
-    });
-    y += 8;
-  });
-  return y + 6;
+  const start = { x: 92, y: 22 };
+  const ends = [
+    { x: 138, y: 7 },
+    { x: 148, y: 16 },
+    { x: 140, y: 27 },
+  ];
+  doc.setDrawColor(92, 150, 214).setLineWidth(0.5);
+  for (const e of ends) {
+    const dx = e.x - start.x;
+    const dy = e.y - start.y;
+    doc.lines([[dx * 0.45, 0, dx * 0.55, dy, dx, dy]], start.x, start.y, [1, 1], 'S');
+  }
+  doc.setFillColor(148, 196, 245);
+  for (const e of ends) doc.circle(e.x, e.y, 1.3, 'F');
+  doc.setFillColor(255, 255, 255).circle(start.x, start.y, 1.1, 'F');
+  doc.setFillColor(15, 95, 184).rect(0, H, 210, 1.4, 'F');
+  doc.setFillColor(255, 255, 255).rect(0, H + 1.4, 210, 24, 'F');
 }
 
 async function buildPdfResponse(department: string, weekStart: string) {
@@ -157,136 +132,149 @@ async function buildPdfResponse(department: string, weekStart: string) {
   const history: HistoryDay[] = Object.entries(countMap).map(([date, tickets]) => ({ date, tickets }));
   if (history.length === 0) history.push({ date: weekStart, tickets: 0 });
   const forecastDays = forecast(department as Department, history).days as unknown as { date?: string; expected?: number }[];
+  const forecastTotal = forecastDays.reduce((sum, d) => sum + (d.expected ?? 0), 0);
 
-  // ---- Build the PDF ----
+  // ---- Draw the PDF, in the Risk report's layout ----
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   doc.setProperties({ title: `Relay ${department} report ${weekStart}`, author: 'Relay' });
+  let y = 0;
 
-  // Header band with a blue stripe underneath
-  doc.setFillColor(...NAVY);
-  doc.rect(0, 0, 210, 36, 'F');
-  doc.setFillColor(...BLUE);
-  doc.rect(0, 36, 210, 1.5, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(147, 197, 253);
-  doc.text('KOPANO FREIGHT RELAY', MARGIN, 12);
-  doc.setFontSize(20);
-  doc.setTextColor(255, 255, 255);
-  doc.text('Weekly Department Report', MARGIN, 24);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(203, 213, 225);
-  doc.text(`${department}   |   Week of ${weekStart} to ${weekEnd}`, MARGIN, 31);
+  // A new page when the next block won't fit above the footer.
+  const room = (needed: number) => {
+    if (y + needed > 280) {
+      doc.addPage();
+      y = 16;
+    }
+  };
+  const heading = (text: string) => {
+    room(14);
+    doc.setFont('helvetica', 'bold').setFontSize(12).setTextColor(...NAVY);
+    doc.text(text.toUpperCase(), LEFT, y);
+    y += 7;
+  };
+  const paragraph = (text: string, size = 10, color = INK) => {
+    doc.setFont('helvetica', 'normal').setFontSize(size).setTextColor(...color);
+    const lines = doc.splitTextToSize(text, WIDTH) as string[];
+    room(lines.length * (size * 0.45) + 2);
+    doc.text(lines, LEFT, y);
+    y += lines.length * (size * 0.45) + 2;
+  };
+  // A simple table: a bold header, a rule, then rows. The first two columns are ink, the rest muted.
+  const table = (head: string[], xs: number[], rows: string[][]) => {
+    room(10);
+    doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(...INK);
+    head.forEach((h, i) => doc.text(h, xs[i], y));
+    y += 2;
+    doc.setDrawColor(...LINE).line(LEFT, y, LEFT + WIDTH, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal').setFontSize(8.5);
+    for (const row of rows) {
+      const cells = row.map((cell, i) => doc.splitTextToSize(cell, (xs[i + 1] ?? LEFT + WIDTH) - xs[i] - 4) as string[]);
+      const h = Math.max(...cells.map((c) => c.length)) * 4 + 3;
+      room(h);
+      cells.forEach((lines, i) => {
+        doc.setTextColor(...(i < 2 ? INK : MUTED)).text(lines, xs[i], y);
+      });
+      y += h;
+    }
+    y += 3;
+  };
 
-  // 1. Key numbers: four boxes
-  let y = heading(doc, 'Key numbers', 50);
+  drawHeaderBand(doc);
+  doc.setTextColor(255, 255, 255).setFont('helvetica', 'bold').setFontSize(10);
+  doc.text('RELAY HELP DESK', LEFT, 13);
+  doc.setFontSize(18).text('Weekly Department Report', LEFT, 23);
+  doc.setFont('helvetica', 'normal').setFontSize(10);
+  doc.text(`${department}  ·  ${formatDay(weekStart)} to ${formatDay(weekEnd)}`, 196, 25, { align: 'right' });
+  y = 46;
+  paragraph("How this department's help desk performed over the week. Live requests only; times are South African time.", 10, MUTED);
+  y += 4;
+
+  // Section 1: the numbers, as boxes, three to a row
+  heading('Section 1: Key numbers');
   const cards = metrics.cards ?? {};
   const boxes = [
-    { label: 'TOTAL TICKETS', value: show(cards.tickets?.value), sub: changeText(cards.tickets?.change_pct) },
-    { label: 'AVG FIRST REPLY', value: show(cards.first_reply_hours?.value, ' h'), sub: changeText(cards.first_reply_hours?.change_pct) },
-    { label: 'OPEN TICKETS', value: show(cards.open_tickets?.value), sub: `Previous: ${show(cards.open_tickets?.previous)}` },
-    { label: 'NEEDING REVIEW', value: show(cards.needs_review?.count), sub: 'flagged by the AI' },
+    { label: 'Total tickets', value: show(cards.tickets?.value), note: changeText(cards.tickets?.change_pct) },
+    { label: 'Average first reply', value: show(cards.first_reply_hours?.value, ' h'), note: changeText(cards.first_reply_hours?.change_pct) },
+    { label: 'Open tickets', value: show(cards.open_tickets?.value), note: `Previous period: ${show(cards.open_tickets?.previous)}` },
+    { label: 'Needing review', value: show(cards.needs_review?.count), note: 'Routed with under 60% confidence, so an agent checks them.' },
+    { label: 'Average resolution time', value: show(metrics.resolution_hours?.value, ' h'), note: `Previous period: ${show(metrics.resolution_hours?.previous, ' h')}` },
+    { label: 'Forecast, next 28 days', value: `${Math.round(forecastTotal)}`, note: 'Requests expected, worked out from past tickets only.' },
   ];
-  const boxWidth = (WIDTH - 3 * 4) / 4;
+  const boxW = (WIDTH - 8) / 3;
+  const boxH = 34;
   boxes.forEach((box, i) => {
-    const x = MARGIN + i * (boxWidth + 4);
-    doc.setFillColor(...PANEL);
-    doc.setDrawColor(...LINE);
-    doc.roundedRect(x, y, boxWidth, 26, 2, 2, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(...MUTED);
-    doc.text(box.label, x + 3, y + 6);
-    doc.setFontSize(16);
-    doc.setTextColor(...NAVY);
-    doc.text(box.value, x + 3, y + 15, { maxWidth: boxWidth - 6 });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...MUTED);
-    doc.text(box.sub, x + 3, y + 21, { maxWidth: boxWidth - 6 });
+    if (i % 3 === 0) room(boxH + 4);
+    const x = LEFT + (i % 3) * (boxW + 4);
+    doc.setDrawColor(...LINE).setFillColor(...PANEL).roundedRect(x, y, boxW, boxH, 2, 2, 'FD');
+    doc.setFont('helvetica', 'normal').setFontSize(8.5).setTextColor(...MUTED);
+    doc.text(doc.splitTextToSize(box.label, boxW - 6) as string[], x + 3, y + 6);
+    doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(...INK);
+    doc.text(box.value, x + 3, y + 17);
+    doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(...MUTED);
+    doc.text((doc.splitTextToSize(box.note, boxW - 6) as string[]).slice(0, 4), x + 3, y + 23);
+    if (i % 3 === 2 || i === boxes.length - 1) y += boxH + 4;
   });
-  y += 36;
+  y += 4;
 
-  // 2. Resolution and priority
-  y = heading(doc, 'Resolution and priority', y);
-  const resolutionRows: string[][] = [
-    ['Average resolution time', show(metrics.resolution_hours?.value, ' h'), `Previous: ${show(metrics.resolution_hours?.previous)}`],
-  ];
+  // Section 2: resolution and priority
+  heading('Section 2: Resolution and priority');
+  const priorityRows: string[][] = [];
   const priority = metrics.by_priority;
   if (Array.isArray(priority)) {
     for (const r of priority as Record<string, unknown>[]) {
-      resolutionRows.push([show(r.priority ?? r.name), show(r.count ?? r.value), '']);
+      priorityRows.push([show(r.priority ?? r.name), show(r.count ?? r.value), '']);
     }
   } else if (priority && typeof priority === 'object') {
     for (const [name, value] of Object.entries(priority as Record<string, unknown>)) {
-      resolutionRows.push([name, show(value), '']);
+      priorityRows.push([name, show(value), '']);
     }
   }
-  y = table(doc, y, ['Measure', 'Value', 'Detail'], [84, 40, 58], resolutionRows);
+  table(['Measure', 'Value', 'Detail'], [LEFT, LEFT + 80, LEFT + 120], [
+    ['Average resolution time', show(metrics.resolution_hours?.value, ' h'), `Previous period: ${show(metrics.resolution_hours?.previous, ' h')}`],
+    ...(priorityRows.length ? priorityRows : [['By priority', 'no data', '']]),
+  ]);
 
-  // 3. AI summary, labelled as AI
-  y = heading(doc, 'AI weekly summary', y);
-  const summaryText = summary ?? 'No AI summary is saved for this department and period. Write one on the Relay dashboard, then download the report again.';
-  const lines = doc.splitTextToSize(summaryText, WIDTH - 12);
-  const boxHeight = lines.length * 4.8 + (summary ? 14 : 8);
-  y = room(doc, y, boxHeight + 4);
-  doc.setFillColor(...AI_BG);
-  doc.rect(MARGIN, y, WIDTH, boxHeight, 'F');
-  doc.setFillColor(...BLUE);
-  doc.rect(MARGIN, y, 1.6, boxHeight, 'F');
-  doc.setFont('helvetica', summary ? 'italic' : 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(...INK);
-  doc.text(lines, MARGIN + 6, y + 7);
+  // Section 3: the AI summary, labelled as AI (the same rule as the screen)
+  heading('Section 3: AI weekly summary');
   if (summary) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...BLUE);
-    doc.text('Summary written by AI - check it against the numbers', MARGIN + 6, y + boxHeight - 4);
+    paragraph(summary, 10, INK);
+    paragraph('Summary written by AI - check it against the numbers', 8.5, BLUE);
+  } else {
+    paragraph('No AI summary is saved for this department and period. Write one on the Relay dashboard, then download the report again.', 9.5, AMBER);
   }
-  y += boxHeight + 10;
+  y += 4;
 
-  // 4. Four-week forecast: the expected requests for each week
-  y = heading(doc, 'Four-week workload forecast', y);
+  // Section 4: the four-week forecast, one row per week
+  heading('Section 4: Four-week workload forecast');
   const weeklyRows: string[][] = [];
   for (let w = 0; w < 4; w++) {
     const days = forecastDays.slice(w * 7, w * 7 + 7);
     if (days.length === 0) break;
     const total = days.reduce((sum, d) => sum + (d.expected ?? 0), 0);
-    const first = days[0].date ?? '';
-    const last = days[days.length - 1].date ?? '';
-    weeklyRows.push([`Week ${w + 1}`, `${first} to ${last}`, `${Math.round(total)} requests expected`]);
+    weeklyRows.push([`Week ${w + 1}`, `${formatDay(days[0].date ?? '')} to ${formatDay(days[days.length - 1].date ?? '')}`, `${Math.round(total)} requests expected`]);
   }
-  y = table(doc, y, ['Week', 'Dates', 'Expected'], [30, 80, 72], weeklyRows.length ? weeklyRows : [['No forecast', '', '']]);
+  table(['Week', 'Dates', 'Expected'], [LEFT, LEFT + 30, LEFT + 110], weeklyRows.length ? weeklyRows : [['No forecast', '', '']]);
 
-  // 5. Oldest unresolved tickets (top 5), no names
-  y = heading(doc, 'Oldest unresolved tickets', y);
+  // Section 5: the oldest unresolved tickets (top 5), with no names
+  heading('Section 5: Oldest unresolved tickets (top 5)');
   const now = Date.now();
   const oldestRows = (oldestOpen ?? []).map((t) => [
     String(t.reference),
     String(t.subject),
-    String(Math.floor((now - new Date(t.created_at as string).getTime()) / 86_400_000)),
+    `${Math.floor((now - new Date(t.created_at as string).getTime()) / 86_400_000)} days`,
   ]);
-  y = table(
-    doc,
-    y,
-    ['Reference', 'Subject', 'Age (days)'],
-    [40, 112, 30],
-    oldestRows.length ? oldestRows : [['No unresolved tickets for this department.', '', '']],
-  );
+  table(['Reference', 'Subject', 'Age'], [LEFT, LEFT + 40, LEFT + 150], oldestRows.length ? oldestRows : [['No unresolved tickets for this department.', '', '']]);
 
-  // Footer on every page
+  // Footer on every page, as on the Risk report
+  const generated = new Date().toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg', dateStyle: 'medium', timeStyle: 'short' });
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
-    doc.setDrawColor(...LINE);
-    doc.line(MARGIN, 285, MARGIN + WIDTH, 285);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...MUTED);
-    doc.text('Relay Internal System Report · Confidential', MARGIN, 290);
-    doc.text(`Page ${p} of ${pages}`, MARGIN + WIDTH, 290, { align: 'right' });
+    doc.setDrawColor(...LINE).line(LEFT, 287, LEFT + WIDTH, 287);
+    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...MUTED);
+    doc.text(`Relay Internal System Report · Confidential · Generated: ${generated}`, LEFT, 292);
+    doc.text(`Page ${p} of ${pages}`, 196, 292, { align: 'right' });
   }
 
   const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
