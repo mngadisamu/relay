@@ -87,7 +87,11 @@ export default function ReportsPage() {
         body: JSON.stringify({ department, weekStart }),
       });
 
-      if (!response.ok) throw new Error('Failed to generate PDF');
+      if (!response.ok) {
+        // Show the server's reason (for example, "Only managers can download reports.")
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || 'Failed to generate PDF');
+      }
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
