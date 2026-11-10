@@ -141,6 +141,6 @@ export const AI_LABEL_CHECKS: LabelCheck[] = [
   { output: "Draft", screen: "Staff: request detail", status: "ok", note: "\"Drafted with AI, then checked and sent by the … team\"" },
   { output: "Draft", screen: "Flagged replies", status: "ok", note: "AI note on every draft shown" },
   { output: "Summary", screen: "Weekly report preview", status: "ok", note: "Shown when the report has an AI summary" },
-  { output: "Summary", screen: "Dashboard insights", status: "not built yet", note: "S2-28 / S2-33 (Mihlali): must use <AiNote kind=\"summary\" />" },
+  { output: "Summary", screen: "Dashboard insights", status: "ok", note: "Shown in the AI summary box on the dashboard (S2-33)" },
   { output: "Forecast", screen: "Forecast view", status: "not built yet", note: "S2-27 (Elzel): must use <AiNote kind=\"forecast\" />" },
 ];

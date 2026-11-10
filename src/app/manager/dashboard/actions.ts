@@ -35,14 +35,25 @@ export async function writeWeeklySummary(formData: FormData) {
   });
   if (error || !metrics) return;
 
+  // Only the fields docs/metrics.md allows for the weekly summary go to Gemini.
+  // Nothing else from the function (weekly, daily, by_department) is needed for it.
+  const m = metrics as Record<string, unknown>;
+  const summaryNumbers = {
+    period: m.period,
+    department: m.department,
+    cards: m.cards,
+    resolution_hours: m.resolution_hours,
+    by_priority: m.by_priority,
+  };
+
   const scope = `the week of ${weekStart} to ${weekEnd}, ${department ?? "all departments"}`;
-  const result = await generateWeeklyInsight(metrics, scope);
+  const result = await generateWeeklyInsight(summaryNumbers, scope);
 
   const row = {
     week_start: weekStart,
     department,
     summary: result.summary,
-    metrics,
+    metrics: summaryNumbers,
     status: result.status,
   };
 
