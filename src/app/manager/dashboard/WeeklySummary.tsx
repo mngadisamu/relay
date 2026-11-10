@@ -1,7 +1,7 @@
 import { AiNote } from "@/components/AiNote";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { writeWeeklySummary } from "./actions";
+import { SummaryButton } from "./SummaryButton";
 
 // The AI summary box on the dashboard (S2-33). It shows the saved summary for the
 // week, labelled as AI-written, or says plainly that there isn't one. The numbers
@@ -51,9 +51,7 @@ export function WeeklySummary({
           <form action={writeWeeklySummary} className="pt-1">
             <input type="hidden" name="week_start" value={weekStart} />
             <input type="hidden" name="department" value={department ?? ""} />
-            <Button type="submit" variant="outline" className="w-full sm:w-auto">
-              {saved ? "Write the summary again" : "Write the summary for this week"}
-            </Button>
+            <SummaryButton hasSummary={!!saved} />
           </form>
         </CardContent>
       </Card>
