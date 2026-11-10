@@ -92,7 +92,7 @@ export async function loadAuditEntries(supabase: Supabase, f: AuditFilters, limi
   if (f.to) query = query.lt("created_at", startOfSastDay(f.to, 1));
 
   if (f.ref) {
-    const { data: tickets } = await supabase.from("tickets").select("id").ilike("reference", `%${f.ref}%`).limit(50);
+    const { data: tickets } = await supabase.from("tickets").select("id").eq("is_historical", false).ilike("reference", `%${f.ref}%`).limit(50);
     const ids = (tickets ?? []).map((t) => t.id as number);
     if (ids.length === 0) return { entries: [] as AuditEntry[], error: null };
     query = query.in("ticket_id", ids);
