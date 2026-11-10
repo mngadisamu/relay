@@ -383,7 +383,7 @@ As a manager, I want a few sentences explaining this week's numbers, so that I u
 - **Given** the summary\
   **When** it is checked\
   **Then** every number in it is in the metrics; otherwise it is rejected
-- **Given** Gemini fails or takes over 10 seconds\
+- **Given** Gemini fails or takes over 25 seconds (changed from 10 on 10 Nov 2026: live use showed Gemini timing out)\
   **When** the summary is generated\
   **Then** it returns "unavailable" instead\
   **And** each summary is saved with its numbers and an insight_generate entry

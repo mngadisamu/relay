@@ -28,6 +28,8 @@ export default async function MyRequests() {
   const { data, error } = await supabase
     .from("tickets")
     .select("id, reference, subject, department, status, created_at, assigned_at, answered_at, closed_at")
+    // Past (seeded) tickets are never shown as someone's request.
+    .eq("is_historical", false)
     .order("created_at", { ascending: false });
   const requests = (data ?? []) as Row[];
 

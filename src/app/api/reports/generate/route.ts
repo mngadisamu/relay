@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { forecast, Department, HistoryDay } from "@/lib/forecast";
 
 const DEPARTMENTS = ["HR", "IT", "Finance", "Operations"];
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
-// Report preview numbers (S2-15): one department, one week.
-// Everything under /api is public in the middleware, so check who is calling here.
-// It runs as the signed-in manager (normal key), so row-level security applies.
+// Report preview numbers (S2-15 & S2-24): one department, one week + forecast + oldest tickets.
 export async function POST(request: Request) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "manager") {
@@ -15,21 +14,25 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => null);
-  const department = String(body?.department ?? "");
+  const department = String(body?.department ?? "") as Department;
   const weekStart = String(body?.week_start ?? "");
   if (!DEPARTMENTS.includes(department) || !DAY.test(weekStart)) {
     return NextResponse.json({ error: "Choose a department and a week." }, { status: 400 });
   }
-  // The week runs Monday to Sunday: the start day plus 6 days.
+
   const end = new Date(`${weekStart}T00:00:00Z`);
   end.setUTCDate(end.getUTCDate() + 6);
   const weekEnd = end.toISOString().slice(0, 10);
 
   const supabase = await createClient();
-  const [{ data: metrics, error: metricsError }, { data: oldestOpen, error: ticketsError }] = await Promise.all([
-    // Mihlali's function (migration 0007): these are its exact parameter names.
+
+  // 1. Fetch metrics, oldest open tickets, and ticket history for the forecast in parallel
+  const [
+    { data: metrics, error: metricsError },
+    { data: oldestOpen, error: ticketsError },
+    { data: historyRows, error: historyError }
+  ] = await Promise.all([
     supabase.rpc("dashboard_metrics", { p_from: weekStart, p_to: weekEnd, p_department: department }),
-    // The 5 oldest tickets that aren't closed yet. "open" isn't a status in Relay.
     supabase
       .from("tickets")
       .select("reference, subject, created_at")
@@ -38,18 +41,81 @@ export async function POST(request: Request) {
       .neq("status", "closed")
       .order("created_at", { ascending: true })
       .limit(5),
+    supabase
+      .from("tickets")
+      .select("created_at")
+      .eq("department", department)
+      .order("created_at", { ascending: true })
   ]);
-  if (metricsError || ticketsError) {
-    return NextResponse.json({ error: (metricsError ?? ticketsError)?.message }, { status: 500 });
+
+  if (metricsError || ticketsError || historyError) {
+    return NextResponse.json({ error: (metricsError ?? ticketsError ?? historyError)?.message }, { status: 500 });
   }
 
-  // Shaped the way ReportPreview reads it. The AI summary (S2-28/S2-34) and the
-  // forecast (S2-24) are added by later stories, so they're empty for now.
+  // 2. Build daily ticket history counts for forecast(department, history)
+  const countMap: Record<string, number> = {};
+  for (const row of historyRows ?? []) {
+    const d = (row.created_at as string).slice(0, 10);
+    countMap[d] = (countMap[d] || 0) + 1;
+  }
+
+  const history: HistoryDay[] = Object.entries(countMap).map(([date, tickets]) => ({
+    date,
+    tickets,
+  }));
+
+  // Fallback history entry if empty to prevent error
+  if (history.length === 0) {
+    history.push({ date: weekStart, tickets: 0 });
+  }
+
+  // 3. Generate the 4-week forecast using the library function
+  const forecastResult = forecast(department, history);
+  
+  // Format summary projection string for the preview component
+  const totalForecastTickets = forecastResult.days.reduce((sum, d) => sum + d.expected, 0);
+  const forecastProjection = `Projected total of ${totalForecastTickets} requests over the next 28 days across ${forecastResult.days.length} days.`;
+
+  // 4. Format oldest tickets (guaranteeing no user names are included)
   const now = Date.now();
   const oldest_tickets = (oldestOpen ?? []).map((t) => ({
     reference: t.reference as string,
     subject: t.subject as string,
     age_days: Math.floor((now - new Date(t.created_at as string).getTime()) / 86_400_000),
   }));
-  return NextResponse.json({ department, week_start: weekStart, week_end: weekEnd, metrics, ai_summary: null, forecast: null, oldest_tickets });
+
+  // 4b. The AI summary for this department and week, if a manager wrote one on the
+  // dashboard (S2-28). Only a summary that passed its checks is shown; otherwise the
+  // section says none is saved.
+  const { data: insight } = await supabase
+    .from("insights")
+    .select("summary, status")
+    .eq("week_start", weekStart)
+    .eq("department", department)
+    .maybeSingle<{ summary: string | null; status: string }>();
+  const aiSummary = insight?.status === "ok" && insight.summary ? insight.summary : null;
+
+  const reportPayload = {
+    department,
+    week_start: weekStart,
+    week_end: weekEnd,
+    metrics,
+    ai_summary: aiSummary,
+    forecast: {
+      projection: forecastProjection,
+      days: forecastResult.days,
+    },
+    oldest_tickets,
+  };
+
+  // 5. Save/persist generated report to the database (S2-29)
+  await supabase.from("reports").upsert({
+    department,
+    week_start: weekStart,
+    week_end: weekEnd,
+    payload: reportPayload,
+    created_by: profile.id,
+  }, { onConflict: "department, week_start" });
+
+  return NextResponse.json(reportPayload);
 }

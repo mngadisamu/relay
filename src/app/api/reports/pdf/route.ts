@@ -41,6 +41,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Report not found for this department and week' }, { status: 404 });
     }
 
+    // 2b. The AI summary saved on the dashboard for this department and week (S2-28).
+    // Read here, the same way the report preview reads it, so the PDF and the preview match.
+    const { data: insight } = await supabase
+      .from('insights')
+      .select('summary, status')
+      .eq('week_start', weekStart)
+      .eq('department', department)
+      .maybeSingle();
+    const hasSummary = insight?.status === 'ok' && !!insight.summary;
+
     // 3. Generate PDF using jsPDF
     const doc = new jsPDF();
     
@@ -75,9 +85,17 @@ export async function POST(request: Request) {
     doc.text('AI Weekly Summary', 14, yPos);
     yPos += 8;
     doc.setFontSize(10);
-    const summaryText = reportData.summary || 'No summary available.';
-    const splitSummary = doc.splitTextToSize(summaryText, 180);
-    doc.text(splitSummary, 14, yPos);
+    if (hasSummary) {
+      const splitSummary = doc.splitTextToSize(insight!.summary as string, 180);
+      doc.text(splitSummary, 14, yPos);
+      yPos += splitSummary.length * 5 + 6;
+      // Label the AI text in the PDF too, as the screen does (AiNote).
+      doc.setFontSize(9);
+      doc.setTextColor(11, 76, 148);
+      doc.text('Summary written by AI - check it against the numbers', 14, yPos);
+    } else {
+      doc.text('No AI summary is saved for this department and week.', 14, yPos);
+    }
 
     // Output PDF bytes
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));

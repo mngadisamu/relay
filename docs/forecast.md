@@ -8,3 +8,10 @@ Each day has a low and a high value around the expected one, forming an 80% rang
 - Both are whole tickets.
 
 Limits: the model assumes tickets arrive independently. Real tickets often come in bursts, so the 80% range may cover fewer than 8 in 10 real days. S2-17 measures that coverage. If it's short, report it as a finding rather than widening the range to hit the target.
+Output
+- `department`: the department requested
+- `generatedAt`: ISO timestamp of the run (not used in the method)
+- `days`: exactly 28 entries, starting the day after the last date in `history` (SAST)
+  - `date`: `YYYY-MM-DD`
+  - `expected`: expected tickets that day, one decimal place, never negative
+  - `low`, `high`: null until S2-13 adds the range

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import TrendCharts from "./TrendCharts";
+import { WeeklySummary, type SavedSummary } from "./WeeklySummary";
 
 // Dashboard (S2-14): four number cards and filters. The numbers come from the
 // database function dashboard_metrics() (see docs/metrics.md). The filters live
@@ -56,6 +57,14 @@ function addDays(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+// The Monday of the week that contains an ISO date (weeks start on Monday, as in the database).
+function mondayOf(iso: string) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  const daysSinceMonday = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - daysSinceMonday);
+  return d.toISOString().slice(0, 10);
+}
+
 function niceDate(iso: string) {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-ZA", {
     day: "numeric",
@@ -69,8 +78,13 @@ const show = (n: number | null) => (n === null ? "No data" : String(n));
 
 // The change line. The arrow is decoration only: the words carry the meaning,
 // so it never relies on colour alone.
-function Delta({ amount, suffix }: { amount: number | null; suffix: string }) {
-       if (amount === null) return <>No comparison available for the previous period</>;
+// `previous` is passed for the cards whose change is a percentage: when the previous
+// period was 0, the percentage can't be worked out, so say what the previous value was.
+function Delta({ amount, suffix, previous }: { amount: number | null; suffix: string; previous?: number | null }) {
+  if (amount === null) {
+    if (previous === 0) return <>Was 0 in the previous period, so there is no percentage change</>;
+    return <>No comparison available for the previous period</>;
+  }
   if (amount === 0) return <>No change since the previous period</>;
   const up = amount > 0;
   return (
@@ -137,6 +151,13 @@ export default async function ManagerDashboard({
   });
   const metrics = error ? null : (data as Metrics | null);
 
+  // The saved AI summary for the week that contains the To date (S2-33), if one was written.
+  const weekStart = mondayOf(to);
+  const weekEnd = addDays(weekStart, 6);
+  let insightQuery = supabase.from("insights").select("summary, status").eq("week_start", weekStart);
+  insightQuery = department ? insightQuery.eq("department", department) : insightQuery.is("department", null);
+  const { data: savedRow } = await insightQuery.maybeSingle<SavedSummary>();
+
   return (
     <div className="min-h-screen bg-page">
       <RoleHeader profile={profile} home="/manager" menu={MANAGER_MENU} current="/manager/dashboard" />
@@ -145,6 +166,11 @@ export default async function ManagerDashboard({
           <h1 className="text-2xl font-semibold text-ink">Dashboard</h1>
           <p className="text-[15px] text-ink-2">
             {department ?? "All departments"} · {niceDate(from)} to {niceDate(to)}
+          </p>
+          {/* Be open about the data: the past tickets were generated for the project (see data/README.md). */}
+          <p className="text-sm text-ink-2">
+            Tickets created before the live requests began are past tickets generated for this project, not
+            real requests. Their dates, depots and priorities are assigned, not recorded.
           </p>
         </div>
 
@@ -223,7 +249,7 @@ export default async function ManagerDashboard({
 
             <ul aria-label="Key numbers" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <MetricCard label="Tickets" value={show(metrics.cards.tickets.value)}>
-                <Delta amount={metrics.cards.tickets.change_pct} suffix="%" />
+                <Delta amount={metrics.cards.tickets.change_pct} previous={metrics.cards.tickets.previous} suffix="%" />
               </MetricCard>
 
               <MetricCard
@@ -235,11 +261,15 @@ export default async function ManagerDashboard({
                 }
                 note={`Based on ${metrics.cards.first_reply_hours.based_on} answered tickets`}
               >
-                <Delta amount={metrics.cards.first_reply_hours.change_pct} suffix="%" />
+                <Delta
+                  amount={metrics.cards.first_reply_hours.change_pct}
+                  previous={metrics.cards.first_reply_hours.previous}
+                  suffix="%"
+                />
               </MetricCard>
 
               <MetricCard label="Open tickets" value={show(metrics.cards.open_tickets.value)}>
-                <Delta amount={metrics.cards.open_tickets.change_pct} suffix="%" />
+                <Delta amount={metrics.cards.open_tickets.change_pct} previous={metrics.cards.open_tickets.previous} suffix="%" />
               </MetricCard>
 
               <MetricCard
@@ -255,7 +285,14 @@ export default async function ManagerDashboard({
               </MetricCard>
             </ul>
 
-            <TrendCharts weekly={metrics.weekly ?? []} departments={metrics.by_department ?? []} />
+            <WeeklySummary
+              weekStart={weekStart}
+              weekEnd={weekEnd}
+              department={department}
+              saved={savedRow ?? null}
+            />
+
+            <TrendCharts weekly={metrics.weekly ?? []} departments={metrics.by_department ?? []} asOf={today} />
 
             <p className="text-xs text-ink-2">
               Changes compare with the previous {metrics.period.days} days.

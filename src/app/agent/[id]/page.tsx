@@ -22,6 +22,8 @@ export default async function TicketPage({ params }: { params: Promise<{ id: str
     .from("tickets")
     .select("id, reference, subject, description, depot, department, priority, status, needs_review, is_sensitive, sensitive_kind, assigned_to, created_at")
     .eq("id", id)
+    // Past (seeded) tickets are never opened as a live ticket.
+    .eq("is_historical", false)
     .maybeSingle<TicketForReply>();
 
   // Not found, or in another department: show the 404 page.

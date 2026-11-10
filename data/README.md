@@ -36,7 +36,7 @@ python ml/train_classifier.py
 | `department` | HR / IT / Finance / Operations | The correct department |
 | `priority` | low / medium / high / urgent | How urgent this kind of request usually is |
 | `depot` | Head Office / City Deep depot / Pomona depot | Where the staff member works |
-| `created_at` | date and time (SAST) | A random time in the 12 months before 29 Oct 2026 |
+| `created_at` | date and time (SAST) | **Generated, not recorded**: a random time in the 12 months before 29 Oct 2026 |
 | `source` | `synthetic` | Marks the row as written, not real, so accuracy is reported separately |
 | `scenario_id` | number | Which kind of request it is. Used to test the model on kinds of requests it never saw |
 
