@@ -84,12 +84,23 @@ export async function POST(request: Request) {
     age_days: Math.floor((now - new Date(t.created_at as string).getTime()) / 86_400_000),
   }));
 
+  // 4b. The AI summary for this department and week, if a manager wrote one on the
+  // dashboard (S2-28). Only a summary that passed its checks is shown; otherwise the
+  // section says none is saved.
+  const { data: insight } = await supabase
+    .from("insights")
+    .select("summary, status")
+    .eq("week_start", weekStart)
+    .eq("department", department)
+    .maybeSingle<{ summary: string | null; status: string }>();
+  const aiSummary = insight?.status === "ok" && insight.summary ? insight.summary : null;
+
   const reportPayload = {
     department,
     week_start: weekStart,
     week_end: weekEnd,
     metrics,
-    ai_summary: null,
+    ai_summary: aiSummary,
     forecast: {
       projection: forecastProjection,
       days: forecastResult.days,

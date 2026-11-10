@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import TrendCharts from "./TrendCharts";
-import { WeeklySummary, type SavedSummary } from "./WeeklySummary";
 
 // Dashboard (S2-14): four number cards and filters. The numbers come from the
 // database function dashboard_metrics() (see docs/metrics.md). The filters live
@@ -54,14 +53,6 @@ function todaySast() {
 function addDays(iso: string, days: number) {
   const d = new Date(`${iso}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-// The Monday of the week that contains an ISO date (weeks start on Monday, as in the database).
-function mondayOf(iso: string) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  const daysSinceMonday = (d.getUTCDay() + 6) % 7;
-  d.setUTCDate(d.getUTCDate() - daysSinceMonday);
   return d.toISOString().slice(0, 10);
 }
 
@@ -145,13 +136,6 @@ export default async function ManagerDashboard({
     p_department: department,
   });
   const metrics = error ? null : (data as Metrics | null);
-
-  // The saved AI summary for the week that contains the To date (S2-33), if one was written.
-  const weekStart = mondayOf(to);
-  const weekEnd = addDays(weekStart, 6);
-  let insightQuery = supabase.from("insights").select("summary, status").eq("week_start", weekStart);
-  insightQuery = department ? insightQuery.eq("department", department) : insightQuery.is("department", null);
-  const { data: savedRow } = await insightQuery.maybeSingle<SavedSummary>();
 
   return (
     <div className="min-h-screen bg-page">
@@ -270,13 +254,6 @@ export default async function ManagerDashboard({
                 <Delta amount={metrics.cards.needs_review.change_points} suffix=" points" />
               </MetricCard>
             </ul>
-
-            <WeeklySummary
-              weekStart={weekStart}
-              weekEnd={weekEnd}
-              department={department}
-              saved={savedRow ?? null}
-            />
 
             <TrendCharts weekly={metrics.weekly ?? []} departments={metrics.by_department ?? []} />
 
