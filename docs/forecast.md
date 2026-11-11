@@ -1,17 +1,12 @@
-## Range (S2-13)
+## Accuracy backtest (S2-17)
 
-Each day has a low and a high value around the expected one, forming an 80% range.
+Origin: 8 Oct 2026, four weeks before the last history date (5 Nov 2026). The forecast is made from history up to 8 Oct and scored on 9 Oct to 5 Nov, with the 19–20 Oct gap not scored.
 
-- The range comes from a Poisson model: tickets on a given day are treated as independent counts with mean equal to `expected`.
-- `low` is the 10th percentile of that model, capped at `expected`.
-- `high` is the 90th percentile, and is never below `expected` or below 1.
-- Both are whole tickets.
+| Department | Scored days | Forecast: off by (tickets/day) | Same as last week: off by (tickets/day) |
+|---|---|---|---|
+| HR | | | |
+| IT | | | |
+| Finance | | | |
+| Operations | | | |
 
-Limits: the model assumes tickets arrive independently. Real tickets often come in bursts, so the 80% range may cover fewer than 8 in 10 real days. S2-17 measures that coverage. If it's short, report it as a finding rather than widening the range to hit the target.
-Output
-- `department`: the department requested
-- `generatedAt`: ISO timestamp of the run (not used in the method)
-- `days`: exactly 28 entries, starting the day after the last date in `history` (SAST)
-  - `date`: `YYYY-MM-DD`
-  - `expected`: expected tickets that day, one decimal place, never negative
-  - `low`, `high`: null until S2-13 adds the range
+Limits: this is one backtest origin. The window spans the drop from busy historical volume to quiet live volume, so the errors reflect that shift as much as the method. A stronger test would roll the origin across several weeks.
