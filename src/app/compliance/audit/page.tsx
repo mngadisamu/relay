@@ -38,7 +38,7 @@ export default async function AuditLogPage({
       />
       <main className="mx-auto max-w-[1360px] space-y-5 px-4 pb-12 pt-7 sm:px-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-ink">Audit log</h1>
+          <h1 className="text-xl font-semibold text-ink sm:text-2xl">Audit log</h1>
           <p className="text-[15px] text-ink-2">
             Every AI decision and every change people make, with who and when. Times are South African time.
           </p>

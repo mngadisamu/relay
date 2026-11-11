@@ -34,7 +34,7 @@ export function TicketLine({ ticket }: { ticket: TicketBits | null }) {
 // The AI draft and what was sent, side by side (one box if they're the same).
 export function ReplyCompare({ response, sentBy, highlight }: { response: ResponseBits; sentBy: string; highlight: string | null }) {
   const same = (response.ai_draft ?? "").trim() === (response.final_text ?? "").trim();
-  const box = "whitespace-pre-line rounded-md border border-line-soft bg-page px-3.5 py-3 text-[15px] leading-[23px] text-ink";
+  const box = "whitespace-pre-line rounded-md border border-line-soft bg-page px-3.5 py-3 text-sm leading-[22px] text-ink sm:text-[15px] sm:leading-[23px]";
   return (
     <div className={`grid gap-3 ${same || !response.ai_draft ? "" : "md:grid-cols-2"}`}>
       {!same && response.ai_draft && (
