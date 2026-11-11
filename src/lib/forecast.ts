@@ -13,8 +13,6 @@ export type ForecastDay = {
   expected: number;    // one decimal place, never negative
   low: number | null;  // whole tickets, 10th percentile (S2-13)
   high: number | null; // whole tickets, 90th percentile, at least 1 (S2-13)
-  low: number | null;  // filled in S2-13
-  high: number | null; // filled in S2-13
 };
 
 export type Forecast = {
