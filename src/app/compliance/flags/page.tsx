@@ -104,14 +104,14 @@ export default async function FlaggedRepliesPage({ searchParams }: { searchParam
       />
       <main className="mx-auto max-w-[1100px] space-y-5 px-4 pb-12 pt-7 sm:px-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-ink">Flagged replies</h1>
+          <h1 className="text-xl font-semibold text-ink sm:text-2xl">Flagged replies</h1>
           <p className="text-[15px] text-ink-2">
             Replies Relay or a colleague marked for a second look: an AI draft sent without edits, an amount or date
             nobody gave the AI, or a reason someone wrote. Times are South African time.
           </p>
         </div>
 
-        <nav aria-label="Which replies" className="flex flex-wrap gap-1 border-b border-line">
+        <nav aria-label="Which replies" className="-mx-1 flex gap-1 overflow-x-auto whitespace-nowrap border-b border-line px-1">
           {tabs.map((t) => (
             <Link
               key={t.view}

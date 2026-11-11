@@ -38,7 +38,7 @@ export default async function RiskReportPage({ searchParams }: { searchParams: P
       <main className="mx-auto max-w-[1100px] space-y-6 px-4 pb-12 pt-7 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold text-ink">Risk report</h1>
+            <h1 className="text-xl font-semibold text-ink sm:text-2xl">Risk report</h1>
             <p className="text-[15px] text-ink-2">
               How Relay&apos;s AI behaved from {formatDay(range.from)} to {formatDay(range.to)}. Live requests only; times
               are South African time.
@@ -91,14 +91,14 @@ export default async function RiskReportPage({ searchParams }: { searchParams: P
 
         {metrics && (
           <section aria-labelledby="numbers-heading" className="space-y-3">
-            <h2 id="numbers-heading" className="text-lg font-semibold text-ink">
+            <h2 id="numbers-heading" className="text-base font-semibold text-ink sm:text-lg">
               1. How the AI was used
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {riskRows(metrics).map((row) => (
                 <li key={row.label} className="space-y-1 rounded-[10px] border border-line bg-white p-4">
                   <p className="text-sm font-medium text-ink-2">{row.label}</p>
-                  <p className="text-3xl font-semibold text-ink">{row.value}</p>
+                  <p className="text-2xl font-semibold text-ink sm:text-3xl">{row.value}</p>
                   <p className="text-[13px] leading-5 text-muted">{row.note}</p>
                 </li>
               ))}
@@ -118,7 +118,7 @@ export default async function RiskReportPage({ searchParams }: { searchParams: P
         )}
 
         <section aria-labelledby="bias-heading" className="space-y-3 rounded-[10px] border border-line bg-white p-4">
-          <h2 id="bias-heading" className="text-lg font-semibold text-ink">
+          <h2 id="bias-heading" className="text-base font-semibold text-ink sm:text-lg">
             2. Bias test
           </h2>
           <p className="text-sm text-ink-2">
@@ -136,7 +136,7 @@ export default async function RiskReportPage({ searchParams }: { searchParams: P
 
         <section aria-labelledby="labels-heading" className="space-y-3">
           <div className="space-y-1">
-            <h2 id="labels-heading" className="text-lg font-semibold text-ink">
+            <h2 id="labels-heading" className="text-base font-semibold text-ink sm:text-lg">
               3. AI labels on each screen
             </h2>
             <p className="text-sm text-ink-2">Every piece of AI output should say it came from AI. Checked by hand on 6 Nov 2026.</p>

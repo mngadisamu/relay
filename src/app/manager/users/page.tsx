@@ -26,7 +26,7 @@ export default async function ManageUsersPage() {
       <RoleHeader profile={profile} home="/manager" menu={MANAGER_MENU} current="/manager/users" />
       <main className="mx-auto max-w-[1100px] space-y-6 px-4 pb-12 pt-7 sm:px-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-ink">Manage users</h1>
+          <h1 className="text-xl font-semibold text-ink sm:text-2xl">Manage users</h1>
           <p className="text-[15px] text-ink-2">
             Add people to Relay and choose what they can do. New people get an email to set their password.
             {profile.department
@@ -38,7 +38,7 @@ export default async function ManageUsersPage() {
         <AddPersonForm myDepartment={profile.department} />
 
         <section aria-labelledby="people-heading" className="space-y-3">
-          <h2 id="people-heading" className="text-lg font-semibold text-ink">
+          <h2 id="people-heading" className="text-base font-semibold text-ink sm:text-lg">
             People ({people.length})
           </h2>
           {error ? (
@@ -57,7 +57,7 @@ export default async function ManageUsersPage() {
         {left.length > 0 && (
           <section aria-labelledby="left-heading" className="space-y-3">
             <div className="space-y-1">
-              <h2 id="left-heading" className="text-lg font-semibold text-ink">
+              <h2 id="left-heading" className="text-base font-semibold text-ink sm:text-lg">
                 Left Relay ({left.length})
               </h2>
               <p className="text-sm text-ink-2">
