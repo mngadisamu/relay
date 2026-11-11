@@ -90,7 +90,8 @@ export async function POST(request: Request) {
   const { data: insight } = await supabase
     .from("insights")
     .select("summary, status")
-    .eq("week_start", weekStart)
+    .eq("period_from", weekStart)
+    .eq("period_to", weekEnd)
     .eq("department", department)
     .maybeSingle<{ summary: string | null; status: string }>();
   const aiSummary = insight?.status === "ok" && insight.summary ? insight.summary : null;
@@ -108,14 +109,19 @@ export async function POST(request: Request) {
     oldest_tickets,
   };
 
-  // 5. Save/persist generated report to the database (S2-29)
-  await supabase.from("reports").upsert({
+  // 5. Save the report (S2-29). It uses the columns the reports table has (0008): metrics
+  // and forecast are kept so a later download shows what the manager saw. The AI summary is
+  // not stored here; the PDF reads the current summary for the period, as the preview does.
+  const { error: saveError } = await supabase.from("reports").upsert({
     department,
     week_start: weekStart,
-    week_end: weekEnd,
-    payload: reportPayload,
-    created_by: profile.id,
-  }, { onConflict: "department, week_start" });
+    metrics,
+    forecast: { projection: forecastProjection, days: forecastResult.days },
+  }, { onConflict: "department,week_start" });
+  if (saveError) {
+    // Don't hide a failed save: the preview still works, but the report won't be in Saved Reports.
+    console.warn("Report not saved:", saveError.message);
+  }
 
   return NextResponse.json(reportPayload);
 }

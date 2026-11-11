@@ -87,10 +87,10 @@ export default async function AgentInbox({
       ) : (
         <AgentHeader profile={profile} current="inbox" />
       )}
-      <main className="mx-auto max-w-[1360px] space-y-[18px] px-6 pb-12 pt-7">
+      <main className="mx-auto max-w-[1360px] space-y-[18px] px-4 pb-12 pt-7 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-[22px] font-semibold text-ink">{isManager ? "Tickets" : "Inbox"}</h1>
+            <h1 className="text-[19px] font-semibold text-ink sm:text-[22px]">{isManager ? "Tickets" : "Inbox"}</h1>
             <p className="text-sm text-muted">
               {profile.department ?? "All departments"}
               {profile.department ? " tickets only" : ""} · most urgent first, then oldest
@@ -150,7 +150,52 @@ export default async function AgentInbox({
           </p>
         )}
 
-        <div className="overflow-x-auto rounded-[10px] border border-line bg-white">
+        {/* Phones: one card per ticket, so nothing is cut off and nothing scrolls sideways.
+            From tablet width (md) up, the full table is shown instead. */}
+        <ul aria-label="Tickets" className="space-y-3 md:hidden">
+          {tickets.map((t) => {
+            const update = latestUpdate(t);
+            return (
+              <li key={t.id} className="rounded-[10px] border border-line bg-white p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <PriorityTag priority={t.priority} />
+                  <StatusPill status={t.status} size="sm" />
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  <Link prefetch href={`/agent/${t.id}`} className="font-semibold text-ink hover:underline">
+                    {t.subject}
+                  </Link>
+                  {t.is_sensitive && <SensitiveTag label={t.sensitive_kind ? SENSITIVE_LABEL[t.sensitive_kind].tag : undefined} />}
+                  {t.needs_review && <NeedsReviewTag />}
+                </div>
+                <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+                  <dt className="text-muted">Reference</dt>
+                  <dd className="tabular-nums text-ink-2">{t.reference}</dd>
+                  <dt className="text-muted">Depot</dt>
+                  <dd className="text-ink-2">{t.depot ?? "Not given"}</dd>
+                  <dt className="text-muted">Assigned to</dt>
+                  <dd className="text-ink-2">{assignedLabel(t) ?? "Nobody yet"}</dd>
+                  <dt className="text-muted">Received</dt>
+                  <dd className="text-ink-2">
+                    <time dateTime={t.created_at}>{formatWhen(t.created_at)}</time>
+                  </dd>
+                  <dt className="text-muted">Last update</dt>
+                  <dd className="text-ink-2">
+                    {update.label === "Sent" ? (
+                      "No reply yet"
+                    ) : (
+                      <>
+                        {update.label} <time dateTime={update.at}>{formatWhen(update.at)}</time>
+                      </>
+                    )}
+                  </dd>
+                </dl>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="hidden overflow-x-auto rounded-[10px] border border-line bg-white md:block">
           <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-[0.4px] text-muted">
@@ -203,16 +248,17 @@ export default async function AgentInbox({
               ))}
             </tbody>
           </table>
-          {tickets.length === 0 && !error && (
-            <p className="px-4 py-8 text-center text-sm text-muted">
-              {mine && !filter
-                ? "Nothing is assigned to you right now. Take a ticket from Everyone's."
-                : filter
-                  ? `No ${STATUS_LABEL[filter].toLowerCase()} tickets.`
-                  : "No tickets for your department right now."}
-            </p>
-          )}
         </div>
+
+        {tickets.length === 0 && !error && (
+          <p className="rounded-[10px] border border-line bg-white px-4 py-8 text-center text-sm text-muted">
+            {mine && !filter
+              ? "Nothing is assigned to you right now. Take a ticket from Everyone's."
+              : filter
+                ? `No ${STATUS_LABEL[filter].toLowerCase()} tickets.`
+                : "No tickets for your department right now."}
+          </p>
+        )}
       </main>
     </div>
   );

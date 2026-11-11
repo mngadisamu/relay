@@ -57,14 +57,6 @@ function addDays(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-// The Monday of the week that contains an ISO date (weeks start on Monday, as in the database).
-function mondayOf(iso: string) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  const daysSinceMonday = (d.getUTCDay() + 6) % 7;
-  d.setUTCDate(d.getUTCDate() - daysSinceMonday);
-  return d.toISOString().slice(0, 10);
-}
-
 function niceDate(iso: string) {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-ZA", {
     day: "numeric",
@@ -110,9 +102,9 @@ function MetricCard({
   return (
     <li>
       <Card className="h-full">
-        <CardContent className="space-y-2 p-5">
+        <CardContent className="space-y-2 p-4 sm:p-5">
           <h2 className="text-sm font-medium text-ink-2">{label}</h2>
-          <p className="text-3xl font-semibold text-ink">{value}</p>
+          <p className="text-2xl font-semibold text-ink sm:text-3xl">{value}</p>
           <p className="text-sm text-ink-2">{children}</p>
           {note ? <p className="text-xs text-ink-2">{note}</p> : null}
         </CardContent>
@@ -151,10 +143,13 @@ export default async function ManagerDashboard({
   });
   const metrics = error ? null : (data as Metrics | null);
 
-  // The saved AI summary for the week that contains the To date (S2-33), if one was written.
-  const weekStart = mondayOf(to);
-  const weekEnd = addDays(weekStart, 6);
-  let insightQuery = supabase.from("insights").select("summary, status").eq("week_start", weekStart);
+  // The saved AI summary for exactly this period and department (S2-33). The numbers above
+  // use the same from/to/department, so the summary always describes what is on screen.
+  let insightQuery = supabase
+    .from("insights")
+    .select("summary, status, created_at")
+    .eq("period_from", from)
+    .eq("period_to", to);
   insightQuery = department ? insightQuery.eq("department", department) : insightQuery.is("department", null);
   const { data: savedRow } = await insightQuery.maybeSingle<SavedSummary>();
 
@@ -163,7 +158,7 @@ export default async function ManagerDashboard({
       <RoleHeader profile={profile} home="/manager" menu={MANAGER_MENU} current="/manager/dashboard" />
       <main className="mx-auto max-w-[1360px] space-y-6 px-4 pb-12 pt-7 sm:px-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-ink">Dashboard</h1>
+          <h1 className="text-xl font-semibold text-ink sm:text-2xl">Dashboard</h1>
           <p className="text-[15px] text-ink-2">
             {department ?? "All departments"} · {niceDate(from)} to {niceDate(to)}
           </p>
@@ -286,8 +281,9 @@ export default async function ManagerDashboard({
             </ul>
 
             <WeeklySummary
-              weekStart={weekStart}
-              weekEnd={weekEnd}
+              from={from}
+              to={to}
+              periodLabel={`${niceDate(from)} to ${niceDate(to)}`}
               department={department}
               saved={savedRow ?? null}
             />

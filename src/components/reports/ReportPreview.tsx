@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { AiNote } from '@/components/AiNote';
 
 interface ReportPreviewProps {
@@ -31,6 +32,12 @@ interface ReportPreviewProps {
 }
 
 export default function ReportPreview({ department, weekStart, reportData }: ReportPreviewProps) {
+  // The report covers Monday to the Sunday after (the same period the summary must cover).
+  const periodEnd = (() => {
+    const d = new Date(`${weekStart}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 6);
+    return d.toISOString().slice(0, 10);
+  })();
   const cards = reportData?.metrics?.cards;
 
   return (
@@ -90,7 +97,15 @@ export default function ReportPreview({ department, weekStart, reportData }: Rep
             </>
           ) : (
             <p className="text-sm text-slate-600">
-              No AI summary is saved for this department and week yet. Write it on the Dashboard, then generate the report again.
+              No AI summary is saved for {department} from {weekStart} to {periodEnd}.{' '}
+              <Link
+                prefetch
+                href={`/manager/dashboard?department=${encodeURIComponent(department)}&from=${weekStart}&to=${periodEnd}`}
+                className="font-semibold text-blue-700 underline"
+              >
+                Write it on the dashboard
+              </Link>
+              , then generate the report again.
             </p>
           )}
         </div>
