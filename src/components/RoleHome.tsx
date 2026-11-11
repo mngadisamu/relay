@@ -20,7 +20,7 @@ export function RoleHome({ title, description, profile, home, menu }: Props) {
       <RoleHeader profile={profile} home={home} menu={menu} />
       <main className="mx-auto max-w-[1360px] space-y-6 px-4 pb-12 pt-7 sm:px-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-ink">{title}</h1>
+          <h1 className="text-xl font-semibold text-ink sm:text-2xl">{title}</h1>
           <p className="text-[15px] text-ink-2">
             Hi {firstName}. {description}
           </p>

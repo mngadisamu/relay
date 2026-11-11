@@ -46,7 +46,7 @@ function promptFor(metrics: unknown, scope: string) {
 Scope: ${scope}.
 
 Write 3 to 5 plain sentences in South African English. Say what went up or down compared with the previous period, and which number the manager may want to look at.
-Use only the numbers in the JSON below, written as digits. Don't add any other number, date or percentage, and don't guess why something changed.
+Use only the numbers in the JSON below, written as digits. Don't add any other number, date or percentage, and don't guess why something changed. If a value is null, say there is no data for it, and never call it zero.
 No headings, no bullet points.
 
 JSON:

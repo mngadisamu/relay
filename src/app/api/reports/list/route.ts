@@ -11,12 +11,19 @@ export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reports")
-    .select("id, department, week_start, week_end, created_at")
+    .select("id, department, week_start, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ reports: data ?? [] });
+  // The table stores the Monday only; the Sunday is the Monday plus six days.
+  const reports = (data ?? []).map((r) => {
+    const end = new Date(`${r.week_start}T00:00:00Z`);
+    end.setUTCDate(end.getUTCDate() + 6);
+    return { ...r, week_end: end.toISOString().slice(0, 10) };
+  });
+
+  return NextResponse.json({ reports });
 }

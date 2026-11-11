@@ -262,7 +262,7 @@ export default function TicketReply({
           <section className="space-y-3.5 rounded-[10px] border border-line bg-white p-5">
             <div className="space-y-2">
               <p className="text-[13px] tabular-nums text-muted">{ticket.reference}</p>
-              <h1 className="text-xl font-semibold leading-[27px] text-ink">{ticket.subject}</h1>
+              <h1 className="text-lg font-semibold leading-6 text-ink sm:text-xl sm:leading-[27px]">{ticket.subject}</h1>
               <div className="flex flex-wrap gap-2">
                 <StatusPill status={status} size="sm" />
                 <PriorityTag priority={ticket.priority} />
@@ -299,13 +299,13 @@ export default function TicketReply({
 
             <div className="space-y-1 border-t border-line-soft pt-3.5">
               <p className="text-[13px] text-muted">Request</p>
-              <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{ticket.description}</p>
+              <p className="whitespace-pre-line text-sm leading-[22px] text-ink sm:text-[15px]">{ticket.description}</p>
             </div>
           </section>
 
           {/* Who is working on it (S2-16) */}
           <section aria-labelledby="assignment-heading" className="space-y-3 rounded-[10px] border border-line bg-white p-5">
-            <h2 id="assignment-heading" className="text-[15px] font-semibold text-ink">
+            <h2 id="assignment-heading" className="text-sm font-semibold text-ink sm:text-[15px]">
               Assignment
             </h2>
             <p className="text-sm text-ink">
@@ -361,7 +361,7 @@ export default function TicketReply({
           </section>
 
           <section aria-labelledby="routing-heading" className="space-y-3.5 rounded-[10px] border border-line bg-white p-5">
-            <h2 id="routing-heading" className="text-[15px] font-semibold text-ink">
+            <h2 id="routing-heading" className="text-sm font-semibold text-ink sm:text-[15px]">
               Routing
             </h2>
             {classification && <AiNote kind="routing" confidence={classification.confidence} />}
@@ -465,7 +465,7 @@ export default function TicketReply({
         <section aria-labelledby="reply-heading" className="flex min-w-0 flex-[999_1_560px] flex-col gap-4 rounded-[10px] border border-line bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h2 id="reply-heading" className="text-[17px] font-semibold text-ink">
+              <h2 id="reply-heading" className="text-sm font-semibold text-ink sm:text-[15px] sm:text-[17px]">
                 Reply
               </h2>
               {aiGenerated && !sent && (
@@ -514,7 +514,7 @@ export default function TicketReply({
               </p>
               <div className="space-y-1">
                 <p className="text-[13px] text-muted">What the staff member received</p>
-                <p className="whitespace-pre-line rounded-md border border-line-soft bg-page px-3.5 py-3 text-[15px] leading-[23px] text-ink">
+                <p className="whitespace-pre-line rounded-md border border-line-soft bg-page px-3.5 py-3 text-sm leading-[22px] text-ink sm:text-[15px] sm:leading-[23px]">
                   {sent.final_text}
                 </p>
               </div>
@@ -548,7 +548,7 @@ export default function TicketReply({
                   {followUps.map((f, i) => (
                     <div key={i} className="space-y-0.5">
                       <p className="text-[12px] text-muted">{formatWhen(f.created_at)}</p>
-                      <p className="whitespace-pre-line text-[15px] leading-[22px] text-ink">{f.body}</p>
+                      <p className="whitespace-pre-line text-sm leading-[22px] text-ink sm:text-[15px]">{f.body}</p>
                     </div>
                   ))}
                   {earlierReply && (
@@ -580,7 +580,7 @@ export default function TicketReply({
                     setPreviousDraft(null);
                   }}
                   disabled={isGenerating}
-                  className="w-full resize-y rounded-md border border-field bg-white px-3.5 py-3 text-[15px] leading-[23px] text-ink disabled:text-muted"
+                  className="w-full resize-y rounded-md border border-field bg-white px-3.5 py-3 text-sm leading-[22px] text-ink sm:text-[15px] sm:leading-[23px] disabled:text-muted"
                 />
               </div>
 
