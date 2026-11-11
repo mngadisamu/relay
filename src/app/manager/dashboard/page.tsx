@@ -102,9 +102,9 @@ function MetricCard({
   return (
     <li>
       <Card className="h-full">
-        <CardContent className="space-y-2 p-5">
+        <CardContent className="space-y-2 p-4 sm:p-5">
           <h2 className="text-sm font-medium text-ink-2">{label}</h2>
-          <p className="text-3xl font-semibold text-ink">{value}</p>
+          <p className="text-2xl font-semibold text-ink sm:text-3xl">{value}</p>
           <p className="text-sm text-ink-2">{children}</p>
           {note ? <p className="text-xs text-ink-2">{note}</p> : null}
         </CardContent>
@@ -158,7 +158,7 @@ export default async function ManagerDashboard({
       <RoleHeader profile={profile} home="/manager" menu={MANAGER_MENU} current="/manager/dashboard" />
       <main className="mx-auto max-w-[1360px] space-y-6 px-4 pb-12 pt-7 sm:px-6">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-ink">Dashboard</h1>
+          <h1 className="text-xl font-semibold text-ink sm:text-2xl">Dashboard</h1>
           <p className="text-[15px] text-ink-2">
             {department ?? "All departments"} · {niceDate(from)} to {niceDate(to)}
           </p>

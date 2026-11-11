@@ -62,13 +62,13 @@ export default function TemplateLibrary({
   return (
     <main className="mx-auto max-w-[1360px] space-y-[18px] px-4 pb-12 pt-7 sm:px-6">
       <div className="space-y-1">
-        <h1 className="text-[22px] font-semibold text-ink">Reply templates</h1>
+        <h1 className="text-[19px] font-semibold text-ink sm:text-[22px]">Reply templates</h1>
         <p className="text-sm text-muted">
           The AI starts every draft from the template that matches the tone the agent picks. [Staff Name] and [Subject] are filled in from the ticket.
         </p>
       </div>
 
-      <div role="tablist" aria-label="Department" className="flex flex-wrap border-b border-line">
+      <div role="tablist" aria-label="Department" className="flex overflow-x-auto whitespace-nowrap border-b border-line">
         {DEPARTMENTS.map((d) => (
           <button
             key={d}
@@ -144,7 +144,7 @@ export default function TemplateLibrary({
                 setEdits((prev) => ({ ...prev, [selected]: e.target.value }));
                 setMessage(null);
               }}
-              className={`w-full resize-y rounded-md border border-field px-3.5 py-3 text-[15px] leading-[23px] text-ink ${canEdit ? "bg-white" : "bg-[#f8f9fb]"}`}
+              className={`w-full resize-y rounded-md border border-field px-3.5 py-3 text-sm leading-[22px] text-ink sm:text-[15px] sm:leading-[23px] ${canEdit ? "bg-white" : "bg-[#f8f9fb]"}`}
             />
           </div>
 

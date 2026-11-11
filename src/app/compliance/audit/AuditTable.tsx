@@ -1,7 +1,7 @@
 import { formatExact, type AuditEntry } from "./audit";
 
-// The list of audit entries (S2-12). On a phone the table scrolls sideways inside
-// its own box, so the page itself never does.
+// The list of audit entries (S2-12). On a phone each entry is a card, so nothing
+// scrolls sideways. From tablet width (md) up, the full table is shown instead.
 export function AuditTable({ entries }: { entries: AuditEntry[] }) {
   if (entries.length === 0) {
     return (
@@ -12,8 +12,30 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-[10px] border border-line bg-white">
-      <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+    <>
+      <ul aria-label="Audit entries" className="space-y-3 md:hidden">
+        {entries.map((e) => (
+          <li key={e.id} className="rounded-[10px] border border-line bg-white p-4 text-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <time dateTime={e.createdAt} className="tabular-nums text-ink-2">
+                {formatExact(e.createdAt)}
+              </time>
+              {e.reference && <span className="tabular-nums text-ink">{e.reference}</span>}
+            </div>
+            <p className="mt-2 font-medium text-ink">{e.actionLabel}</p>
+            <p className="font-mono text-xs text-muted">{e.action}</p>
+            <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+              <dt className="text-muted">Who</dt>
+              <dd className="break-words text-ink">{e.who}</dd>
+              <dt className="text-muted">Summary</dt>
+              <dd className="break-words leading-5 text-ink">{e.summary}</dd>
+            </dl>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto rounded-[10px] border border-line bg-white md:block">
+        <table className="w-full min-w-[760px] border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-line text-[13px] text-muted">
             <th scope="col" className="px-4 py-3 font-medium">When (SAST)</th>
@@ -40,6 +62,7 @@ export function AuditTable({ entries }: { entries: AuditEntry[] }) {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }

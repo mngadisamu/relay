@@ -11,7 +11,7 @@ export function AddPersonForm({ myDepartment }: { myDepartment: string | null })
 
   return (
     <section aria-labelledby="add-heading" className="space-y-3 rounded-[10px] border border-line bg-white p-4">
-      <h2 id="add-heading" className="text-lg font-semibold text-ink">
+      <h2 id="add-heading" className="text-base font-semibold text-ink sm:text-lg">
         Add a person
       </h2>
       {/* key: redraw the form after each try: empty once someone is added, with what was typed after an error */}

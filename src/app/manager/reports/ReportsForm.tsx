@@ -111,7 +111,7 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 py-10 px-4 font-sans space-y-8">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200">
         <h1 className="text-xl font-bold text-slate-900 mb-4">Department Report Generator</h1>
         
         <form onSubmit={handleGenerateReport} className="flex flex-wrap gap-4 items-end">
@@ -184,7 +184,7 @@ export default function ReportsPage() {
       )}
 
       {/* S2-29: Saved Reports List Section */}
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200">
         <h2 className="text-lg font-bold text-slate-900 mb-4">Saved Reports</h2>
         
         {loadingSaved ? (

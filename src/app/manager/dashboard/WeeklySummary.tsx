@@ -51,7 +51,7 @@ export function WeeklySummary({
 
           {hasSummary ? (
             <div className="space-y-2">
-              <p className="text-[15px] leading-6 text-ink">{saved.summary}</p>
+              <p className="text-sm leading-6 text-ink sm:text-[15px]">{saved.summary}</p>
               <AiNote kind="summary" />
               <p className="text-xs text-muted">Written {writtenAt}. It covers exactly the period above.</p>
             </div>
