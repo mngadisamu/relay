@@ -11,8 +11,8 @@ export type HistoryDay = {
 export type ForecastDay = {
   date: string;        // 'YYYY-MM-DD', SAST
   expected: number;    // one decimal place, never negative
-  low: number | null;  // filled in S2-13
-  high: number | null; // filled in S2-13
+  low: number | null;  // whole tickets, 10th percentile (S2-13)
+  high: number | null; // whole tickets, 90th percentile, at least 1 (S2-13)
 };
 
 export type Forecast = {
@@ -24,6 +24,9 @@ export type Forecast = {
 const HORIZON_DAYS = 28;
 const RECENT_DAYS = 14;      // agreed with Samukelo; must start after the historical period ends
 const MONTH_END_FROM_DAY = 25;
+const RANGE_LOW_Q = 0.1;     // 80% range: 10th to 90th percentile
+const RANGE_HIGH_Q = 0.9;
+const MIN_HIGH = 1;          // a range never collapses to zero width
 
 function addDays(date: string, n: number): string {
   const d = new Date(date + 'T00:00:00Z');
@@ -42,6 +45,20 @@ function dayOfMonth(date: string): number {
 
 function mean(values: number[]): number {
   return values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+// Smallest whole count k where the Poisson chance of k or fewer reaches q, for mean lambda
+function poissonQuantile(lambda: number, q: number): number {
+  if (lambda <= 0) return 0;
+  let p = Math.exp(-lambda);
+  let cdf = p;
+  let k = 0;
+  while (cdf < q) {
+    k += 1;
+    p *= lambda / k;
+    cdf += p;
+  }
+  return k;
 }
 
 export function monthEndFactor(history: HistoryDay[]): number {
@@ -98,4 +115,16 @@ export function forecast(department: Department, history: HistoryDay[]): Forecas
     generatedAt: new Date().toISOString(),
     days,
   };
+}
+
+// S2-13: each day gets an 80% range in whole tickets, from a Poisson model of the expected count.
+// Low never exceeds expected; high is never below expected or below 1.
+export function forecastRange(department: Department, history: HistoryDay[]): Forecast {
+  const base = forecast(department, history);
+  const days = base.days.map((d) => {
+    const low = Math.min(d.expected, poissonQuantile(d.expected, RANGE_LOW_Q));
+    const high = Math.max(d.expected, MIN_HIGH, poissonQuantile(d.expected, RANGE_HIGH_Q));
+    return { ...d, low, high };
+  });
+  return { ...base, days };
 }
