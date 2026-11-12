@@ -7,6 +7,7 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { submitRequest, type Field, type SubmitState } from "./actions";
 import { formatWhen } from "./status";
+import { AiNote } from "@/components/AiNote";
 
 const initialState: SubmitState = { status: "idle" };
 
@@ -63,6 +64,14 @@ function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
             <div className="space-y-0.5">
               <dt className="text-[13px] text-muted">Sent to</dt>
               <dd className="text-base font-semibold text-ink">{state.department}</dd>
+              {/* Says who chose the department: the model (with its confidence) or a fixed rule. */}
+              {state.routedByRule ? (
+                <dd className="text-sm text-ink-2">This kind of request always goes to {state.department}.</dd>
+              ) : (
+                <dd>
+                  <AiNote kind="routing" confidence={state.confidence} />
+                </dd>
+              )}
             </div>
             <div className="space-y-0.5">
               <dt className="text-[13px] text-muted">Subject</dt>

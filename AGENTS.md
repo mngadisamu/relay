@@ -154,14 +154,18 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0008_reports.sql` | The `reports` table (S2-10) | Baphakamise |
 | `0009_sensitive_requests.sql` | `is_sensitive`, `sensitive_kind`, and "Sensitive" templates for HR, IT and Operations | Samukelo |
 | `0010_daily_ticket_counts.sql` | `daily_ticket_counts()`: tickets per day per department, counted in SQL, for the forecast | Samukelo |
+| `0010_weekly_reports_schedule.sql` | **Replaced by 0018. Do not run.** Its Monday function wrote columns the `reports` table doesn't have. | Baphakamise |
 | `0011_flags.sql` | The `flags` table; `flag_reply()` and `resolve_flag()` (S2-26) | Samukelo |
 | `0012_manage_users.sql` | `list_people()` and `set_user_role()` for Manage users (S2-25) | Samukelo |
 | `0013_deactivate_users.sql` | `profiles.active`; `deactivate_user()` and `reactivate_user()`; removed people get no role in the rules and can't be assigned (S2-35) | Samukelo |
 | `0014_risk_metrics.sql` | `risk_metrics()`: the Risk report's numbers, counted in SQL (S2-30) | Samukelo |
 | `0015_user_details_and_reset.sql` | `update_user_details()`, `can_manage_user()`, `reset_email_for()` (S2-36) | Samukelo |
 | `0016_risk_ai_unavailable.sql` | `risk_metrics()` counts drafts where Gemini didn't answer (`ai_unavailable`) and sensitive requests kept from Gemini (`sensitive_kept`) (S2-30) | Samukelo |
+| `0017_summary_periods.sql` | `insights` keyed by exact period and department (S2-28, S2-33) | Samukelo |
+| `0018_weekly_reports_schedule_fix.sql` | Replaces `generate_weekly_reports()` with the columns `reports` has, and schedules it for Mondays 08:00 SAST via pg_cron (S2-34) | Baphakamise, reviewed by Samukelo |
+| `0019_weekly_summaries_schedule.sql` | `cron_secret` and the secret-checked functions the Monday summary route uses (S2-34) | Baphakamise, reviewed by Samukelo |
 
-The next free number is **0017**. Ask Samukelo before writing one.
+The next free number is **0020**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -341,7 +345,9 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 ### Baphakamise: automated reporting
 - ✅ **S2-05** report template spec (`docs/report-template.md`)
 - In progress: **S2-10** reports table (0008) and **S2-15** report preview, on `feature/S2-10-reports-migration`: the route must not use the secret key, the page goes under `/manager/reports`, and 0008 needs `default now()` and `public.department`
-- Next: S2-19 PDF download · S2-24 forecast and open-ticket sections (use `forecast(history, …)` from `docs/forecast.md`) · S2-29 saved reports · S2-34 Monday schedule and AI summary
+- ✅ **S2-29** saved reports list, with cards on phones (PR #95)
+- ✅ **S2-34** Monday report schedule (0018) and Monday AI summaries (0019, `src/app/api/cron/weekly-summaries`). Built and tested by hand on 12 Nov. The first scheduled run is Monday 16 Nov at 08:15 SAST; confirm it there.
+- Next: S2-19 PDF download · S2-24 forecast and open-ticket sections (use `forecast(history, …)` from `docs/forecast.md`; waiting on Elzel's start-date fix)
 
 ---
 
