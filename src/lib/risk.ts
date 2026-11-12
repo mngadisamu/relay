@@ -136,7 +136,7 @@ export const BIAS_SUMMARY = {
 export type LabelCheck = { output: string; screen: string; status: "ok" | "missing" | "not built yet"; note: string };
 export const AI_LABEL_CHECKS: LabelCheck[] = [
   { output: "Routing", screen: "Agent ticket view", status: "ok", note: "\"Routed by AI · n% sure · an agent can change it\"" },
-  { output: "Routing", screen: "Staff: request sent", status: "missing", note: "\"Sent to IT\" doesn't say the AI chose it (Mihlali, staff pages)" },
+  { output: "Routing", screen: "Staff: request sent", status: "ok", note: "\"Routed by AI · n% sure\" under Sent to, or the fixed-rule sentence (S2-29 label fix, staff pages)" },
   { output: "Draft", screen: "Agent reply box", status: "ok", note: "\"AI-drafted · check before sending\"" },
   { output: "Draft", screen: "Staff: request detail", status: "ok", note: "\"Drafted with AI, then checked and sent by the … team\"" },
   { output: "Draft", screen: "Flagged replies", status: "ok", note: "AI note on every draft shown" },

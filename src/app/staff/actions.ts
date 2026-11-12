@@ -16,7 +16,8 @@ export type SubmitState =
   // fieldErrors: one message per empty field, shown under that field with a red border.
   // message: a problem that isn't about one field (e.g. the save failed).
   | { status: "error"; fieldErrors: Partial<Record<Field, string>>; message?: string; values: SubmitValues }
-  | { status: "sent"; reference: string; department: string; subject: string; sentAt: string };
+  // confidence and routedByRule say how the department was chosen, for the AI note on the confirmation.
+  | { status: "sent"; reference: string; department: string; subject: string; sentAt: string; confidence: number; routedByRule: boolean };
 
 const DEPOTS = ["Head Office", "City Deep depot", "Pomona depot"];
 // How urgent the person says it is (S2-11). The inbox puts urgent first (S1-19).
@@ -111,5 +112,5 @@ export async function submitRequest(
   if (auditError) console.error("Could not write the audit entry:", auditError);
 
   revalidatePath("/staff/requests");
-  return { status: "sent", reference: ticket.reference, department, subject, sentAt: ticket.created_at };
+  return { status: "sent", reference: ticket.reference, department, subject, sentAt: ticket.created_at, confidence, routedByRule };
 }
