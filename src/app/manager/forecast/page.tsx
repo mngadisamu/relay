@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { RoleHeader } from "@/components/RoleHeader";
 import { MANAGER_MENU } from "@/lib/menus";
 import ForecastChart, { type ChartRow } from "./ForecastChart";
+import { StaffingHint } from "./StaffingHint";
+import { monthEndCallout } from "@/lib/staffing";
 
 const DEPARTMENTS: Department[] = ["HR", "IT", "Finance", "Operations"];
 const BACKTEST_ORIGIN = "2026-10-08"; // same origin as the S2-17 table in docs/forecast.md
@@ -69,6 +71,9 @@ export default async function ForecastPage({
     `Next 4 weeks, ${result.days[0].date} to ${result.days[n - 1].date}: on average the forecast expects ` +
     `${round1(avgExpected)} ${dept} tickets a day, with a range of ${round1(avgLow)} to ${round1(avgHigh)} a day.`;
 
+  // S2-32: the month-end callout, and the agents-needed estimate the staffing hint works out
+  const callout = monthEndCallout(dept, result.days);
+
   let backtestText = "Backtest not available for this department.";
   try {
     const bt = accuracy(dept, history, BACKTEST_ORIGIN);
@@ -109,6 +114,13 @@ export default async function ForecastPage({
 
             <p className="text-sm">{summary}</p>
             <p className="text-xs text-muted-foreground">{backtestText}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <h2 className="font-semibold">Staffing (estimate)</h2>
+            <StaffingHint days={result.days} callout={callout} />
           </CardContent>
         </Card>
       </main>

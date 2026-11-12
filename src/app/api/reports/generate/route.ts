@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { forecast, Department } from "@/lib/forecast";
+import { forecastRange, Department } from "@/lib/forecast";
 import { todaySast } from "@/lib/risk";
 import { loadForecastHistory } from "@/lib/daily-history";
 
@@ -61,8 +61,8 @@ export async function POST(request: Request) {
     history.push({ date: weekStart, tickets: 0 });
   }
 
-  // 3. Generate the 4-week forecast using the library function
-  const forecastResult = forecast(department, history, todaySast());
+  // 3. Generate the 4-week forecast with its low and high range (S2-13), as the forecast page does
+  const forecastResult = forecastRange(department, history, todaySast());
   
   // Format summary projection string for the preview component
   const totalForecastTickets = forecastResult.days.reduce((sum, d) => sum + d.expected, 0);

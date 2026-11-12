@@ -22,6 +22,17 @@ Each day has a low and a high value around the expected one, forming an 80% rang
 - Both are whole tickets.
 
 Limits: the model assumes tickets arrive independently. Real tickets often come in bursts, so the 80% range may cover fewer than 8 in 10 real days. S2-17 measures that coverage. If it's short, report it as a finding rather than widening the range to hit the target.
+
+**Measured coverage (12 Nov 2026):** every day in the last 8 weeks of the past-ticket history was forecast (56 forecasts, each for the next 28 days), and each actual count was checked against its low and high:
+
+| Department | Days inside the range | Coverage |
+|---|---|---|
+| HR | 1,210 of 1,568 | 77.2% |
+| IT | 1,284 of 1,568 | 81.9% |
+| Finance | 1,347 of 1,568 | 85.9% |
+| Operations | 1,214 of 1,568 | 77.4% |
+
+Finding: IT and Finance are at or above 8 in 10; HR and Operations are about 2 to 3 points short, as the limits above predicted. The range is not widened to hit the target. The measurement uses the past tickets only, which is what the forecast learns from.
 Output
 - `department`: the department requested
 - `generatedAt`: ISO timestamp of the run (not used in the method)
