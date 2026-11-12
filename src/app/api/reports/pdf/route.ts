@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
-import { forecast, Department } from '@/lib/forecast';
+import { forecastRange, Department } from '@/lib/forecast';
 import { loadForecastHistory } from '@/lib/daily-history';
 import { formatDay, todaySast } from '@/lib/risk';
 import { jsPDF } from 'jspdf';
@@ -125,7 +125,7 @@ async function buildPdfResponse(department: string, weekStart: string) {
   // The four-week forecast: the same history the forecast page and the preview use.
   const history = await loadForecastHistory(supabase, department as Department, todaySast());
   if (history.length === 0) history.push({ date: weekStart, tickets: 0 });
-  const forecastDays = forecast(department as Department, history, todaySast()).days as unknown as { date?: string; expected?: number }[];
+  const forecastDays = forecastRange(department as Department, history, todaySast()).days as unknown as { date?: string; expected?: number; low?: number; high?: number }[];
   const forecastTotal = forecastDays.reduce((sum, d) => sum + (d.expected ?? 0), 0);
 
   // ---- Draw the PDF, in the Risk report's layout ----
@@ -245,10 +245,14 @@ async function buildPdfResponse(department: string, weekStart: string) {
   for (let w = 0; w < 4; w++) {
     const days = forecastDays.slice(w * 7, w * 7 + 7);
     if (days.length === 0) break;
-    const total = days.reduce((sum, d) => sum + (d.expected ?? 0), 0);
-    weeklyRows.push([`Week ${w + 1}`, `${formatDay(days[0].date ?? '')} to ${formatDay(days[days.length - 1].date ?? '')}`, `${Math.round(total)} requests expected`]);
+    // Average per day, with the average low and high (the 80% range, S2-13)
+    const avg = (f: (d: (typeof days)[number]) => number) => days.reduce((sum, d) => sum + f(d), 0) / days.length;
+    const expected = avg((d) => d.expected ?? 0).toFixed(1);
+    const low = avg((d) => d.low ?? d.expected ?? 0).toFixed(1);
+    const high = avg((d) => d.high ?? d.expected ?? 0).toFixed(1);
+    weeklyRows.push([`Week ${w + 1}`, `${formatDay(days[0].date ?? '')} to ${formatDay(days[days.length - 1].date ?? '')}`, `${expected} a day (range ${low} to ${high})`]);
   }
-  table(['Week', 'Dates', 'Expected'], [LEFT, LEFT + 30, LEFT + 110], weeklyRows.length ? weeklyRows : [['No forecast', '', '']]);
+  table(['Week', 'Dates', 'Average per day'], [LEFT, LEFT + 30, LEFT + 110], weeklyRows.length ? weeklyRows : [['No forecast', '', '']]);
 
   // Section 5: the oldest unresolved tickets (top 5), with no names
   heading('Section 5: Oldest unresolved tickets (top 5)');

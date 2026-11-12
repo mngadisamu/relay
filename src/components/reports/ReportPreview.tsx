@@ -22,6 +22,7 @@ interface ReportPreviewProps {
       projection?: string;
       range?: string;
       callout?: string;
+      days?: Array<{ date: string; expected: number; low?: number; high?: number }>;
     };
     oldest_tickets?: Array<{
       reference: string;
@@ -115,7 +116,26 @@ export default function ReportPreview({ department, weekStart, reportData }: Rep
       <div className="mb-8">
         <h2 className="text-sm font-bold tracking-wider text-muted uppercase mb-4">Section 3: 4-Week Workload Forecast</h2>
         <div className="bg-page border border-line-soft p-4 rounded-md">
-          <p className="text-sm text-ink-2">{reportData?.forecast?.projection || 'The 4-week forecast is added to the report in a later story (S2-24).'}</p>
+          <p className="text-sm text-ink-2">{reportData?.forecast?.projection || 'No forecast is available for this report.'}</p>
+          {(reportData?.forecast?.days?.length ?? 0) > 0 && (
+            <ul className="mt-3 space-y-2 text-sm">
+              {[0, 1, 2, 3]
+                .map((w) => reportData.forecast.days!.slice(w * 7, w * 7 + 7))
+                .filter((days) => days.length > 0)
+                .map((days, w) => {
+                  const avg = (f: (d: (typeof days)[number]) => number) =>
+                    (days.reduce((sum, d) => sum + f(d), 0) / days.length).toFixed(1);
+                  return (
+                    <li key={w} className="flex flex-wrap justify-between gap-2 border-t border-line-soft pt-2">
+                      <span className="font-medium text-ink">Week {w + 1}: {days[0].date} to {days[days.length - 1].date}</span>
+                      <span className="text-ink-2">
+                        {avg((d) => d.expected)} a day (range {avg((d) => d.low ?? d.expected)} to {avg((d) => d.high ?? d.expected)})
+                      </span>
+                    </li>
+                  );
+                })}
+            </ul>
+          )}
           {reportData?.forecast?.callout && (
             <div className="mt-2 text-xs font-semibold text-brand-dark bg-brand-soft p-2 rounded">
               💡 {reportData.forecast.callout}
