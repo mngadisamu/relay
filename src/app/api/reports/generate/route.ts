@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { forecast, Department, HistoryDay } from "@/lib/forecast";
+import { todaySast } from "@/lib/risk";
 
 const DEPARTMENTS = ["HR", "IT", "Finance", "Operations"];
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
   }
 
   // 3. Generate the 4-week forecast using the library function
-  const forecastResult = forecast(department, history);
+  const forecastResult = forecast(department, history, todaySast());
   
   // Format summary projection string for the preview component
   const totalForecastTickets = forecastResult.days.reduce((sum, d) => sum + d.expected, 0);

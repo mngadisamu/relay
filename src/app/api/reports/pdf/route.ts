@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
 import { forecast, Department, HistoryDay } from '@/lib/forecast';
-import { formatDay } from '@/lib/risk';
+import { formatDay, todaySast } from '@/lib/risk';
 import { jsPDF } from 'jspdf';
 
 const DEPARTMENTS = ['HR', 'IT', 'Finance', 'Operations'];
@@ -131,7 +131,7 @@ async function buildPdfResponse(department: string, weekStart: string) {
   }
   const history: HistoryDay[] = Object.entries(countMap).map(([date, tickets]) => ({ date, tickets }));
   if (history.length === 0) history.push({ date: weekStart, tickets: 0 });
-  const forecastDays = forecast(department as Department, history).days as unknown as { date?: string; expected?: number }[];
+  const forecastDays = forecast(department as Department, history, todaySast()).days as unknown as { date?: string; expected?: number }[];
   const forecastTotal = forecastDays.reduce((sum, d) => sum + (d.expected ?? 0), 0);
 
   // ---- Draw the PDF, in the Risk report's layout ----

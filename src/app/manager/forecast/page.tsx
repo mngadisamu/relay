@@ -63,7 +63,7 @@ export default async function ForecastPage({
   }
   const last = history[history.length - 1].date;
 
-  const result = forecastRange(dept, history);
+  const result = forecastRange(dept, history, today);
   const byDate = new Map(history.map((h) => [h.date, h.tickets]));
 
   const actualStart = addDays(last, -55);

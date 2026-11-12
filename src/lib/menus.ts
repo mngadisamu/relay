@@ -4,13 +4,8 @@ import type { MenuItem } from "@/components/RoleHeader";
 // in the same pull request that adds the page, so the menu never links to a
 // page that doesn't exist yet.
 
+// The order is the order of the tabs: Dashboard, Tickets, Manage users, Forecast, Reports.
 export const MANAGER_MENU: MenuItem[] = [
-  {
-    label: "Tickets",
-    href: "/agent",
-    description: "Open tickets in your department. Assign them to an agent.",
-    ready: true, // Samukelo, S2-16
-  },
   {
     label: "Dashboard",
     href: "/manager/dashboard",
@@ -18,10 +13,16 @@ export const MANAGER_MENU: MenuItem[] = [
     ready: true, // Mihlali, S2-14
   },
   {
-    label: "Reports",
-    href: "/manager/reports",
-    description: "Weekly department reports to preview, save and download.",
-    ready: true, // Baphakamise, S2-15
+    label: "Tickets",
+    href: "/agent",
+    description: "Open tickets in your department. Assign them to an agent.",
+    ready: true, // Samukelo, S2-16
+  },
+  {
+    label: "Manage users",
+    href: "/manager/users",
+    description: "Add staff and agents, and set their role and department.",
+    ready: true, // Samukelo, S2-25
   },
   {
     label: "Forecast",
@@ -30,10 +31,10 @@ export const MANAGER_MENU: MenuItem[] = [
     ready: true, // Elzel, S2-27
   },
   {
-    label: "Manage users",
-    href: "/manager/users",
-    description: "Add staff and agents, and set their role and department.",
-    ready: true, // Samukelo, S2-25
+    label: "Reports",
+    href: "/manager/reports",
+    description: "Weekly department reports to preview, save and download.",
+    ready: true, // Baphakamise, S2-15
   },
 ];
 
