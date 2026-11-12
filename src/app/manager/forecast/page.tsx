@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import ForecastChart, { type ChartRow } from "./ForecastChart";
 
 const DEPARTMENTS: Department[] = ["HR", "IT", "Finance", "Operations"];
+const BACKTEST_ORIGIN = "2026-10-08"; // same origin as the S2-17 table in docs/forecast.md
 
 // Same periods as the S2-03 notebook. The 19–20 Oct 2026 gap sits between them.
 const HISTORY_START = "2025-10-19";
@@ -87,7 +88,7 @@ export default async function ForecastPage({
 
   let backtestText = "Backtest not available for this department.";
   try {
-    const bt = accuracy(dept, history, addDays(last, -28));
+    const bt = accuracy(dept, history, BACKTEST_ORIGIN);
     backtestText =
       `Backtest over the last 4 weeks: the forecast was off by ${bt.forecastMae} tickets a day; ` +
       `same as last week was off by ${bt.naiveMae}.`;

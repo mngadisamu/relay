@@ -27,7 +27,7 @@ export const MANAGER_MENU: MenuItem[] = [
     label: "Forecast",
     href: "/manager/forecast",
     description: "Expected tickets for the next four weeks.",
-    ready: false, // Elzel, S2-27
+    ready: true, // Elzel, S2-27
   },
   {
     label: "Manage users",
