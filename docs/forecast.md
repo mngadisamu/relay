@@ -10,6 +10,10 @@ Origin: 8 Oct 2026, four weeks before the last history date (5 Nov 2026). The fo
 | Operations | 26 | 8.3 | 6.5 |
 
 Over the 4 weeks to 5 Nov 2026, the forecast was off by more than a same-as-last-week guess for all four departments. The window spans the drop from the busy historical period to the quiet live period, and the forecast's level and weekday shape are learned from the older data, so it predicts higher volume than arrived. This is one backtest origin, so it's a warning about the method's current behaviour, not a verdict on it.
+| HR | | | |
+| IT | | | |
+| Finance | | | |
+| Operations | | | |
 
 Limits: this is one backtest origin. The window spans the drop from busy historical volume to quiet live volume, so the errors reflect that shift as much as the method. A stronger test would roll the origin across several weeks.
 ## Range (S2-13)
