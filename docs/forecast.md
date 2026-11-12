@@ -10,10 +10,6 @@ Origin: 8 Oct 2026, four weeks before the last history date (5 Nov 2026). The fo
 | Operations | 26 | 8.3 | 6.5 |
 
 Over the 4 weeks to 5 Nov 2026, the forecast was off by more than a same-as-last-week guess for all four departments. The window spans the drop from the busy historical period to the quiet live period, and the forecast's level and weekday shape are learned from the older data, so it predicts higher volume than arrived. This is one backtest origin, so it's a warning about the method's current behaviour, not a verdict on it.
-| HR | | | |
-| IT | | | |
-| Finance | | | |
-| Operations | | | |
 
 Limits: this is one backtest origin. The window spans the drop from busy historical volume to quiet live volume, so the errors reflect that shift as much as the method. A stronger test would roll the origin across several weeks.
 ## Range (S2-13)
@@ -33,3 +29,29 @@ Output
   - `date`: `YYYY-MM-DD`
   - `expected`: expected tickets that day, one decimal place, never negative
   - `low`, `high`: null until S2-13 adds the range
+
+  ## Method note (S2-22)
+
+Each forecast predicts the next 28 days for one department. It starts from how busy the department has been recently, using the average over the last 14 days. It then spreads that level across the week, using the usual pattern for each weekday from the older history, so a typical Monday is expected to be busier than a Saturday. Days from the 25th of the month onward are raised by how much busier month-end has been over the past year. Each day also gets a range that covers the outcomes we would expect for a count of that size. The range is wider when the expected number is small. The forecast is a guide to typical volume, not a promise.
+
+![Tickets per day by department, with the start of the live period marked](forecast/daily-history.png)
+
+**Limits**
+
+- Public holidays are not modelled. A holiday week will look like a normal week, or a quiet one.
+- Some past tickets (before 21 Oct 2026) have their response and close dates set when the data was loaded, not when the events happened, so the timing of that year's data is approximate.
+- The live data is short: 19 tickets so far, and about five for HR. The recent level for HR rests on very few tickets.
+- Requests of a new kind, or a change in how the business works, will not show up until they appear in the data.
+- The 19–20 October 2026 gap is excluded, so it is not treated as a day of zero volume.
+- The backtest covers one starting point, 8 October 2026. In that window the forecast was off by more than a same-as-last-week guess for all four departments (see the accuracy table above). Treat the forecast as less reliable than that simple benchmark until this has been looked at again.
+- The ranges come from a statistical model, so they may cover fewer than 8 in 10 real days.
+
+**Limits**
+
+- Past ticket dates are assigned, not recorded. The response and close dates for tickets before 21 Oct 2026 were set when the data was loaded, so their timing is approximate.
+- Public holidays are not modelled. A holiday week will look like a normal week, or a quiet one.
+- New kinds of request are not known to the forecast until they appear in the data.
+- The live data is short: 19 tickets so far, about five for HR. The HR recent level rests on very few tickets.
+- The 19–20 October 2026 gap is excluded, so it is not treated as a day of zero volume.
+- The backtest covers one starting point, 8 October 2026. In that window the forecast was off by more than a same-as-last-week guess for all four departments (see the accuracy table above). Treat the forecast as less reliable than that benchmark until this has been looked at again.
+- The ranges come from a statistical model, so they may cover fewer than 8 in 10 real days.
