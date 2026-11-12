@@ -123,18 +123,18 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 py-10 px-4 font-sans space-y-8">
-      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200">
-        <h1 className="text-xl font-bold text-slate-900 mb-4">Department Report Generator</h1>
+    <div className="min-h-screen bg-page py-10 px-4 font-sans space-y-8">
+      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-line">
+        <h1 className="text-xl font-bold text-ink mb-4">Department Report Generator</h1>
         
         <form onSubmit={handleGenerateReport} className="flex flex-wrap gap-4 items-end">
           <div>
-            <label htmlFor="department" className="block text-xs font-semibold uppercase text-slate-600 mb-1">Department</label>
+            <label htmlFor="department" className="block text-xs font-semibold uppercase text-ink-2 mb-1">Department</label>
             <select
               id="department"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              className="border border-slate-300 rounded-md p-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="border border-field rounded-md p-2 text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value="Finance">Finance</option>
               <option value="HR">HR</option>
@@ -144,20 +144,20 @@ export default function ReportsPage() {
           </div>
 
           <div>
-            <label htmlFor="week-start" className="block text-xs font-semibold uppercase text-slate-600 mb-1">Week Start (Monday)</label>
+            <label htmlFor="week-start" className="block text-xs font-semibold uppercase text-ink-2 mb-1">Week Start (Monday)</label>
             <input
               id="week-start"
               type="date"
               value={weekStart}
               onChange={(e) => setWeekStart(e.target.value)}
-              className="border border-slate-300 rounded-md p-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="border border-field rounded-md p-2 text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50"
+            className="bg-brand hover:bg-brand-dark text-white font-medium px-4 py-2 rounded-md text-sm transition-colors disabled:opacity-50"
           >
             {loading ? 'Loading…' : 'Preview report'}
           </button>
@@ -191,34 +191,34 @@ export default function ReportsPage() {
           />
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto text-center py-6 text-slate-400 italic">
+        <div className="max-w-4xl mx-auto text-center py-6 text-muted italic">
           Select a department and week above, then click generate to preview the report.
         </div>
       )}
 
       {/* S2-29: Saved Reports List Section */}
-      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200">
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Saved Reports</h2>
+      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-line">
+        <h2 className="text-lg font-bold text-ink mb-4">Saved Reports</h2>
         
         {loadingSaved ? (
-          <p className="text-sm text-slate-500">Loading saved reports...</p>
+          <p className="text-sm text-muted">Loading saved reports...</p>
         ) : savedReports.length === 0 ? (
-          <p className="text-sm text-slate-500">No saved reports found.</p>
+          <p className="text-sm text-muted">No saved reports found.</p>
         ) : (
           <>
             {/* Phones: one card per saved report (the table is too wide for 360 px) */}
             <ul className="space-y-3 md:hidden">
               {savedReports.map((r) => (
-                <li key={r.id} className="space-y-3 rounded-lg border border-slate-200 p-4">
+                <li key={r.id} className="space-y-3 rounded-lg border border-line p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-slate-900">{r.department}</p>
-                      <p className="text-sm text-slate-600">{r.week_start} to {r.week_end}</p>
+                      <p className="font-semibold text-ink">{r.department}</p>
+                      <p className="text-sm text-ink-2">{r.week_start} to {r.week_end}</p>
                     </div>
-                    <p className="text-xs text-slate-500">Generated {new Date(r.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted">Generated {new Date(r.created_at).toLocaleDateString()}</p>
                   </div>
                   <div className="flex flex-wrap gap-4">
-                    <button type="button" onClick={() => loadSavedReport(r)} className="text-sm font-medium text-blue-600 hover:underline">
+                    <button type="button" onClick={() => loadSavedReport(r)} className="text-sm font-medium text-brand hover:underline">
                       Load Preview
                     </button>
                     <a
@@ -238,7 +238,7 @@ export default function ReportsPage() {
             <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-slate-600">
+                <tr className="border-b border-line bg-page text-ink-2">
                   <th className="p-3 font-semibold">Department</th>
                   <th className="p-3 font-semibold">Week Period</th>
                   <th className="p-3 font-semibold">Generated On</th>
@@ -247,15 +247,15 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {savedReports.map((r) => (
-                  <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="p-3 font-medium text-slate-800">{r.department}</td>
-                    <td className="p-3 text-slate-600">{r.week_start} to {r.week_end}</td>
-                    <td className="p-3 text-slate-600">{new Date(r.created_at).toLocaleDateString()}</td>
+                  <tr key={r.id} className="border-b border-line-soft hover:bg-page transition-colors">
+                    <td className="p-3 font-medium text-ink">{r.department}</td>
+                    <td className="p-3 text-ink-2">{r.week_start} to {r.week_end}</td>
+                    <td className="p-3 text-ink-2">{new Date(r.created_at).toLocaleDateString()}</td>
                     <td className="p-3">
                       <button
                         type="button"
                         onClick={() => loadSavedReport(r)}
-                        className="text-blue-600 hover:underline font-medium text-xs mr-4"
+                        className="text-brand hover:underline font-medium text-xs mr-4"
                       >
                         Load Preview
                       </button>

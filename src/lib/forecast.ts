@@ -68,7 +68,10 @@ export function monthEndFactor(history: HistoryDay[]): number {
   return endAvg > 0 && otherAvg > 0 ? endAvg / otherAvg : 1;
 }
 
-export function forecast(department: Department, history: HistoryDay[]): Forecast {
+// asOf (SAST date, optional): the 28 days start the day after asOf. Without it they start after the
+// last day of history, which is what the backtest in accuracy.ts relies on. The screens and reports
+// pass today, so a forecast never shows days that have already passed.
+export function forecast(department: Department, history: HistoryDay[], asOf?: string): Forecast {
   if (history.length === 0) {
     throw new Error('forecast: history is empty');
   }
@@ -102,9 +105,12 @@ export function forecast(department: Department, history: HistoryDay[]): Forecas
 
   const monthEnd = monthEndFactor(sorted);
 
+  // Start from asOf when it is later than the history, so the days are in the future.
+  const start = asOf && asOf > last ? asOf : last;
+
   const days: ForecastDay[] = [];
   for (let i = 1; i <= HORIZON_DAYS; i++) {
-    const date = addDays(last, i);
+    const date = addDays(start, i);
     const factor = dayOfMonth(date) >= MONTH_END_FROM_DAY ? monthEnd : 1;
     const expected = Math.max(0, Math.round(shape[weekday(date)] * recentLevel * factor * 10) / 10);
     days.push({ date, expected, low: null, high: null });
@@ -119,8 +125,8 @@ export function forecast(department: Department, history: HistoryDay[]): Forecas
 
 // S2-13: each day gets an 80% range in whole tickets, from a Poisson model of the expected count.
 // Low never exceeds expected; high is never below expected or below 1.
-export function forecastRange(department: Department, history: HistoryDay[]): Forecast {
-  const base = forecast(department, history);
+export function forecastRange(department: Department, history: HistoryDay[], asOf?: string): Forecast {
+  const base = forecast(department, history, asOf);
   const days = base.days.map((d) => {
     const low = Math.min(d.expected, poissonQuantile(d.expected, RANGE_LOW_Q));
     const high = Math.max(d.expected, MIN_HIGH, poissonQuantile(d.expected, RANGE_HIGH_Q));
