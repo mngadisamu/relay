@@ -109,6 +109,19 @@ export default function ReportsPage() {
     }
   };
 
+  // Loads a saved report into the preview. Used by both the phone cards and the table.
+  const loadSavedReport = async (r: SavedReport) => {
+    setDepartment(r.department);
+    setWeekStart(r.week_start);
+    const res = await fetch('/api/reports/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ department: r.department, week_start: r.week_start }),
+    });
+    const data = await res.json();
+    if (res.ok) setReportData(data);
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 py-10 px-4 font-sans space-y-8">
       <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-slate-200">
@@ -192,7 +205,37 @@ export default function ReportsPage() {
         ) : savedReports.length === 0 ? (
           <p className="text-sm text-slate-500">No saved reports found.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* Phones: one card per saved report (the table is too wide for 360 px) */}
+            <ul className="space-y-3 md:hidden">
+              {savedReports.map((r) => (
+                <li key={r.id} className="space-y-3 rounded-lg border border-slate-200 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-slate-900">{r.department}</p>
+                      <p className="text-sm text-slate-600">{r.week_start} to {r.week_end}</p>
+                    </div>
+                    <p className="text-xs text-slate-500">Generated {new Date(r.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    <button type="button" onClick={() => loadSavedReport(r)} className="text-sm font-medium text-blue-600 hover:underline">
+                      Load Preview
+                    </button>
+                    <a
+                      href={`/api/reports/pdf?department=${r.department}&week_start=${r.week_start}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-emerald-600 hover:underline"
+                    >
+                      PDF
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Tablet and desktop: the table */}
+            <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-slate-600">
@@ -211,17 +254,7 @@ export default function ReportsPage() {
                     <td className="p-3">
                       <button
                         type="button"
-                        onClick={async () => {
-                          setDepartment(r.department);
-                          setWeekStart(r.week_start);
-                          const res = await fetch('/api/reports/generate', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ department: r.department, week_start: r.week_start }),
-                          });
-                          const data = await res.json();
-                          if (res.ok) setReportData(data);
-                        }}
+                        onClick={() => loadSavedReport(r)}
                         className="text-blue-600 hover:underline font-medium text-xs mr-4"
                       >
                         Load Preview
@@ -239,7 +272,8 @@ export default function ReportsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </div>
     </div>
