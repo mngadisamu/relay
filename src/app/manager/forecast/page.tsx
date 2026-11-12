@@ -5,9 +5,9 @@ import { accuracy } from "@/lib/accuracy";
 import { AiNote } from "@/components/AiNote";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { RoleHeader } from "@/components/RoleHeader";
+import { MANAGER_MENU } from "@/lib/menus";
 import ForecastChart, { type ChartRow } from "./ForecastChart";
-import { monthEndCallout } from "@/lib/staffing";
-import { StaffingHint } from "./StaffingHint";
 
 const DEPARTMENTS: Department[] = ["HR", "IT", "Finance", "Operations"];
 const BACKTEST_ORIGIN = "2026-10-08"; // same origin as the S2-17 table in docs/forecast.md
@@ -38,7 +38,7 @@ export default async function ForecastPage({
 }: {
   searchParams: Promise<{ dept?: string }>;
 }) {
-  await requireRole(["manager"]);
+  const profile = await requireRole(["manager"]);
   const params = await searchParams;
   const dept: Department = DEPARTMENTS.find((d) => d === params.dept) ?? "HR";
 
@@ -66,14 +66,12 @@ export default async function ForecastPage({
   const result = forecastRange(dept, history);
   const byDate = new Map(history.map((h) => [h.date, h.tickets]));
 
-  // Last 8 weeks of actual counts. Gap days have no count, so they stay blank in the chart.
   const actualStart = addDays(last, -55);
   const actualRows: ChartRow[] = Array.from({ length: 56 }, (_, i) => {
     const date = addDays(actualStart, i);
     return { date, actual: byDate.get(date) ?? null, forecast: null, base: null, span: null };
   });
 
-  // Next 4 weeks. base is the low end, span is the width up to high, so the stacked band is the range.
   const forecastRows: ChartRow[] = result.days.map((d) => {
     const low = d.low ?? d.expected;
     const high = d.high ?? d.expected;
@@ -98,43 +96,39 @@ export default async function ForecastPage({
     // keep the default message
   }
 
-  const callout = monthEndCallout(dept, result.days);
-
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-4">
-      <h1 className="text-xl font-semibold">Forecast</h1>
+    <>
+      <RoleHeader profile={profile} home="/manager" menu={MANAGER_MENU} current="/manager/forecast" />
+      <main className="mx-auto max-w-340 space-y-6 px-4 pb-12 pt-7 sm:px-6">
+        <h1 className="text-xl font-semibold">Forecast</h1>
 
-      <form method="get" className="flex flex-wrap items-end gap-2">
-        <label htmlFor="dept" className="text-sm font-medium">Department</label>
-        <select id="dept" name="dept" defaultValue={dept} className="rounded border px-2 py-1.5 text-sm">
-          {DEPARTMENTS.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
-        </select>
-        <Button type="submit">Show</Button>
-      </form>
+        <form method="get" className="flex flex-wrap items-end gap-2">
+          <label htmlFor="dept" className="text-sm font-medium">Department</label>
+          <select id="dept" name="dept" defaultValue={dept} className="rounded border px-2 py-1.5 text-sm">
+            {DEPARTMENTS.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <Button type="submit">Show</Button>
+        </form>
 
-      <Card>
-        <CardContent className="space-y-3 p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-semibold">Forecast from past tickets</h2>
-            <AiNote kind="forecast" />
-          </div>
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-semibold">Forecast from past tickets</h2>
+              <AiNote kind="forecast" />
+            </div>
 
-          <ForecastChart
-            rows={[...actualRows, ...forecastRows]}
-            label={`${dept} tickets per day: last 8 weeks actual, next 4 weeks forecast with the range shaded`}
-          />
+            <ForecastChart
+              rows={[...actualRows, ...forecastRows]}
+              label={`${dept} tickets per day: last 8 weeks actual, next 4 weeks forecast with the range shaded`}
+            />
 
-          <p className="text-sm">{summary}</p>
-          <p className="text-xs text-muted-foreground">{backtestText}</p>
-
-          <div className="border-t pt-3">
-            <h3 className="mb-2 font-semibold">Staffing (estimate)</h3>
-            <StaffingHint days={result.days} callout={callout} />
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+            <p className="text-sm">{summary}</p>
+            <p className="text-xs text-muted-foreground">{backtestText}</p>
+          </CardContent>
+        </Card>
+      </main>
+    </>
   );
 }
