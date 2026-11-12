@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { forecastRange, type Department, type HistoryDay } from "@/lib/forecast";
+import { forecastRange, type Department } from "@/lib/forecast";
+import { loadForecastHistory } from "@/lib/daily-history";
 import { accuracy } from "@/lib/accuracy";
 import { AiNote } from "@/components/AiNote";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,13 +12,6 @@ import ForecastChart, { type ChartRow } from "./ForecastChart";
 
 const DEPARTMENTS: Department[] = ["HR", "IT", "Finance", "Operations"];
 const BACKTEST_ORIGIN = "2026-10-08"; // same origin as the S2-17 table in docs/forecast.md
-
-// Same periods as the S2-03 notebook. The 19–20 Oct 2026 gap sits between them.
-const HISTORY_START = "2025-10-19";
-const HISTORY_END = "2026-10-18";
-const LIVE_START = "2026-10-21";
-
-type DailyRow = { date: string; tickets: number };
 
 function sastToday(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Johannesburg" });
@@ -45,19 +39,8 @@ export default async function ForecastPage({
   const supabase = await createClient();
   const today = sastToday();
 
-  const [hist, live] = await Promise.all([
-    supabase.rpc("dashboard_metrics", { p_from: HISTORY_START, p_to: HISTORY_END, p_department: dept }),
-    supabase.rpc("dashboard_metrics", { p_from: LIVE_START, p_to: today, p_department: dept }),
-  ]);
-  if (hist.error || live.error) {
-    throw new Error(hist.error?.message ?? live.error?.message ?? "Could not load ticket history");
-  }
-
-  const daily: DailyRow[] = [
-    ...(hist.data as { daily: DailyRow[] }).daily,
-    ...(live.data as { daily: DailyRow[] }).daily,
-  ];
-  const history: HistoryDay[] = daily.map((d) => ({ date: d.date.slice(0, 10), tickets: d.tickets }));
+  // The same history the report preview and PDF use (daily-history.ts).
+  const history = await loadForecastHistory(supabase, dept, today);
   if (history.length === 0) {
     throw new Error("No ticket history for this department");
   }

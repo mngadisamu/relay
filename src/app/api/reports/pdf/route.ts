@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentProfile } from '@/lib/auth';
-import { forecast, Department, HistoryDay } from '@/lib/forecast';
+import { forecast, Department } from '@/lib/forecast';
+import { loadForecastHistory } from '@/lib/daily-history';
 import { formatDay, todaySast } from '@/lib/risk';
 import { jsPDF } from 'jspdf';
 
@@ -95,7 +96,6 @@ async function buildPdfResponse(department: string, weekStart: string) {
   const [
     { data: metricsData, error: metricsError },
     { data: insight },
-    { data: historyRows },
     { data: oldestOpen },
   ] = await Promise.all([
     supabase.rpc('dashboard_metrics', { p_from: weekStart, p_to: weekEnd, p_department: department }),
@@ -106,7 +106,6 @@ async function buildPdfResponse(department: string, weekStart: string) {
       .eq('period_to', weekEnd)
       .eq('department', department)
       .maybeSingle<{ summary: string | null; status: string }>(),
-    supabase.from('tickets').select('created_at').eq('department', department).order('created_at', { ascending: true }),
     supabase
       .from('tickets')
       .select('reference, subject, created_at')
@@ -123,13 +122,8 @@ async function buildPdfResponse(department: string, weekStart: string) {
   const metrics = (metricsData ?? {}) as Metrics;
   const summary = insight?.status === 'ok' && insight.summary ? insight.summary : null;
 
-  // The four-week forecast, worked out the same way as the preview.
-  const countMap: Record<string, number> = {};
-  for (const row of historyRows ?? []) {
-    const day = (row.created_at as string).slice(0, 10);
-    countMap[day] = (countMap[day] || 0) + 1;
-  }
-  const history: HistoryDay[] = Object.entries(countMap).map(([date, tickets]) => ({ date, tickets }));
+  // The four-week forecast: the same history the forecast page and the preview use.
+  const history = await loadForecastHistory(supabase, department as Department, todaySast());
   if (history.length === 0) history.push({ date: weekStart, tickets: 0 });
   const forecastDays = forecast(department as Department, history, todaySast()).days as unknown as { date?: string; expected?: number }[];
   const forecastTotal = forecastDays.reduce((sum, d) => sum + (d.expected ?? 0), 0);
