@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { forecast, Department, HistoryDay } from "@/lib/forecast";
+import { forecast, Department } from "@/lib/forecast";
 import { todaySast } from "@/lib/risk";
+import { loadForecastHistory } from "@/lib/daily-history";
 
 const DEPARTMENTS = ["HR", "IT", "Finance", "Operations"];
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -31,7 +32,6 @@ export async function POST(request: Request) {
   const [
     { data: metrics, error: metricsError },
     { data: oldestOpen, error: ticketsError },
-    { data: historyRows, error: historyError }
   ] = await Promise.all([
     supabase.rpc("dashboard_metrics", { p_from: weekStart, p_to: weekEnd, p_department: department }),
     supabase
@@ -42,28 +42,19 @@ export async function POST(request: Request) {
       .neq("status", "closed")
       .order("created_at", { ascending: true })
       .limit(5),
-    supabase
-      .from("tickets")
-      .select("created_at")
-      .eq("department", department)
-      .order("created_at", { ascending: true })
   ]);
 
-  if (metricsError || ticketsError || historyError) {
-    return NextResponse.json({ error: (metricsError ?? ticketsError ?? historyError)?.message }, { status: 500 });
+  if (metricsError || ticketsError) {
+    return NextResponse.json({ error: (metricsError ?? ticketsError)?.message }, { status: 500 });
   }
 
-  // 2. Build daily ticket history counts for forecast(department, history)
-  const countMap: Record<string, number> = {};
-  for (const row of historyRows ?? []) {
-    const d = (row.created_at as string).slice(0, 10);
-    countMap[d] = (countMap[d] || 0) + 1;
+  // 2. The same history the forecast page uses (daily counts from the database, no row limit)
+  let history;
+  try {
+    history = await loadForecastHistory(supabase, department, todaySast());
+  } catch (e) {
+    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
-
-  const history: HistoryDay[] = Object.entries(countMap).map(([date, tickets]) => ({
-    date,
-    tickets,
-  }));
 
   // Fallback history entry if empty to prevent error
   if (history.length === 0) {
