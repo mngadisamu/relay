@@ -6,6 +6,8 @@ import { AiNote } from "@/components/AiNote";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ForecastChart, { type ChartRow } from "./ForecastChart";
+import { monthEndCallout } from "@/lib/staffing";
+import { StaffingHint } from "./StaffingHint";
 
 const DEPARTMENTS: Department[] = ["HR", "IT", "Finance", "Operations"];
 const BACKTEST_ORIGIN = "2026-10-08"; // same origin as the S2-17 table in docs/forecast.md
@@ -96,6 +98,8 @@ export default async function ForecastPage({
     // keep the default message
   }
 
+  const callout = monthEndCallout(dept, result.days);
+
   return (
     <main className="mx-auto max-w-3xl space-y-4 p-4">
       <h1 className="text-xl font-semibold">Forecast</h1>
@@ -124,6 +128,11 @@ export default async function ForecastPage({
 
           <p className="text-sm">{summary}</p>
           <p className="text-xs text-muted-foreground">{backtestText}</p>
+
+          <div className="border-t pt-3">
+            <h3 className="mb-2 font-semibold">Staffing (estimate)</h3>
+            <StaffingHint days={result.days} callout={callout} />
+          </div>
         </CardContent>
       </Card>
     </main>
