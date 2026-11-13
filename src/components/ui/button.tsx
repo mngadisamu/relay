@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 // <Button>Send</Button>, <Button variant="outline">Cancel</Button>,
 // <Button asChild><Link href="/staff">Home</Link></Button> for a link that looks like a button.
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  // Press feedback: the button shrinks a little while it is pressed (active:) and
+  // shows a busy cursor while it is working (aria-busy). The short duration keeps it instant.
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold outline-none transition-[transform,background-color,opacity,filter] duration-100 ease-out focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.97] active:brightness-95 aria-busy:cursor-progress aria-busy:opacity-80 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {

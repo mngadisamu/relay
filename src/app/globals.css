@@ -55,3 +55,18 @@ body {
   outline: 2px solid #0f5fb8;
   outline-offset: 2px;
 }
+
+/* Instant click feedback for every button in Relay (S4 "instant feel").
+   A button shrinks a little while it is pressed, so the click is visible at once,
+   and shows a busy cursor while it is working (aria-busy="true"). The short
+   transition keeps it snappy. Works for raw <button> elements too. */
+button:not(:disabled) {
+  cursor: pointer;
+  transition: transform 100ms ease-out, background-color 100ms ease-out, opacity 100ms ease-out;
+}
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+button[aria-busy="true"] {
+  cursor: progress;
+}
