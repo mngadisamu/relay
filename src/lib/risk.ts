@@ -135,12 +135,12 @@ export const BIAS_SUMMARY = {
 // Checked by hand on Fri 6 Nov 2026 for S2-30; check again when a screen changes.
 export type LabelCheck = { output: string; screen: string; status: "ok" | "missing" | "not built yet"; note: string };
 export const AI_LABEL_CHECKS: LabelCheck[] = [
-  { output: "Routing", screen: "Agent ticket view", status: "ok", note: "\"Routed by AI · n% sure · an agent can change it\"" },
-  { output: "Routing", screen: "Staff: request sent", status: "ok", note: "\"Routed by AI · n% sure\" under Sent to, or the fixed-rule sentence (S2-29 label fix, staff pages)" },
+  { output: "Routing", screen: "Agent ticket view", status: "ok", note: "\"Routed by AI · 92% sure · an agent can change it\" (the % is the model's confidence)" },
+  { output: "Routing", screen: "Staff: request sent", status: "ok", note: "\"Routed by AI · 92% sure\" under Sent to. A fixed-rule request says it always goes to that team instead" },
   { output: "Draft", screen: "Agent reply box", status: "ok", note: "\"AI-drafted · check before sending\"" },
-  { output: "Draft", screen: "Staff: request detail", status: "ok", note: "\"Drafted with AI, then checked and sent by the … team\"" },
-  { output: "Draft", screen: "Flagged replies", status: "ok", note: "AI note on every draft shown" },
-  { output: "Summary", screen: "Weekly report preview", status: "ok", note: "Shown when the report has an AI summary" },
-  { output: "Summary", screen: "Dashboard insights", status: "ok", note: "Shown in the AI summary box on the dashboard (S2-33)" },
-  { output: "Forecast", screen: "Forecast view", status: "not built yet", note: "S2-27 (Elzel): must use <AiNote kind=\"forecast\" />" },
+  { output: "Draft", screen: "Staff: request detail", status: "ok", note: "\"Drafted with AI, then checked and sent by the [team] team\"" },
+  { output: "Draft", screen: "Flagged replies", status: "ok", note: "\"AI-drafted · check before sending\" on every draft shown" },
+  { output: "Summary", screen: "Weekly report preview", status: "ok", note: "\"Summary written by AI · check it against the numbers\", when the report has a summary" },
+  { output: "Summary", screen: "Dashboard insights", status: "ok", note: "\"Summary written by AI · check it against the numbers\" in the dashboard summary box" },
+  { output: "Forecast", screen: "Forecast view", status: "ok", note: "\"Forecast from past tickets · a guide, not a promise\"" },
 ];
