@@ -33,7 +33,7 @@ export const ACTION_LABEL: Record<string, string> = {
 export const ACTIONS = Object.keys(ACTION_LABEL);
 
 export type AuditFilters = {
-  action?: string; // one of ACTIONS
+  actions?: string[]; // any of ACTIONS; none means all actions
   from?: string; // "2026-11-01", a day in South African time
   to?: string; // "2026-11-13", included
   ref?: string; // part of a ticket reference, e.g. "KF-261105"
@@ -53,12 +53,16 @@ export type AuditEntry = {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 // Read the filters from the page address, ignoring anything that isn't valid.
-export function readFilters(params: Record<string, string | undefined>): AuditFilters {
-  const ref = (params.ref ?? "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+export function readFilters(params: Record<string, string | string[] | undefined>): AuditFilters {
+  const ref = String(params.ref ?? "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
+  // The action checkboxes send one value each, so there can be several (or none).
+  const picked = (Array.isArray(params.action) ? params.action : [params.action]).filter(
+    (a): a is string => typeof a === "string" && ACTIONS.includes(a),
+  );
   return {
-    action: ACTIONS.includes(params.action ?? "") ? params.action : undefined,
-    from: DAY.test(params.from ?? "") ? params.from : undefined,
-    to: DAY.test(params.to ?? "") ? params.to : undefined,
+    actions: picked.length > 0 ? picked : undefined,
+    from: typeof params.from === "string" && DAY.test(params.from) ? params.from : undefined,
+    to: typeof params.to === "string" && DAY.test(params.to) ? params.to : undefined,
     ref: ref || undefined,
   };
 }
@@ -66,7 +70,10 @@ export function readFilters(params: Record<string, string | undefined>): AuditFi
 // The same filters as a query string, for the Export CSV link.
 export function filtersToQuery(f: AuditFilters) {
   const q = new URLSearchParams();
-  for (const [key, value] of Object.entries(f)) if (value) q.set(key, value);
+  for (const a of f.actions ?? []) q.append("action", a);
+  if (f.from) q.set("from", f.from);
+  if (f.to) q.set("to", f.to);
+  if (f.ref) q.set("ref", f.ref);
   return q.toString();
 }
 
@@ -87,7 +94,7 @@ export async function loadAuditEntries(supabase: Supabase, f: AuditFilters, limi
     .order("id", { ascending: Boolean(f.ref) })
     .limit(limit);
 
-  if (f.action) query = query.eq("action", f.action);
+  if (f.actions?.length) query = query.in("action", f.actions);
   if (f.from) query = query.gte("created_at", startOfSastDay(f.from));
   if (f.to) query = query.lt("created_at", startOfSastDay(f.to, 1));
 

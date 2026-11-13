@@ -10,13 +10,20 @@ import { AuditTable } from "./AuditTable";
 // the CSV export goes further back.
 const SCREEN_LIMIT = 300;
 
+// The Action dropdown's closed label: what is picked, in words.
+function actionSummary(actions: string[] | undefined) {
+  if (!actions || actions.length === 0) return "All actions";
+  if (actions.length === 1) return ACTION_LABEL[actions[0]];
+  return `${actions.length} actions selected`;
+}
+
 // Audit log (S2-12): every AI decision and human change, so compliance can answer
 // "who did what, and when?" for any ticket. Filters live in the address, so a
 // filtered view can be bookmarked or shared.
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const profile = await requireRole(["compliance", "manager"]);
   const filters = readFilters(await searchParams);
@@ -46,17 +53,34 @@ export default async function AuditLogPage({
 
         {/* A plain GET form: the filters go into the address, so no JavaScript is needed. */}
         <form method="get" className="grid gap-3 rounded-[10px] border border-line bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.2fr_auto]">
-          <div className="space-y-1.5">
-            <label htmlFor="action" className="block text-[13px] font-medium text-ink-2">Action</label>
-            <select id="action" name="action" defaultValue={filters.action ?? ""} className={field}>
-              <option value="">All actions</option>
-              {ACTIONS.map((a) => (
-                <option key={a} value={a}>
-                  {ACTION_LABEL[a]} ({a})
-                </option>
-              ))}
-            </select>
-          </div>
+          <fieldset className="space-y-1.5">
+            <legend className="block text-[13px] font-medium text-ink-2">Action</legend>
+            {/* A dropdown that opens into checkboxes, so several actions can be picked at once. */}
+            <details className="relative">
+              <summary className={`${field} flex cursor-pointer list-none items-center justify-between`}>
+                <span>{actionSummary(filters.actions)}</span>
+                <span aria-hidden="true">▾</span>
+              </summary>
+              <div className="absolute z-20 mt-1 max-h-80 w-full min-w-[280px] overflow-y-auto rounded-md border border-line bg-white p-3 shadow-lg">
+                <div className="grid gap-2.5">
+                  {ACTIONS.map((a) => (
+                    <label key={a} className="flex items-center gap-2.5 text-sm text-ink">
+                      <input
+                        type="checkbox"
+                        name="action"
+                        value={a}
+                        defaultChecked={filters.actions?.includes(a)}
+                        className="size-4 accent-brand"
+                      />
+                      <span>
+                        {ACTION_LABEL[a]} <span className="font-mono text-xs text-muted">({a})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </details>
+          </fieldset>
           <div className="space-y-1.5">
             <label htmlFor="from" className="block text-[13px] font-medium text-ink-2">From</label>
             <input id="from" name="from" type="date" defaultValue={filters.from} className={field} />
@@ -78,6 +102,12 @@ export default async function AuditLogPage({
             </Link>
           </div>
         </form>
+
+        {filters.actions && (
+          <p className="text-sm text-ink-2">
+            Showing: <span className="font-medium text-ink">{filters.actions.map((a) => ACTION_LABEL[a]).join(", ")}</span>
+          </p>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p role="status" className="text-sm text-ink-2">

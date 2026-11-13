@@ -112,13 +112,6 @@ export function riskRows(m: RiskMetrics) {
 // A warning when Gemini didn't answer for some drafts in the range: agents got
 // the plain template instead, so "0 AI drafts" can mean the AI is down, over
 // its daily limit, or its model name has changed, not that nobody used it.
-export function aiUnavailableWarning(m: RiskMetrics) {
-  const n = m.drafts.ai_unavailable ?? 0;
-  if (n === 0) return null;
-  const total = n + m.drafts.drafted;
-  return `The AI didn't answer for ${n} of ${total} drafts in this period, so agents got the plain template instead. Check the Gemini key, its daily limit and the model name in the draft route.`;
-}
-
 // The bias test (S2-21, docs/responsible-ai/bias-test.md). Update this when
 // the test is run again.
 export const BIAS_SUMMARY = {
