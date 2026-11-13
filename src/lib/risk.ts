@@ -121,7 +121,7 @@ export const BIAS_SUMMARY = {
     "Depots: 2 of 40 short IT requests went to Operations when the person wrote \"City Deep depot\", and any depot lowered confidence. Both were marked Needs review. Fix planned for the next retrain.",
     "AI drafts by name: 50 of 50 drafts made. Tone, thanks and help offered were the same for every name. Some single requests differed in length by up to 16 words; we can't yet tell whether that is the name or chance. Next: three drafts per name.",
   ],
-  link: "https://github.com/mngadisamu/relay/blob/main/docs/responsible-ai/bias-test.md",
+  link: "/compliance/bias-test",
 };
 
 // Every AI output in Relay, and whether its screen shows the AI note (S2-07).

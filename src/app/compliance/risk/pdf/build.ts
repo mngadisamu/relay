@@ -71,7 +71,7 @@ export function buildRiskPdf(metrics: RiskMetrics, range: { from: string; to: st
   heading("Section 2: Bias test");
   paragraph(`The same requests sent with four names and three depots, run on ${BIAS_SUMMARY.ranOn}.`, 10, MUTED);
   for (const point of BIAS_SUMMARY.points) paragraph(`•  ${point}`);
-  paragraph(`Full write-up: ${BIAS_SUMMARY.link}`, 8.5, MUTED);
+  paragraph("The full bias test is in its own PDF, from the Risk report page.", 8.5, MUTED);
   y += 4;
 
   // Section 3: AI labels, as a table
@@ -116,7 +116,7 @@ export function buildRiskPdf(metrics: RiskMetrics, range: { from: string; to: st
 // The navy band at the top: soft circles, a faint dot grid, and curved routes
 // ending in dots (requests finding their team, as on the home page), with a
 // brand-blue line underneath. Drawn first, so the title sits on top.
-function drawHeaderBand(doc: jsPDF) {
+export function drawHeaderBand(doc: jsPDF) {
   const H = 34;
   doc.setFillColor(...NAVY).rect(0, 0, 210, H, "F");
 
