@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { AI_LABEL_CHECKS, BIAS_SUMMARY, aiUnavailableWarning, formatDay, riskRows, type RiskMetrics } from "@/lib/risk";
+import { AI_LABEL_CHECKS, BIAS_SUMMARY, formatDay, riskRows, type RiskMetrics } from "@/lib/risk";
 
 // Draws the Risk report PDF (S2-30) in the weekly report layout
 // (docs/report-template.md): a header band, numbered sections, a footer.
@@ -50,11 +50,6 @@ export function buildRiskPdf(metrics: RiskMetrics, range: { from: string; to: st
 
   // Section 1: the numbers, as boxes, three to a row
   heading("Section 1: How the AI was used");
-  const warning = aiUnavailableWarning(metrics);
-  if (warning) {
-    paragraph(`AI unavailable. ${warning}`, 9.5, [146, 64, 14]);
-    y += 2;
-  }
   const rows = riskRows(metrics);
   const boxW = (width - 8) / 3;
   const boxH = 34;

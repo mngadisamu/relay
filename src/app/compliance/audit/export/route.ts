@@ -9,8 +9,14 @@ const EXPORT_LIMIT = 5000;
 // Runs as the signed-in user, so row-level security still applies.
 export async function GET(request: Request) {
   await requireRole(["compliance", "manager"]);
-  const params = Object.fromEntries(new URL(request.url).searchParams);
-  const filters = readFilters(params);
+  // Read the filters the same way the page does, including several actions.
+  const url = new URL(request.url);
+  const filters = readFilters({
+    action: url.searchParams.getAll("action"),
+    from: url.searchParams.get("from") ?? undefined,
+    to: url.searchParams.get("to") ?? undefined,
+    ref: url.searchParams.get("ref") ?? undefined,
+  });
 
   const supabase = await createClient();
   const { entries, error } = await loadAuditEntries(supabase, filters, EXPORT_LIMIT);
