@@ -61,23 +61,26 @@ export default async function AuditLogPage({
                 <span>{actionSummary(filters.actions)}</span>
                 <span aria-hidden="true">▾</span>
               </summary>
-              <div className="absolute z-20 mt-1 max-h-80 w-full min-w-[280px] overflow-y-auto rounded-md border border-line bg-white p-3 shadow-lg">
-                <div className="grid gap-2.5">
-                  {ACTIONS.map((a) => (
-                    <label key={a} className="flex items-center gap-2.5 text-sm text-ink">
-                      <input
-                        type="checkbox"
-                        name="action"
-                        value={a}
-                        defaultChecked={filters.actions?.includes(a)}
-                        className="size-4 accent-brand"
-                      />
-                      <span>
-                        {ACTION_LABEL[a]} <span className="font-mono text-xs text-muted">({a})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
+              <div className="absolute z-20 mt-1 max-h-80 w-full min-w-[340px] overflow-y-auto rounded-md border border-line bg-white p-2 shadow-lg">
+                {ACTIONS.map((a) => (
+                  // Every row has the same layout: the box and the first line of text share a top edge,
+                  // so long names that wrap don't push one box out of line with the others.
+                  <label key={a} className="flex items-start gap-3 rounded px-2 py-2 text-sm text-ink hover:bg-page">
+                    {/* One box style for every row. The real checkbox is visually hidden; the box shows its state. */}
+                    <input type="checkbox" name="action" value={a} defaultChecked={filters.actions?.includes(a)} className="peer sr-only" />
+                    <span
+                      aria-hidden="true"
+                      className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-field bg-white peer-checked:border-brand peer-checked:bg-brand peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-0 peer-checked:opacity-100">
+                        <path d="M5 12.5l4.5 4.5L19 7.5" />
+                      </svg>
+                    </span>
+                    <span className="min-w-0 leading-5">
+                      {ACTION_LABEL[a]} <span className="font-mono text-xs text-muted">({a})</span>
+                    </span>
+                  </label>
+                ))}
               </div>
             </details>
           </fieldset>
