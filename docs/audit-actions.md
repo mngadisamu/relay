@@ -42,6 +42,8 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 | `risk_report_download` | The compliance officer or manager (Risk report, Export PDF, S2-30) | A risk report PDF is downloaded | no | `from`, `to` |
 | `flag` | The agent who sent the reply (automatic check in `sendReply`, `src/lib/flags.ts`), or an agent, manager or compliance officer (Flag button) (`flag_reply()`, migration 0011) | An AI reply is flagged for a second look | yes | `flag_id`, `response_id`, `reason` (`Sent without edits`, `Possible invented detail` or `Flagged by a person`; the written reason stays in `flags.note`, not here), `source` (`auto` or `person`) |
 | `flag_resolve` | The compliance officer (Flagged replies, `resolve_flag()`, migration 0011) | A flag is reviewed | yes | `flag_id`, `outcome` (`ok` or `needs_change`); the note stays in `flags.resolution_note` |
+| `approval_request` | The agent (`request_approval()`, migration 0020) | An agent asks a manager to approve a purchase or leave request, and the ticket moves to Awaiting approval | yes | `request_type` (`purchase`, `leave`, `system_access` or `other`), `amount` (rand value, or null when not a purchase), `department` |
+| `approval_decision` | The manager (`decide_approval()`, migration 0020) | A manager approves or declines a request | yes | `approval_id`, `decision` (`approved` or `rejected`), `note` (short reason; required when rejected) |
 
 ## How to read it
 
