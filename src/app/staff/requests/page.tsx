@@ -4,7 +4,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StatusPill } from "@/components/StatusPill";
-import { StaffNav } from "../StaffNav";
+import { RequestsHeader } from "../RequestsHeader";
 import { formatWhen, latestUpdate, type TicketStatus } from "../status";
 
 type Row = {
@@ -20,14 +20,16 @@ type Row = {
 };
 
 // My requests (S1-26, mockup screen 4): newest first, status in words and colour.
-// Row-level security (S1-15) means a plain select only returns this user's tickets.
+// Only this person's own requests. Managers and agents can read more tickets than they
+// sent (their department's), so the filter is applied here as well as in the database rules.
 export default async function MyRequests() {
-  await requireRole(["staff", "agent", "manager"]);
+  const profile = await requireRole(["staff", "agent", "manager"]);
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tickets")
     .select("id, reference, subject, department, status, created_at, assigned_at, answered_at, closed_at")
+    .eq("submitted_by", profile.id)
     // Past (seeded) tickets are never shown as someone's request.
     .eq("is_historical", false)
     .order("created_at", { ascending: false });
@@ -35,7 +37,7 @@ export default async function MyRequests() {
 
   return (
     <div className="min-h-screen bg-page">
-      <StaffNav current="requests" />
+      <RequestsHeader profile={profile} current="requests" />
       <main className="mx-auto max-w-3xl space-y-3 px-4 py-5">
         <div className="flex items-baseline justify-between gap-3">
           <h1 className="text-xl font-semibold text-ink">My requests</h1>

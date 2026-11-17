@@ -7,7 +7,7 @@ import type { CurrentProfile } from "@/lib/auth";
 
 // Agent top bar (mockup screens 6–8): logo, department, Inbox and Templates only (S1-18),
 // who is signed in, and Sign out. It lays out the same way as RoleHeader on a phone.
-export function AgentHeader({ profile, current }: { profile: CurrentProfile; current: "inbox" | "templates" }) {
+export function AgentHeader({ profile, current }: { profile: CurrentProfile; current: "inbox" | "templates" | "submit" | "requests" }) {
   const navClass = (active: boolean) =>
     `shrink-0 rounded-md px-3 py-2 text-sm ${active ? "bg-brand-soft font-semibold text-brand-dark" : "font-medium text-ink-2 hover:bg-page"}`;
 
@@ -30,10 +30,10 @@ export function AgentHeader({ profile, current }: { profile: CurrentProfile; cur
             <Link prefetch href="/agent/templates" aria-current={current === "templates" ? "page" : undefined} className={navClass(current === "templates")}>
               Templates
             </Link>
-            <Link prefetch href="/staff" className={navClass(false)}>
+            <Link prefetch href="/staff" aria-current={current === "submit" ? "page" : undefined} className={navClass(current === "submit")}>
               Submit request
             </Link>
-            <Link prefetch href="/staff/requests" className={navClass(false)}>
+            <Link prefetch href="/staff/requests" aria-current={current === "requests" ? "page" : undefined} className={navClass(current === "requests")}>
               My requests
             </Link>
           </nav>
