@@ -1,3 +1,4 @@
+-- PostgreSQL (Supabase) migration. Use a PostgreSQL-aware SQL parser/editor.
 -- S4-03: managers see only their own department's approvals.
 -- DRAFT for Samukelo to review and run in the Supabase SQL Editor. Safe to run twice.
 -- Why: migration 0020 let every manager read every approval. The story says a department
