@@ -43,7 +43,7 @@ export function SubmitForm() {
 
 function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
   const [state, formAction, isPending] = useActionState(submitRequest, initialState);
-
+    const [requestType, setRequestType] = useState(state.status === "error" ? state.values.requestType : "");
   if (state.status === "sent") {
     return (
       <div className="space-y-4">
@@ -121,7 +121,45 @@ function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
           {formMessage}
         </p>
       )}
+            <div className="space-y-1.5">
+        <label htmlFor="requestType" className="block text-sm font-medium text-ink">
+          What kind of request is it?
+        </label>
+        <select
+          id="requestType"
+          name="requestType"
+          value={requestType}
+          onChange={(e) => setRequestType(e.target.value)}
+          className={`${fieldClass(!!errors.requestType)} h-12`}
+          {...errorProps("requestType")}
+        >
+          <option value="">Choose a request type</option>
+          <option value="purchase">Purchase</option>
+          <option value="leave">Leave</option>
+          <option value="system_access">System access</option>
+          <option value="other">Other</option>
+        </select>
+        <FieldError id="requestType-error" message={errors.requestType} />
+      </div>
 
+      {requestType === "purchase" && (
+        <div className="space-y-1.5">
+          <label htmlFor="amount" className="block text-sm font-medium text-ink">
+            Amount (R)
+          </label>
+          <input
+            id="amount"
+            name="amount"
+            type="text"
+            inputMode="decimal"
+            defaultValue={values?.amount}
+            placeholder="e.g. 6000"
+            className={`${fieldClass(!!errors.amount)} h-12`}
+            {...errorProps("amount")}
+          />
+          <FieldError id="amount-error" message={errors.amount} />
+        </div>
+      )}
       <div className="space-y-1.5">
         <label htmlFor="subject" className="block text-sm font-medium text-ink">
           Subject
