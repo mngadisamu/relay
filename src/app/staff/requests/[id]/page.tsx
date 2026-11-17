@@ -23,6 +23,12 @@ type Ticket = {
   closed_at: string | null;
 };
 
+type ApprovalRecord = {
+  status: string; // 'pending' | 'approved' | 'declined'
+  created_at: string;
+  decided_at: string | null;
+};
+
 // Request detail (S1-26, mockup screen 5) with the agent's replies once sent (S1-28),
 // and "This solved it" / "I still need help" while it's Answered (S2-20).
 export default async function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -40,9 +46,8 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
     .maybeSingle<Ticket>();
   if (!ticket) notFound();
 
-  // Every reply that was sent (RLS never shows staff an unsent AI draft) and every
-  // "I still need help" message (S2-20), oldest first.
-  const [{ data: replyRows }, { data: messageRows }] = await Promise.all([
+  // Fetch replies, follow-up messages, and approval record for S4-11
+  const [{ data: replyRows }, { data: messageRows }, { data: approvalRows }] = await Promise.all([
     supabase
       .from("responses")
       .select("final_text, sent_at, ai_generated")
@@ -50,9 +55,12 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
       .not("sent_at", "is", null)
       .order("sent_at", { ascending: true }),
     supabase.from("ticket_messages").select("body, created_at").eq("ticket_id", ticket.id).order("created_at", { ascending: true }),
+    supabase.from("approvals").select("status, created_at, decided_at").eq("ticket_id", ticket.id).maybeSingle<ApprovalRecord>(),
   ]);
+
   const replies = (replyRows ?? []) as { final_text: string; sent_at: string; ai_generated: boolean }[];
   const messages = (messageRows ?? []) as { body: string; created_at: string }[];
+  const approval = approvalRows ?? null;
 
   // The replies and follow-ups as one conversation, in the order they happened.
   const thread = [
@@ -60,10 +68,24 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
     ...messages.map((m) => ({ kind: "message" as const, at: m.created_at, text: m.body, ai: false })),
   ].sort((a, b) => a.at.localeCompare(b.at));
 
-  // Status history from the ticket's timestamps, plus each time the person asked
-  // for more help and each later reply. answered_at keeps the first reply's time.
+  // Status history from the ticket's timestamps, approval milestones, and messages
   const history = [
     { label: "Received", at: ticket.created_at, dot: "bg-[#3d4651]" },
+    // S4-11: Approval steps integration
+    ...(approval
+      ? [
+          { label: "Waiting for approval", at: approval.created_at, dot: "bg-[#8a3b00]" },
+          ...(approval.decided_at
+            ? [
+                {
+                  label: approval.status === "approved" ? "Approved" : "Declined",
+                  at: approval.decided_at,
+                  dot: approval.status === "approved" ? "bg-[#1b6b36]" : "bg-[#a4231a]",
+                },
+              ]
+            : []),
+        ]
+      : []),
     { label: "Assigned", at: ticket.assigned_at, dot: "bg-[#0b4c94]" },
     { label: "Answered", at: ticket.answered_at, dot: "bg-[#1b6b36]" },
     ...messages.map((m) => ({ label: "You asked for more help", at: m.created_at, dot: "bg-[#8a3b00]" })),
