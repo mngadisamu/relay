@@ -36,7 +36,9 @@ export default async function ForecastPage({
 }) {
   const profile = await requireRole(["manager"]);
   const params = await searchParams;
-  const dept: Department = DEPARTMENTS.find((d) => d === params.dept) ?? "HR";
+  // A department manager sees only their own department; a general manager sees all four.
+  const allowed: Department[] = profile.department ? [profile.department as Department] : DEPARTMENTS;
+  const dept: Department = allowed.find((d) => d === params.dept) ?? allowed[0];
 
   const supabase = await createClient();
   const today = sastToday();
@@ -93,7 +95,7 @@ export default async function ForecastPage({
         <form method="get" className="flex flex-wrap items-end gap-2">
           <label htmlFor="dept" className="text-sm font-medium">Department</label>
           <select id="dept" name="dept" defaultValue={dept} className="rounded border px-2 py-1.5 text-sm">
-            {DEPARTMENTS.map((d) => (
+            {allowed.map((d) => (
               <option key={d} value={d}>{d}</option>
             ))}
           </select>

@@ -28,6 +28,7 @@ export type TicketForReply = {
   is_sensitive: boolean;
   sensitive_kind: SensitiveKind | null;
   assigned_to: string | null;
+  submitted_by: string; // the person who sent the request: they can't take their own (S4 scope fix)
   created_at: string;
 };
 
@@ -182,6 +183,9 @@ export default function TicketReply({
     });
   }
 
+  // An agent can't take their own request: another agent in the department handles it.
+  const ownRequest = ticket.submitted_by === viewer.id;
+
   // Take ticket (agent, for themselves) or Assign (manager, to the chosen agent) (S2-16).
   // The server reloads the page afterwards, so the status and "Assigned to" update.
   function handleAssign(agentId?: string) {
@@ -316,7 +320,11 @@ export default function TicketReply({
                   : `Assigned to ${assigneeName ?? "another agent"}`}
             </p>
 
-            {viewer.role === "agent" && !ticket.assigned_to && ticket.status !== "closed" && (
+            {viewer.role === "agent" && !ticket.assigned_to && ticket.status !== "closed" && ownRequest && (
+              <p className="text-sm text-muted">This is your own request, so another agent in your department takes it.</p>
+            )}
+
+            {viewer.role === "agent" && !ticket.assigned_to && ticket.status !== "closed" && !ownRequest && (
               <button type="button" onClick={() => handleAssign()} disabled={busy} className={secondaryBtn}>
                 {isAssigning ? "Taking…" : "Take ticket"}
               </button>

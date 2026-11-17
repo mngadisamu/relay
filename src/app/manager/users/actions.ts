@@ -48,6 +48,10 @@ export async function addPerson(_prev: PeopleFormState, formData: FormData): Pro
   const failed = (rest: PeopleFormState): PeopleFormState => ({ ...rest, values, stamp: Date.now() });
   if (!fullName) fieldErrors.fullName = "Enter their full name";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) fieldErrors.email = "Enter a valid email address";
+  // A department manager adds agents of their own department only.
+  if (profile.department && (role !== "agent" || department !== profile.department)) {
+    return failed({ error: `As the ${profile.department} manager, you can only add ${profile.department} agents.` });
+  }
   // Nothing is saved or sent while a field is wrong.
   if (Object.keys(fieldErrors).length) return failed({ fieldErrors });
 
@@ -113,6 +117,11 @@ export async function changeRole(userId: string, _prev: PeopleFormState, formDat
   const failed = (rest: PeopleFormState): PeopleFormState => ({ ...rest, values, stamp: Date.now() });
   // Nothing is saved while a field is wrong.
   if (Object.keys(fieldErrors).length) return failed({ fieldErrors });
+
+  // A department manager only keeps people as agents of their own department.
+  if (profile.department && (role !== "agent" || department !== profile.department)) {
+    return failed({ error: `As the ${profile.department} manager, you can only keep agents in ${profile.department}.` });
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_user_role", { p_user_id: userId, p_role: role, p_department: department });

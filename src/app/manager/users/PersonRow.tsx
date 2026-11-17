@@ -22,7 +22,7 @@ const leftOn = (iso: string) =>
   new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric", timeZone: "Africa/Johannesburg" });
 
 // One person in the list, with their role and department to change (S2-25).
-export function PersonRow({ person, isMe }: { person: Person; isMe: boolean }) {
+export function PersonRow({ person, isMe, myDepartment }: { person: Person; isMe: boolean; myDepartment: string | null }) {
   const name = person.full_name || person.email;
   const [state, action, pending] = useActionState<PeopleFormState, FormData>(changeRole.bind(null, person.id), {});
   const idPrefix = `person-${person.id.slice(0, 8)}`;
@@ -48,6 +48,8 @@ export function PersonRow({ person, isMe }: { person: Person; isMe: boolean }) {
         <div className="md:pt-1">
           <RemoveButton userId={person.id} name={name} removed />
         </div>
+      ) : myDepartment && person.role !== "agent" ? (
+        <p className="text-sm text-muted md:pt-2">Only a general manager can change this person.</p>
       ) : isMe ? (
         <p className="text-sm text-muted md:pt-2">This is you. Another manager can change your role.</p>
       ) : (
@@ -57,6 +59,7 @@ export function PersonRow({ person, isMe }: { person: Person; isMe: boolean }) {
             role={state.values?.role ?? person.role}
             department={state.values ? state.values.department : person.department}
             errors={state.fieldErrors}
+            agentOnly={myDepartment !== null}
           />
           <div className="space-y-1.5 sm:pt-[26px]">
             <button

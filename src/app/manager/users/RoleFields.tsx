@@ -26,12 +26,15 @@ export function RoleFields({
   role,
   department,
   errors,
+  agentOnly = false,
 }: {
   idPrefix: string;
   role?: string;
   department?: string | null;
   errors?: { role?: string; department?: string };
+  agentOnly?: boolean; // department managers: agents of their own department only
 }) {
+  if (agentOnly) return <AgentOnlyFields idPrefix={idPrefix} department={department ?? ""} />;
   return (
     <>
       <div className="space-y-1.5">
@@ -77,6 +80,30 @@ export function RoleFields({
           ))}
         </select>
         <FieldError id={`${idPrefix}-department-error`} message={errors?.department} />
+      </div>
+    </>
+  );
+}
+
+// Department managers add and manage agents of their own department only, so the role
+// is fixed to Agent and the department is fixed to theirs. The hidden inputs still send
+// both values with the form.
+function AgentOnlyFields({ idPrefix, department }: { idPrefix: string; department: string }) {
+  return (
+    <>
+      <div className="space-y-1.5">
+        <label htmlFor={`${idPrefix}-role-fixed`} className="block text-[13px] font-medium text-ink-2">
+          Role
+        </label>
+        <input id={`${idPrefix}-role-fixed`} value="Agent" readOnly className={`${fieldClass} bg-page`} />
+        <input type="hidden" name="role" value="agent" />
+      </div>
+      <div className="space-y-1.5">
+        <label htmlFor={`${idPrefix}-department-fixed`} className="block text-[13px] font-medium text-ink-2">
+          Department
+        </label>
+        <input id={`${idPrefix}-department-fixed`} value={department} readOnly className={`${fieldClass} bg-page`} />
+        <input type="hidden" name="department" value={department} />
       </div>
     </>
   );

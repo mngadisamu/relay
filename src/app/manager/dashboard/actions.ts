@@ -17,7 +17,8 @@ export async function writeWeeklySummary(formData: FormData) {
   const periodFrom = String(formData.get("period_from") ?? "");
   const periodTo = String(formData.get("period_to") ?? "");
   const dept = String(formData.get("department") ?? "");
-  const department = DEPARTMENTS.includes(dept) ? dept : null;
+  // A department manager's summaries are always for their own department.
+  const department = profile.department ?? (DEPARTMENTS.includes(dept) ? dept : null);
   if (!DATE.test(periodFrom) || !DATE.test(periodTo) || periodFrom > periodTo) return;
 
   const supabase = await createClient();

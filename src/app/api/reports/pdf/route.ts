@@ -84,6 +84,10 @@ async function buildPdfResponse(department: string, weekStart: string) {
   if (!DEPARTMENTS.includes(department) || !DAY.test(weekStart)) {
     return NextResponse.json({ error: 'Choose a department and a week.' }, { status: 400 });
   }
+  // A department manager can only download reports for their own department.
+  if (profile.department && department !== profile.department) {
+    return NextResponse.json({ error: 'You can only download reports for your own department.' }, { status: 403 });
+  }
 
   // The report covers Monday to the Sunday after.
   const end = new Date(`${weekStart}T00:00:00Z`);

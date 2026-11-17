@@ -22,7 +22,7 @@ type Row = {
 // My requests (S1-26, mockup screen 4): newest first, status in words and colour.
 // Row-level security (S1-15) means a plain select only returns this user's tickets.
 export default async function MyRequests() {
-  await requireRole(["staff"]);
+  await requireRole(["staff", "agent", "manager"]);
 
   const supabase = await createClient();
   const { data, error } = await supabase

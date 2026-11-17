@@ -10,7 +10,7 @@ export default async function ManagerReportsPage() {
   return (
     <div className="min-h-screen bg-page">
       <RoleHeader profile={profile} home="/manager" menu={MANAGER_MENU} current="/manager/reports" />
-      <ReportsForm />
+      <ReportsForm myDepartment={profile.department} />
     </div>
   );
 }

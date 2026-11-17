@@ -9,10 +9,13 @@ export async function GET() {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("reports")
     .select("id, department, week_start, created_at")
     .order("created_at", { ascending: false });
+  // A department manager sees only their own department's saved reports.
+  if (profile.department) query = query.eq("department", profile.department);
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

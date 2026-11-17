@@ -30,7 +30,7 @@ export default async function ManageUsersPage() {
           <p className="text-[15px] text-ink-2">
             Add people to Relay and choose what they can do. New people get an email to set their password.
             {profile.department
-              ? ` As the ${profile.department} manager, you can add staff and ${profile.department} agents.`
+              ? ` As the ${profile.department} manager, you can add and manage ${profile.department} agents only. A general manager adds staff, managers and compliance officers.`
               : " A manager with no department sees every department."}
           </p>
         </div>
@@ -48,7 +48,7 @@ export default async function ManageUsersPage() {
           ) : (
             <ul className="divide-y divide-line-soft rounded-[10px] border border-line bg-white">
               {people.map((p) => (
-                <PersonRow key={p.id} person={p} isMe={p.id === profile.id} />
+                <PersonRow key={p.id} person={p} isMe={p.id === profile.id} myDepartment={profile.department} />
               ))}
             </ul>
           )}
@@ -66,7 +66,7 @@ export default async function ManageUsersPage() {
             </div>
             <ul className="divide-y divide-line-soft rounded-[10px] border border-line bg-white">
               {left.map((p) => (
-                <PersonRow key={p.id} person={p} isMe={false} />
+                <PersonRow key={p.id} person={p} isMe={false} myDepartment={profile.department} />
               ))}
             </ul>
           </section>

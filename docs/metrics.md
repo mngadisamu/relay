@@ -17,7 +17,7 @@ dashboard_metrics(p_from date, p_to date, p_department text default null) return
 
 - **Past and live tickets together:** both are in the `tickets` table. Past tickets have `is_historical = true`. The function counts both, and never filters on `is_historical`.
 - **Previous period:** the same number of days immediately before `p_from`. Every "change" below compares against it.
-- **Who sees what:** the function runs as the caller (`security invoker`), so the existing row rules decide the numbers. A manager sees all departments. An agent sees only their own department. Staff are not given permission to run it.
+- **Who sees what:** the function runs as the caller (`security invoker`), so the existing row rules decide the numbers. A general manager sees all departments. A department manager sees only their own department (migration 0024). An agent sees only their own department. Staff are not given permission to run it.
 - **Speed:** each call must answer in under 1 second.
 - **No personal data:** the result contains counts and averages only. No names, no ticket text.
 
