@@ -6,14 +6,14 @@ import { classify } from "@/lib/classifier";
 import { getCurrentProfile } from "@/lib/auth";
 import { checkSensitive, departmentFor, priorityFor } from "@/lib/sensitive";
 
-export type Field = "subject" | "description" | "depot" | "priority";
+export type Field = "subject" | "description" | "depot" | "priority" | "requestType" | "amount";
 
 // What the person typed, sent back on an error so the form doesn't empty itself.
 export type SubmitValues = Record<Field, string>;
 
 export type SubmitState =
   | { status: "idle" }
-  // fieldErrors: one message per empty field, shown under that field with a red border.
+  // fieldErrors: one message per field, shown under that field with a red border.
   // message: a problem that isn't about one field (e.g. the save failed).
   | { status: "error"; fieldErrors: Partial<Record<Field, string>>; message?: string; values: SubmitValues }
   // confidence and routedByRule say how the department was chosen, for the AI note on the confirmation.
@@ -22,6 +22,16 @@ export type SubmitState =
 const DEPOTS = ["Head Office", "City Deep depot", "Pomona depot"];
 // How urgent the person says it is (S2-11). The inbox puts urgent first (S1-19).
 const PRIORITIES = ["low", "medium", "high", "urgent"];
+// Request types (migration 0020). The form offers these in this order.
+const REQUEST_TYPES = ["purchase", "leave", "system_access", "other"];
+
+// Turns "6000", "6 000", "R6,000" or "6000.50" into rand, or null if it isn't a positive amount.
+function parseAmount(raw: string): number | null {
+  const cleaned = raw.replace(/[\sR,]/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+  const n = Number(cleaned);
+  return n > 0 ? n : null;
+}
 
 // Submits a staff request (S1-22) and saves how it was classified (S1-21, S1-25).
 // Runs as the signed-in staff member, so row-level security applies (migration 0003).
@@ -33,8 +43,10 @@ export async function submitRequest(
   const description = String(formData.get("description") ?? "").trim();
   const depot = String(formData.get("depot") ?? "");
   const priority = String(formData.get("priority") ?? "medium");
+  const requestType = String(formData.get("requestType") ?? "");
+  const amountRaw = String(formData.get("amount") ?? "").trim();
 
-  const values: SubmitValues = { subject, description, depot, priority };
+  const values: SubmitValues = { subject, description, depot, priority, requestType, amount: amountRaw };
 
   // Check every field at once, so the person sees all problems together.
   const fieldErrors: Partial<Record<Field, string>> = {};
@@ -43,6 +55,19 @@ export async function submitRequest(
   if (!description) fieldErrors.description = "Please describe your request";
   if (!DEPOTS.includes(depot)) fieldErrors.depot = "Please choose your depot";
   if (!PRIORITIES.includes(priority)) fieldErrors.priority = "Please choose how urgent it is";
+  if (!REQUEST_TYPES.includes(requestType)) fieldErrors.requestType = "Please choose a request type";
+
+  // The amount is only asked for on a purchase (S4-01). Other requests store none.
+  let amount: number | null = null;
+  if (requestType === "purchase") {
+    if (!amountRaw) {
+      fieldErrors.amount = "Please enter the amount";
+    } else {
+      amount = parseAmount(amountRaw);
+      if (amount === null) fieldErrors.amount = "Enter an amount greater than zero";
+    }
+  }
+
   if (Object.keys(fieldErrors).length > 0) return { status: "error", fieldErrors, values };
 
   const profile = await getCurrentProfile();
@@ -77,6 +102,8 @@ export async function submitRequest(
       needs_review: needsReview,
       is_sensitive: check.sensitive,
       sensitive_kind: check.sensitive ? check.kind : null,
+      request_type: requestType,
+      amount,
     })
     .select("id, reference, created_at")
     .single();
@@ -105,6 +132,7 @@ export async function submitRequest(
         needs_review: needsReview,
         sensitive: check.sensitive ? check.kind : null,
         routed_by_rule: routedByRule,
+        request_type: requestType,
       },
     }),
   ]);
