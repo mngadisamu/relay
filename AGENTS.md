@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT2_3_STORIES.md` and the contract your story uses (section 5), and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Mon 9 Nov 2026 (Sprint 2+3, day 6).
+Last updated: Tue 17 Nov 2026 (Sprint 4, day 2).
 
 ---
 
@@ -24,7 +24,7 @@ The bootcamp runs **8 weeks**. Work is graded on technical delivery *and* profes
 | --- | --- | --- | --- |
 | 1 | 19–30 Oct 2026 | Ticket classification · AI response generator | Done |
 | 2 + 3 | 2–13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | **In progress** |
-| 4 | to be confirmed | Workflow automation · Deployment and showcase | |
+| 4 | 16–19 Nov 2026 (dates to confirm) | Request types and approvals · Notifications · Workflow automation · Deployment and showcase | In progress |
 
 Sprints 2 and 3 were combined into one two-week sprint by the programme.
 
@@ -128,7 +128,7 @@ docs/                             architecture.md · audit-actions.md · metrics
 
 Need an agent for HR, Finance or Operations, or a department manager? Ask Samukelo.
 
-**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). People who leave are **removed, not deleted** (S2-35, "Remove from Relay"): they can't sign in, but their name stays on their tickets, replies and audit entries. A department manager removes staff and their own department's agents; a general manager removes anyone; nobody removes themselves, and there is always at least one general manager. When listing people to pick from (e.g. Assign), add `.eq("active", true)`. **Forgot your password** (`/forgot-password`) emails a link that opens `/reset-password`; managers can send the same link, and edit a person's name, email and depot, on Manage users (S2-36). Every page before sign-in uses `AuthShell` (`src/components/AuthShell.tsx`). Relay's email designs are in `docs/email-templates/`. Don't build a sign-up page.
+**Accounts and roles:** there is **no sign-up page**, and public sign-up is switched off in Supabase. A manager adds people on **Manage users** (`/manager/users`, S2-25): the person gets an invite email, its link opens `/auth/confirm`, and they choose a password on `/welcome`. The invite is sent by the Supabase Edge Function `supabase/functions/invite-user` (it holds the secret key inside Supabase, so the key never enters Relay's code). People who leave are **removed, not deleted** (S2-35, "Remove from Relay"): they can't sign in, but their name stays on their tickets, replies and audit entries. A department manager removes staff and their own department's agents; a general manager removes anyone; nobody removes themselves, and there is always at least one general manager. When listing people to pick from (e.g. Assign), add `.eq("active", true)`. **Forgot your password** (`/forgot-password`) emails a link that opens `/reset-password`; managers can send the same link, and edit a person's name, email and depot, on Manage users (S2-36). Every page before sign-in uses `AuthShell` (`src/components/AuthShell.tsx`). Relay's email designs are in `docs/email-templates/`. Don't build a sign-up page. A department manager adds and changes only agents of their own department (migration 0025); the `invite-user` function checks this before an invite is sent.
 
 **Data in Supabase:**
 - **15,579 past tickets** (`is_historical = true`), 19 Oct 2025 to 18 Oct 2026, about 3,900 per department, loaded by `supabase/seed/seed_historical.mjs` (S1-17). They feed the dashboard, reports and forecast. Their dates, depots and priorities were **assigned** with a realistic pattern, not recorded (see `data/README.md`).
@@ -161,6 +161,16 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0014_risk_metrics.sql` | `risk_metrics()`: the Risk report's numbers, counted in SQL (S2-30) | Samukelo |
 | `0015_user_details_and_reset.sql` | `update_user_details()`, `can_manage_user()`, `reset_email_for()` (S2-36) | Samukelo |
 | `0016_risk_ai_unavailable.sql` | `risk_metrics()` counts drafts where Gemini didn't answer (`ai_unavailable`) and sensitive requests kept from Gemini (`sensitive_kept`) (S2-30) | Samukelo |
+| `0017_summary_periods.sql` | Weekly AI summaries saved per period and department (S2-28, S2-33) | Baphakamise |
+| `0018_weekly_reports_schedule_fix.sql` | Monday schedule for the weekly reports (S2-34) | Baphakamise |
+| `0019_weekly_summaries_schedule.sql` | Monday AI summaries for the scheduled reports (S2-34) | Baphakamise |
+| `0020_request_types_and_approvals.sql` | Request types, amounts, the awaiting-approval status and the approval rules (S4-01, S4-03) | Samukelo |
+| `0021_notices.sql` | In-app notices, the fallback for email notifications (S4-10) | Samukelo |
+| `0022_security_hardening.sql` | Closes functions signed-out visitors could call, and fixes a search path (security advisor, 16 Nov) | Samukelo |
+| `0023_approvals_department_scope.sql` | Managers read only their own department's approvals (S4-03) | Samukelo |
+| `0024_department_scope_everywhere.sql` | A department manager sees only their own department's tickets, and its agents and managers (16 Nov) | Samukelo |
+| `0025_department_scope_people_reports.sql` | Department scope for people lists, role changes, reports, insights, the audit log and self-assignment (17 Nov) | Samukelo |
+| `0026_risk_department_scope.sql` | The risk report counts only a department manager's own department (17 Nov) | Samukelo |
 | `0017_summary_periods.sql` | `insights` keyed by exact period and department (S2-28, S2-33) | Samukelo |
 | `0018_weekly_reports_schedule_fix.sql` | Replaces `generate_weekly_reports()` with the columns `reports` has, and schedules it for Mondays 08:00 SAST via pg_cron (S2-34) | Baphakamise, reviewed by Samukelo |
 | `0019_weekly_summaries_schedule.sql` | `cron_secret` and the secret-checked functions the Monday summary route uses (S2-34) | Baphakamise, reviewed by Samukelo |
@@ -189,15 +199,15 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 
 | Table | Read | Create | Update |
 | --- | --- | --- | --- |
-| `profiles` | own row · managers, compliance: all · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | only through `supabase.rpc("set_user_role", { p_user_id, p_role, p_department })` (0012): managers, never their own role; a department manager only staff and their own department's agents |
-| `tickets` | staff: own · agents: own department · managers, compliance: all | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all. Prefer the lifecycle functions below. |
+| `profiles` | own row · compliance and general manager: all · department manager: their department's agents and managers (0025) · agents: people in their own department (0006). Agents get a ticket sender's name, email and depot through `supabase.rpc("ticket_submitter", { p_ticket_id })` (0005) | automatic when an account is added (trigger) | only through `supabase.rpc("set_user_role", { p_user_id, p_role, p_department })` (0012): managers, never their own role; a department manager only staff and their own department's agents |
+| `tickets` | staff: own · agents: own department · compliance and general manager: all · department manager: their department (0024) | anyone signed in, only with `submitted_by = auth.uid()` | agents: own department, and the ticket must stay in it · managers: all (a department manager: their department only, 0024). Prefer the lifecycle functions below. |
 | `classifications` | anyone who can see the ticket | anyone who can see the ticket (the submitter saves it on submit) | agents, managers: record an override (`overridden_by` = themselves) |
 | `templates` | agents, managers, compliance (**not** staff) | agents: own department · managers: any | agents: own department · managers: any |
 | `responses` | agents, managers, compliance on visible tickets · **staff only once `sent_at` is set** (never unsent drafts) | agents, managers, on visible tickets | agents, managers |
-| `audit_log` | managers, compliance | anyone signed in, only with `actor = auth.uid()` | nobody (append-only) |
+| `audit_log` | compliance and general manager: all · department manager: their own actions and their department's tickets (0025) | anyone signed in, only with `actor = auth.uid()` | nobody (append-only) |
 | `ticket_messages` | anyone who can see the ticket | only through `reopen_ticket()` | nobody |
-| `insights` | managers | managers | managers |
-| `reports` | managers (0008) | managers | managers |
+| `insights` | managers: their department (general manager: all, 0025) | same | same |
+| `reports` | managers: their department (general manager: all, 0008, 0025) | same | same |
 | `flags` | agents, managers, compliance, on tickets they can see (never staff) | only through `supabase.rpc("flag_reply", { p_response_id, p_kind, p_note })` (0011) | only through `supabase.rpc("resolve_flag", { p_flag_id, p_outcome, p_note })`, compliance only |
 | `approvals` | (Sprint 4) | | |
 

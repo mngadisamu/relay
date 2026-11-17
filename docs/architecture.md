@@ -25,7 +25,7 @@ Later sprints add analytics and reports (Sprint 2), workload forecasting and AI 
 | --- | --- | --- |
 | Staff | Office staff, depot workers, drivers | Submit requests, track them, read replies |
 | Agent | HR, IT, Finance and Operations team members | Work their department's inbox, edit and send AI-drafted replies |
-| Manager | Department heads | Add users and set their roles, dashboards, reports, approvals (later sprints) |
+| Manager | Department heads, and a general manager with no department | Add their department's agents (a general manager adds everyone); their department's dashboard, reports, forecast, risk report and approvals. A general manager sees every department |
 | Compliance | Compliance officer | Audit log and AI risk reports (Sprint 3) |
 
 ---
@@ -219,7 +219,7 @@ erDiagram
 - **Replies store both the AI draft and the final text.** We can show exactly what the AI suggested and what a person changed. This is a core part of using AI responsibly.
 - **Historical tickets are marked** with `is_historical`, so a year of seeded past requests can feed the dashboards and forecasts without mixing with live work.
 - **Fixed lists are database types** (`user_role`, `department`, `ticket_status`, `ticket_priority`, `reply_tone`), so the database itself rejects a misspelt department or status.
-- **Every change to the structure is a numbered migration** in `supabase/migrations/` (`0001` to `0004` so far), reviewed in a pull request like any other code. Anyone can rebuild the database by running them in order.
+- **Every change to the structure is a numbered migration** in `supabase/migrations/` (`0001` to `0026` so far; the full list is in AGENTS.md, section 5), reviewed in a pull request like any other code. Anyone can rebuild the database by running them in order.
 
 | Migration | What it adds |
 | --- | --- |

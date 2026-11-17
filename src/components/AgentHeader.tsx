@@ -30,6 +30,12 @@ export function AgentHeader({ profile, current }: { profile: CurrentProfile; cur
             <Link prefetch href="/agent/templates" aria-current={current === "templates" ? "page" : undefined} className={navClass(current === "templates")}>
               Templates
             </Link>
+            <Link prefetch href="/staff" className={navClass(false)}>
+              Submit request
+            </Link>
+            <Link prefetch href="/staff/requests" className={navClass(false)}>
+              My requests
+            </Link>
           </nav>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm sm:justify-end sm:gap-3.5">

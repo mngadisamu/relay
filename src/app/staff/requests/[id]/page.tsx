@@ -33,7 +33,7 @@ type ApprovalRecord = {
 // and "This solved it" / "I still need help" while it's Answered (S2-20).
 export default async function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireRole(["staff"]);
+  await requireRole(["staff", "agent", "manager"]);
 
   const supabase = await createClient();
   // RLS only returns the ticket if this user submitted it.

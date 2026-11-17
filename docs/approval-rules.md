@@ -4,8 +4,10 @@ These are the rules that decide whether a request needs a manager's sign-off. Th
 (`request_approval` in migration 0020) and the submit form both follow this table. If a rule
 changes, change this document first, then the code, in the same pull request.
 
-Status: **draft.** The R5,000 limit and the all-leave rule must be confirmed by the business
-before Day 2 of Sprint 4.
+Status: **agreed.** Kopano Freight is a fictional company, so the team makes the business
+decisions and records them here (Mon 16 Nov 2026, Samukelo as the business analyst):
+- Finance purchases over **R5,000** need a manager's sign-off. Purchases of R5,000 or less do not.
+- **All leave** needs a manager's sign-off, whatever its length.
 
 ## The rules
 

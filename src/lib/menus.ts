@@ -31,6 +31,18 @@ export const MANAGER_MENU: MenuItem[] = [
     ready: true, // Elzel, S2-27
   },
   {
+    label: "Submit request",
+    href: "/staff",
+    description: "Send your own request to HR, IT, Finance or Operations.",
+    ready: true, // Samukelo, scope fix (agents and managers can also raise requests)
+  },
+  {
+    label: "My requests",
+    href: "/staff/requests",
+    description: "Requests you have sent, and their status.",
+    ready: true, // Samukelo, scope fix
+  },
+  {
     label: "Reports",
     href: "/manager/reports",
     description: "Weekly department reports to preview, save and download.",

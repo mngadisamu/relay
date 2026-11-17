@@ -14,7 +14,7 @@ Relay gives staff one place to ask for help. It routes each request to the right
 | --- | --- | --- | --- |
 | 1 | 19 Oct – 30 Oct 2026 | Ticket classification · AI response generator | Done |
 | 2 + 3 | 2 Nov – 13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | **In progress** |
-| 4 | To be confirmed | Workflow automation · Deployment and showcase | |
+| 4 | 16 Nov – 19 Nov 2026 (dates to confirm) | Request types and approvals · Notifications · Workflow automation · Deployment and showcase | **In progress** |
 
 Sprints 2 and 3 were combined into one two-week sprint by the programme. It starts with the Sprint 1 carry-over: assigning and closing tickets, priority on submit, manager and compliance homes, and Manage users.
 
@@ -23,9 +23,9 @@ Sprints 2 and 3 were combined into one two-week sprint by the programme. It star
 | Who | What they can do |
 | --- | --- |
 | **Staff** | Send a request with how urgent it is · Relay routes it to HR, IT, Finance or Operations · follow it in **My requests**, with a reference number, status history and the reply |
-| **Agents** | **Inbox** of their department's tickets, most urgent first, with a **Mine** filter · **Take ticket** · confirm or move the AI's department choice · reply from an **AI draft** in a formal, friendly or urgent tone, edited and checked by them · **Template library** |
-| **Managers** | **Tickets** for their department (all departments for a general manager) · **Assign** tickets to agents · dashboard, reports and forecast coming this sprint |
-| **Compliance** | **Audit log** of every AI decision and human change, with filters, a ticket's whole history and CSV export · flagged replies and risk report coming this sprint |
+| **Agents** | **Inbox** of their department's tickets, most urgent first, with a **Mine** filter · **Take ticket** · confirm or move the AI's department choice · reply from an **AI draft** in a formal, friendly or urgent tone, edited and checked by them · **Template library** · send their own requests (they can't take their own) |
+| **Managers** | **Tickets** for their department (all departments for a general manager) · **Assign** tickets to agents · **Dashboard**, **Reports**, **Forecast** and the **Risk report** for their department (a general manager sees every department) · **Manage users**: a department manager adds and manages agents of their own department, a general manager adds everyone · **Approvals** for their department |
+| **Compliance** | **Audit log** of every AI decision and human change, with filters, a ticket's whole history and CSV export · flagged replies and the risk report |
 
 Every piece of AI work is labelled (for example "Routed by AI · 92% sure · an agent can change it"), and a person can check or change it before it counts.
 
@@ -44,6 +44,7 @@ Every piece of AI work is labelled (for example "Routed by AI · 92% sure · an 
 | [Design](docs/design/README.md) | Personas, journey map, wireframes, mockups and the style guide |
 | [Sprint 1 stories](docs/sprints/SPRINT1_STORIES.md) · [plan](docs/sprints/Sprint1_Plan.docx) · [dependencies](docs/sprints/Sprint1_Dependencies.pdf) | Sprint 1 stories with their Given / When / Then criteria |
 | [Sprint 2+3 stories](docs/sprints/SPRINT2_3_STORIES.md) · [plan](docs/sprints/Relay%20Sprint%202%2B3%20Plan%20(1).docx) | Every Sprint 2+3 story by member and day, with its acceptance criteria and later decisions |
+| [Sprint 4 plan](docs/sprints/Relay%20Sprint%204%20Plan.docx) · [PDF](docs/sprints/Relay%20Sprint%204%20Plan.pdf) | The Sprint 4 stories: request types and approvals, notifications, workflow and the showcase, with each member's days and acceptance criteria |
 | [Forecast](docs/forecast.md) | How the workload forecast works, and the shape the reports and forecast screen build against (contract 4) |
 
 ## Tech stack
