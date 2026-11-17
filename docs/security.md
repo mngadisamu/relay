@@ -10,7 +10,9 @@ Written Fri 6 Nov 2026, after feedback that account management was the weakest p
 | Who | Add people | Change roles | Remove people who leave |
 | --- | --- | --- | --- |
 | **General manager** (manager with no department) | Anyone, any role | Anyone except themselves | Anyone except themselves; never the last general manager |
-| **Department manager** | Staff, and agents for their own department | Staff, and their own department's agents | Staff, and their own department's agents |
+| **Department manager** | Agents of their own department only | Their own department's agents only | Their own department's agents only |
+
+A department manager also sees only their own department: its tickets, approvals, dashboard, forecast, reports and risk report (migrations 0024 to 0026). They don't see staff at all in Manage users: only a general manager adds, changes or removes staff. The `invite-user` function checks the same rule before it sends an invite.
 
 Updating details (name, email, depot) and sending a password reset follow the same rules (S2-36). A manager can always
 update their own name and depot.

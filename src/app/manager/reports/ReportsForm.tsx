@@ -20,8 +20,10 @@ interface SavedReport {
   created_at: string;
 }
 
-export default function ReportsPage() {
-  const [department, setDepartment] = useState('Finance');
+export default function ReportsPage({ myDepartment = null }: { myDepartment?: string | null }) {
+  // A department manager makes reports for their own department only.
+  const departments = myDepartment ? [myDepartment] : ['Finance', 'HR', 'IT', 'Operations'];
+  const [department, setDepartment] = useState(myDepartment ?? 'Finance');
   const [weekStart, setWeekStart] = useState('2026-11-02');
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -136,10 +138,9 @@ export default function ReportsPage() {
               onChange={(e) => setDepartment(e.target.value)}
               className="border border-field rounded-md p-2 text-sm text-ink bg-white focus:outline-none focus:ring-2 focus:ring-brand"
             >
-              <option value="Finance">Finance</option>
-              <option value="HR">HR</option>
-              <option value="IT">IT</option>
-              <option value="Operations">Operations</option>
+              {departments.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
             </select>
           </div>
 

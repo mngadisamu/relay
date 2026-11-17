@@ -133,7 +133,9 @@ export default async function ManagerDashboard({
     from = defaultFrom;
     to = today;
   }
-  const department = DEPARTMENTS.find((d) => d === sp.department) ?? null;
+  // A department manager always sees their own department; the URL can't change it.
+  const department = (profile.department as (typeof DEPARTMENTS)[number] | null)
+    ?? DEPARTMENTS.find((d) => d === sp.department) ?? null;
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("dashboard_metrics", {
@@ -180,19 +182,27 @@ export default async function ManagerDashboard({
             >
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <select
-                  id="department"
-                  name="department"
-                  defaultValue={department ?? ""}
-                  className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">All departments</option>
-                  {DEPARTMENTS.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+                {profile.department ? (
+                  <>
+                    {/* Department managers: fixed to their own department. */}
+                    <input type="hidden" name="department" value={profile.department} />
+                    <Input id="department" value={profile.department} readOnly className="bg-page" />
+                  </>
+                ) : (
+                  <select
+                    id="department"
+                    name="department"
+                    defaultValue={department ?? ""}
+                    className="h-10 w-full rounded-md border border-input bg-white px-3 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">All departments</option>
+                    {DEPARTMENTS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="from">From</Label>

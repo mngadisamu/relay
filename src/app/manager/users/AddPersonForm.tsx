@@ -47,7 +47,13 @@ export function AddPersonForm({ myDepartment }: { myDepartment: string | null })
           />
           <FieldError id="add-email-error" message={e.email} />
         </div>
-        <RoleFields idPrefix="add" role={state.values?.role} department={state.values ? state.values.department : myDepartment} errors={e} />
+        <RoleFields
+          idPrefix="add"
+          role={state.values?.role}
+          department={myDepartment ?? (state.values ? state.values.department : null)}
+          errors={e}
+          agentOnly={myDepartment !== null}
+        />
         <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-4">
           <button
             type="submit"

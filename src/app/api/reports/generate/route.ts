@@ -21,6 +21,10 @@ export async function POST(request: Request) {
   if (!DEPARTMENTS.includes(department) || !DAY.test(weekStart)) {
     return NextResponse.json({ error: "Choose a department and a week." }, { status: 400 });
   }
+  // A department manager can only make reports for their own department.
+  if (profile.department && department !== profile.department) {
+    return NextResponse.json({ error: "You can only make reports for your own department." }, { status: 403 });
+  }
 
   const end = new Date(`${weekStart}T00:00:00Z`);
   end.setUTCDate(end.getUTCDate() + 6);

@@ -98,6 +98,13 @@ Deno.serve(async (req) => {
   if (department && !DEPARTMENTS.includes(department)) return reply(400, { error: "Choose a department", field: "department" });
   if (role === "agent" && !department) return reply(400, { error: "Choose a department for this agent", field: "department" });
 
+  // A department manager adds agents of their own department only. Checked before the
+  // invite email is sent, so an out-of-scope person is never invited.
+  const { data: myProfile } = await asCaller.from("profiles").select("department").eq("id", userData.user.id).single();
+  if (myProfile?.department && (role !== "agent" || department !== myProfile.department)) {
+    return reply(403, { error: `As the ${myProfile.department} manager, you can only add ${myProfile.department} agents.` });
+  }
+
   // 3. Send the invite. The email's link opens Relay's /auth/confirm page.
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName },

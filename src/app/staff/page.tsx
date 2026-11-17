@@ -4,7 +4,7 @@ import { SubmitForm } from "./SubmitForm";
 
 // Staff home = the submit form (S1-22, mockup screens 2 and 3).
 export default async function StaffHome() {
-  await requireRole(["staff"]);
+  await requireRole(["staff", "agent", "manager"]);
 
   return (
     <div className="min-h-screen bg-page">
