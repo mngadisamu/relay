@@ -19,6 +19,12 @@ export const MANAGER_MENU: MenuItem[] = [
     ready: true, // Samukelo, S2-16
   },
   {
+    label: "Approvals",
+    href: "/manager/approvals",
+    description: "Purchases and leave waiting for your decision.",
+    ready: true, // Samukelo, S4-08
+  },
+  {
     label: "Manage users",
     href: "/manager/users",
     description: "Add staff and agents, and set their role and department.",

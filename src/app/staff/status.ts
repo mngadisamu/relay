@@ -1,6 +1,6 @@
 // Status shown in words AND colour, never colour alone (WCAG 2.1 AA).
 // Colours from the style guide; every pair passes AA contrast.
-export type TicketStatus = "received" | "assigned" | "answered" | "closed";
+export type TicketStatus = "received" | "assigned" | "answered" | "closed" | "awaiting_approval";
 export type TicketPriority = "low" | "medium" | "high" | "urgent";
 
 export const STATUS_LABEL: Record<TicketStatus, string> = {
@@ -8,6 +8,7 @@ export const STATUS_LABEL: Record<TicketStatus, string> = {
   assigned: "Assigned",
   answered: "Answered",
   closed: "Closed",
+  awaiting_approval: "Waiting for approval",
 };
 
 // Background and text colour for each status pill (the dot uses the text colour).
@@ -16,6 +17,7 @@ export const STATUS_STYLE: Record<TicketStatus, string> = {
   assigned: "bg-[#e7f0fb] text-[#0b4c94]",
   answered: "bg-[#e5f3ea] text-[#1b6b36]",
   closed: "bg-[#ecedef] text-[#4a4f57]",
+  awaiting_approval: "bg-[#fff0e3] text-[#8a3b00]",
 };
 
 export const PRIORITY_LABEL: Record<TicketPriority, string> = {

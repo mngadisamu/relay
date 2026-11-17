@@ -6,35 +6,28 @@ import { classify } from "@/lib/classifier";
 import { getCurrentProfile } from "@/lib/auth";
 import { checkSensitive, departmentFor, priorityFor } from "@/lib/sensitive";
 
-export type Field = "subject" | "description" | "depot" | "priority" | "requestType" | "amount";
+export type Field = "subject" | "description" | "depot" | "priority";
 
 // What the person typed, sent back on an error so the form doesn't empty itself.
 export type SubmitValues = Record<Field, string>;
 
 export type SubmitState =
   | { status: "idle" }
-  // fieldErrors: one message per field, shown under that field with a red border.
+  // fieldErrors: one message per empty field, shown under that field with a red border.
   // message: a problem that isn't about one field (e.g. the save failed).
   | { status: "error"; fieldErrors: Partial<Record<Field, string>>; message?: string; values: SubmitValues }
   // confidence and routedByRule say how the department was chosen, for the AI note on the confirmation.
-  | { status: "sent"; reference: string; department: string; subject: string; sentAt: string; confidence: number; routedByRule: boolean };
+  | { status: "sent"; reference: string; department: string; subject: string; sentAt: string; confidence: number; routedByRule: boolean; needsApproval: boolean };
 
 const DEPOTS = ["Head Office", "City Deep depot", "Pomona depot"];
 // How urgent the person says it is (S2-11). The inbox puts urgent first (S1-19).
 const PRIORITIES = ["low", "medium", "high", "urgent"];
-// Request types (migration 0020). The form offers these in this order.
-const REQUEST_TYPES = ["purchase", "leave", "system_access", "other"];
-
-// Turns "6000", "6 000", "R6,000" or "6000.50" into rand, or null if it isn't a positive amount.
-function parseAmount(raw: string): number | null {
-  const cleaned = raw.replace(/[\sR,]/g, "");
-  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
-  const n = Number(cleaned);
-  return n > 0 ? n : null;
-}
 
 // Submits a staff request (S1-22) and saves how it was classified (S1-21, S1-25).
 // Runs as the signed-in staff member, so row-level security applies (migration 0003).
+// Request types from migration 0020 (S4-01). The form may not send one yet.
+const REQUEST_TYPES = ["purchase", "leave", "system_access", "other"];
+
 export async function submitRequest(
   _prev: SubmitState,
   formData: FormData,
@@ -43,10 +36,8 @@ export async function submitRequest(
   const description = String(formData.get("description") ?? "").trim();
   const depot = String(formData.get("depot") ?? "");
   const priority = String(formData.get("priority") ?? "medium");
-  const requestType = String(formData.get("requestType") ?? "");
-  const amountRaw = String(formData.get("amount") ?? "").trim();
 
-  const values: SubmitValues = { subject, description, depot, priority, requestType, amount: amountRaw };
+  const values: SubmitValues = { subject, description, depot, priority };
 
   // Check every field at once, so the person sees all problems together.
   const fieldErrors: Partial<Record<Field, string>> = {};
@@ -55,19 +46,6 @@ export async function submitRequest(
   if (!description) fieldErrors.description = "Please describe your request";
   if (!DEPOTS.includes(depot)) fieldErrors.depot = "Please choose your depot";
   if (!PRIORITIES.includes(priority)) fieldErrors.priority = "Please choose how urgent it is";
-  if (!REQUEST_TYPES.includes(requestType)) fieldErrors.requestType = "Please choose a request type";
-
-  // The amount is only asked for on a purchase (S4-01). Other requests store none.
-  let amount: number | null = null;
-  if (requestType === "purchase") {
-    if (!amountRaw) {
-      fieldErrors.amount = "Please enter the amount";
-    } else {
-      amount = parseAmount(amountRaw);
-      if (amount === null) fieldErrors.amount = "Enter an amount greater than zero";
-    }
-  }
-
   if (Object.keys(fieldErrors).length > 0) return { status: "error", fieldErrors, values };
 
   const profile = await getCurrentProfile();
@@ -89,6 +67,17 @@ export async function submitRequest(
   const needsReview = routedByRule ? false : modelNeedsReview;
   const finalPriority = check.sensitive ? priorityFor(check.kind, priority) : priority;
 
+  // Request type and amount (S4-01). Optional: a form without them still works.
+  const requestType = String(formData.get("request_type") ?? "");
+  const amountText = String(formData.get("amount") ?? "").trim();
+  if (requestType && !REQUEST_TYPES.includes(requestType)) {
+    return { status: "error", fieldErrors: {}, message: "Choose what kind of request this is.", values };
+  }
+  const amount = requestType === "purchase" ? Number(amountText) : null;
+  if (requestType === "purchase" && (!amountText || !Number.isFinite(amount) || (amount ?? 0) <= 0)) {
+    return { status: "error", fieldErrors: {}, message: "Enter the amount of the purchase in rand.", values };
+  }
+
   // 2. Save the ticket. submitted_by must be the signed-in user (RLS requires it).
   const { data: ticket, error } = await supabase
     .from("tickets")
@@ -102,7 +91,7 @@ export async function submitRequest(
       needs_review: needsReview,
       is_sensitive: check.sensitive,
       sensitive_kind: check.sensitive ? check.kind : null,
-      request_type: requestType,
+      request_type: requestType || null,
       amount,
     })
     .select("id, reference, created_at")
@@ -132,13 +121,19 @@ export async function submitRequest(
         needs_review: needsReview,
         sensitive: check.sensitive ? check.kind : null,
         routed_by_rule: routedByRule,
-        request_type: requestType,
       },
     }),
   ]);
   if (classifyError) console.error("Could not save the classification:", classifyError);
   if (auditError) console.error("Could not write the audit entry:", auditError);
 
+  // 4. S4-07: a Finance purchase over R5,000 or any leave request waits for a manager.
+  //    request_approval() decides (migration 0020). The ticket is saved first, so an approval
+  //    never exists without its ticket.
+  const { data: approvalId, error: approvalError } = await supabase.rpc("request_approval", { p_ticket_id: ticket.id });
+  if (approvalError) console.error("Could not ask for approval:", approvalError);
+  const needsApproval = !approvalError && approvalId !== null;
+
   revalidatePath("/staff/requests");
-  return { status: "sent", reference: ticket.reference, department, subject, sentAt: ticket.created_at, confidence, routedByRule };
+  return { status: "sent", reference: ticket.reference, department, subject, sentAt: ticket.created_at, confidence, routedByRule, needsApproval };
 }
