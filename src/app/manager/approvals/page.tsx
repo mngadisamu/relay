@@ -32,12 +32,22 @@ export default async function ApprovalsPage() {
   const profile = await requireRole(["manager"]);
 
   const supabase = await createClient();
+  // Nobody decides their own request (decide_approval refuses it), so leave those out of the queue.
   const { data, error } = await supabase
     .from("approvals")
     .select("id, requested_at, ticket:tickets(reference, subject, department, request_type, amount, depot)")
     .eq("decision", "pending")
+    .neq("requested_by", profile.id)
     .order("requested_at", { ascending: true });
   const items = (data ?? []) as unknown as Pending[];
+
+  // The manager's own pending requests: shown as a note, so they know another manager decides them.
+  const { data: own } = await supabase
+    .from("approvals")
+    .select("id")
+    .eq("decision", "pending")
+    .eq("requested_by", profile.id);
+  const ownCount = own?.length ?? 0;
 
   return (
     <div className="min-h-screen bg-page">
@@ -53,6 +63,12 @@ export default async function ApprovalsPage() {
         {error && (
           <p role="alert" className="rounded-md border border-[#f0c8c3] bg-[#fdf1ef] px-3 py-2.5 text-sm text-[#a4231a]">
             The list couldn&apos;t be loaded: {error.message}
+          </p>
+        )}
+
+        {ownCount > 0 && (
+          <p role="status" className="rounded-md bg-[#eef3fb] px-3 py-2.5 text-sm text-ink-2">
+            You have {ownCount} request{ownCount === 1 ? "" : "s"} waiting for another manager. They are not listed here.
           </p>
         )}
 
