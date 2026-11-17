@@ -233,7 +233,9 @@ export default function TicketReply({
   // them, a manager once it's assigned to someone. Otherwise Send reply is greyed
   // out and the reason is shown under it (the server checks the same thing).
   const sendBlockedReason =
-    viewer.role === "manager"
+    ticket.status === "awaiting_approval"
+      ? "Waiting for a manager's approval before it can be answered."
+      : viewer.role === "manager"
       ? ticket.assigned_to
         ? null
         : "Assign this ticket to an agent before replying."
