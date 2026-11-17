@@ -24,7 +24,7 @@ The bootcamp runs **8 weeks**. Work is graded on technical delivery *and* profes
 | --- | --- | --- | --- |
 | 1 | 19–30 Oct 2026 | Ticket classification · AI response generator | Done |
 | 2 + 3 | 2–13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | **In progress** |
-| 4 | 16–19 Nov 2026 (dates to confirm) | Request types and approvals · Notifications · Workflow automation · Deployment and showcase | In progress |
+| 4 | 16–19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | In progress |
 
 Sprints 2 and 3 were combined into one two-week sprint by the programme.
 

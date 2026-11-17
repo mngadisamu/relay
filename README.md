@@ -13,8 +13,8 @@ Relay gives staff one place to ask for help. It routes each request to the right
 | Sprint | Dates | Modules | Status |
 | --- | --- | --- | --- |
 | 1 | 19 Oct – 30 Oct 2026 | Ticket classification · AI response generator | Done |
-| 2 + 3 | 2 Nov – 13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | **In progress** |
-| 4 | 16 Nov – 19 Nov 2026 (dates to confirm) | Request types and approvals · Notifications · Workflow automation · Deployment and showcase | **In progress** |
+| 2 + 3 | 2 Nov – 13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | Done |
+| 4 | 16 Nov – 19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | **In progress** |
 
 Sprints 2 and 3 were combined into one two-week sprint by the programme. It starts with the Sprint 1 carry-over: assigning and closing tickets, priority on submit, manager and compliance homes, and Manage users.
 
@@ -63,6 +63,7 @@ src/app/              Pages, server actions and API routes, one folder per role 
 src/components/       Shared components (menus, AI note, status tags) and shadcn/ui in components/ui
 src/lib/              Shared code: sign-in and roles, Supabase clients, classifier, menus, templates
 supabase/migrations   Database changes, applied in order (0001 onwards); never edit one that has been run
+supabase/functions   Edge Function `invite-user`: sends the invites from Manage users (deployed in Supabase, outside the Next.js app)
 supabase/seed         Reply templates and the year of past tickets used by the dashboard and forecast
 ml/notebooks          Colab notebooks: classifier training, daily ticket history
 ml/model              The exported classifier (JSON) and its results
@@ -106,7 +107,7 @@ Passwords are shared privately by Samukelo. Never put them in code, docs or chat
 | `manager@relay.test` | Manager (general manager, all departments) |
 | `compliance@relay.test` | Compliance |
 
-There's no sign-up page: accounts are added by a manager (Manage users, this sprint).
+There's no sign-up page: a manager adds people on **Manage users** (`/manager/users`). For department managers and other test accounts, ask Samukelo.
 
 ## Working together
 
@@ -119,9 +120,9 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) before your first commit. In short:
 
 ## Team
 
-| Member | Sprint 2+3 feature | Sprint 1 feature |
-| --- | --- | --- |
-| Samukelo (team lead, BA) | Platform, Sprint 1 carry-over, AI risk and compliance | F1 · Platform foundation: database, sign-in and roles, architecture |
-| Elzel | Workload forecasting | F2 · Ticket data and ML classifier |
-| Mihlali | Analytics dashboard | F3 · Staff request portal (UI/UX) |
-| Baphakamise | Automated reporting | F4 · AI response generator and agent inbox |
+| Member | Sprint 1 feature | Sprint 2+3 feature | Sprint 4 feature |
+| --- | --- | --- | --- |
+| Samukelo (team lead, BA) | F1 · Platform foundation: database, sign-in and roles, architecture | Platform, Sprint 1 carry-over, AI risk and compliance | F2 Approvals and sign-in security (approval rules, the manager queue, two-step sign-in) · F4 Showcase and documentation (demo, landing page, technical docs, portfolio) |
+| Elzel | F2 · Ticket data and ML classifier | Workload forecasting | F1 Routing and assignment (request types, automatic routing, least-busy assignment, escalating urgent tickets) |
+| Mihlali | F3 · Staff request portal (UI/UX) | Analytics dashboard | Tests each day's stories by hand on the preview (scope and access to be confirmed at planning) |
+| Baphakamise | F4 · AI response generator and agent inbox | Automated reporting | F3 Notifications and quality (email notifications, approval steps in the status history, usability test and fixes, accessibility audit) |
