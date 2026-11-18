@@ -1,47 +1,77 @@
-import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
+// Email and in-app notices for ticket events (S4-10).
+//
+// Writing a notice and queuing its email happen in the database (notify_ticket_event, migration
+// 0027), which also decides who is told. This file only sends the queued emails through Resend.
+// It never holds the service-role key. Email carries the reference, the title and a link only,
+// never the text of the request.
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+import { Resend } from "resend";
+import { createClient } from "@/lib/supabase/server";
 
-interface NotifyParams {
-  userId: string;
-  email: string;
-  title: string;
-  message: string;
-  reference: string;
-  link: string;
+export type NotifyEvent = "received" | "needs_approval" | "decided" | "reply_sent";
+
+type Client = Awaited<ReturnType<typeof createClient>>;
+
+// Queues the notices and emails for one event, then tries to send the emails now.
+// It never throws: a failed notification must not stop the request or the reply.
+export async function notifyTicketEvent(supabase: Client, ticketId: number, event: NotifyEvent) {
+  const { error } = await supabase.rpc("notify_ticket_event", { p_ticket_id: ticketId, p_event: event });
+  if (error) {
+    console.error("Could not queue the notification:", error.message);
+    return;
+  }
+  await sendPendingEmails(supabase);
 }
 
-export async function sendNotification({ userId, email, title, message, reference, link }: NotifyParams) {
-  // Respect the privacy rule: email carries reference, title, and link only, never the ticket text.
-  const emailSubject = `Relay Notification: ${reference} - ${title}`;
-  const emailHtml = `<p>You have a new update regarding ticket reference <strong>${reference}</strong>.</p><p><a href="${link}">View in Relay</a></p>`;
-
-  if (resend && email) {
-    try {
-      await resend.emails.send({
-        from: 'Relay Help Desk <noreply@relay.test>',
-        to: email,
-        subject: emailSubject,
-        html: emailHtml,
-      });
-      return;
-    } catch (error) {
-      console.error('Resend email failed, falling back to in-app notice:', error);
-    }
+// Sends the emails waiting in the outbox. With no Resend key, nothing is sent: the notices
+// stay in the app (the fallback), and the emails wait until email is switched on.
+export async function sendPendingEmails(supabase: Client): Promise<{ sent: number; note?: string }> {
+  const secret = process.env.CRON_SECRET;
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!secret || !apiKey) {
+    return { sent: 0, note: "Email is not switched on. Notices are in the app only." };
   }
 
-  // Fallback: Write full message and details to in-app notices table
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: rows, error } = await supabase.rpc("take_pending_emails", { p_secret: secret });
+  if (error || !rows) {
+    console.error("Could not read the email outbox:", error?.message);
+    return { sent: 0 };
+  }
 
-  await supabase.from('notices').insert({
-    user_id: userId,
-    title,
-    message,
-    link,
-    read: false,
-  });
+  const resend = new Resend(apiKey);
+  const appUrl = process.env.APP_URL ?? "https://relay-gilt-nine.vercel.app";
+  const from = process.env.RESEND_FROM ?? "Relay <onboarding@resend.dev>";
+  const sentIds: number[] = [];
+
+  for (const row of rows) {
+    const link = `${appUrl}${row.link_path}`;
+    const { error: sendError } = await resend.emails.send({
+      from,
+      to: row.to_email,
+      subject: row.subject,
+      html:
+        `<p>${escapeHtml(row.title)}</p>` +
+        `<p>Reference: <strong>${escapeHtml(row.reference)}</strong></p>` +
+        `<p><a href="${escapeHtml(link)}">Open in Relay</a></p>`,
+    });
+    if (sendError) {
+      // Left unsent, so the next attempt tries it again.
+      console.error("Email not sent, will try again:", sendError.message);
+      continue;
+    }
+    sentIds.push(row.outbox_id);
+  }
+
+  if (sentIds.length > 0) {
+    await supabase.rpc("mark_emails_sent", { p_secret: secret, p_ids: sentIds });
+  }
+  return { sent: sentIds.length };
+}
+
+function escapeHtml(text: string) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
