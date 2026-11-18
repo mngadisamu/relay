@@ -41,6 +41,8 @@ Your menu depends on whether you manage one department or all of them.
 - **Department manager** (for example, HR): you see your own department only.
 - **General manager** (no department): you see and act on every department.
 
+Your menu also has **Tickets** (the department's inbox, as for agents), **Submit request** and **My requests**, so you can send your own requests too.
+
 **Dashboard.** Requests, response times and the weekly summary. Department managers see their own department only.
 
 **Approvals.** Purchases and leave waiting for a decision, oldest first. Approve, or decline with a reason. You can't decide your own request, so it isn't listed. Another manager decides it.

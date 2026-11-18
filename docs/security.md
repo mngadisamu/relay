@@ -69,8 +69,9 @@ These live in Supabase, not in Git, so check them after any change to the projec
 - **Two-step sign-in is required for managers and compliance officers** (S4-17). After the password, they enter a six-digit
   code from an authenticator app (`/mfa/enrol` first time, `/mfa/verify` after that). The gate is in
   `src/lib/supabase/middleware.ts`, and every private page and server action runs through it.
-  - **Not covered:** the `/api` routes (for example the report routes) skip the page gate, so they check only that a person
-    is signed in. Fix before real use: each `/api` route should also require the second step.
+  - **`/api` routes:** the page gate doesn't run on `/api`, so the routes that managers and compliance use check the second step
+    themselves with `secondStepMissing()` (`src/lib/mfa.ts`): the draft route and the three report routes. `/api/classify` needs a
+    signed-in person only, and the Monday job (`/api/cron/weekly-summaries`) checks `CRON_SECRET` instead.
   - **Lost phone:** there is no self-service reset yet. Samukelo removes the authenticator in the Supabase dashboard
     (Authentication → Users → the person → multi-factor), and the person sets it up again at next sign-in.
   - Staff and agents do not have two-step sign-in. That is a decision for the team, not a gap in the code.

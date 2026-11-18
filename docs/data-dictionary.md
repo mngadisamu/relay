@@ -51,7 +51,7 @@ One row per request.
 | `needs_review` | boolean, not null | `true` when the model's confidence was below 0.6. |
 | `is_sensitive` | boolean, not null | Set by the word rules in `src/lib/sensitive.ts`. |
 | `sensitive_kind` | text | `conduct`, `wellbeing`, `incident`, `security` or `personal`. |
-| `request_type` | `request_type` | Purchase, leave, system access or other. Set when the form sends it. |
+| `request_type` | `request_type` | Purchase, leave, system access or other. Set when a request type is sent; the submit form does not ask for one yet (S4-01). |
 | `amount` | numeric | The purchase amount, in rand. |
 | `is_historical` | boolean, not null | `true` for the seeded past tickets. |
 | `assigned_to` | uuid | The agent who took the ticket. |
