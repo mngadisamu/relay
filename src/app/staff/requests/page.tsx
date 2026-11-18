@@ -77,6 +77,10 @@ export default async function MyRequests() {
                   <p className="text-[13px] tabular-nums text-muted">
                     {r.reference} · {r.department ?? "Not routed yet"}
                   </p>
+                  {/* A manager can't approve their own request, so another manager decides it. Said in words, not only by the status colour. */}
+                  {profile.role === "manager" && r.status === "awaiting_approval" && (
+                    <p className="text-[13px] font-medium text-[#8a3b00]">Waiting for another manager to decide.</p>
+                  )}
                   {/* Sent time, plus the latest change once there is one (e.g. "Replied Today, 10:05"). */}
                   <p className="text-[13px] tabular-nums text-ink-2">
                     Sent <time dateTime={r.created_at}>{formatWhen(r.created_at)}</time>
