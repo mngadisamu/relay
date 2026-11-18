@@ -40,8 +40,7 @@ export default function Home() {
                 Every request finds its way.
               </h1>
               <p className="text-[17px] leading-7 text-[#d6e2f2] sm:text-lg">
-                Relay is the help desk that sorts itself. Staff ask in their own words, Relay sends each request to the
-                team that can answer it, and that team replies fast with an AI-drafted reply they check first.
+                Relay sends each staff request to the team that can answer it, and that team replies fast.
               </p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
                 <Button asChild size="lg" className="h-12 bg-white px-7 text-base text-navy hover:bg-[#e7f0fb]">
