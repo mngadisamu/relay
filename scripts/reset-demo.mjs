@@ -87,7 +87,7 @@ const scripted = [
 // Insert one ticket at a time, so each row is matched with its own kind.
 // Each ticket gets a classification, like a real submission, and the approval or draft its kind needs.
 for (const spec of scripted) {
-  const { kind, ...row } = spec;
+  const row = Object.fromEntries(Object.entries(spec).filter(([key]) => key !== "kind"));
   const { data: ticket, error: insertError } = await supabase
     .from("tickets")
     .insert(row)

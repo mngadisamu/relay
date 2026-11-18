@@ -47,5 +47,26 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // S4-17: managers and compliance officers also need a code from their authenticator app.
+  // Until they have given it this session, every private page sends them to the second step.
+  // The /mfa pages themselves are left open, or the redirect would loop.
+  if (user && !isPublic && !path.startsWith("/mfa")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.sub)
+      .single();
+
+    if (profile && (profile.role === "manager" || profile.role === "compliance")) {
+      const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (level && level.currentLevel !== "aal2") {
+        // Has an app set up already: ask for a code. Not set up yet: start set-up.
+        const url = request.nextUrl.clone();
+        url.pathname = level.nextLevel === "aal2" ? "/mfa/verify" : "/mfa/enrol";
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   return response;
 }

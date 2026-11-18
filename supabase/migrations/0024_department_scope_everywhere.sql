@@ -1,3 +1,4 @@
+
 -- 0024_department_scope_everywhere.sql
 -- Applied to the database on 16 Nov 2026 (Samukelo). Safe to run twice.
 -- Decision (16 Nov 2026): a department manager sees only their own department's tickets,
