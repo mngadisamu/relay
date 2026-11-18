@@ -42,7 +42,7 @@ These are open, and they're listed in the risk register with their status:
 
 - The classifier still places some requests by depot name (two of 40 in the bias test), to be fixed at the next retrain.
 - Reply drafts are longer for some names on some requests. We need more drafts per name before we can say whether that is a pattern.
-- `/api/classify` is still open without sign-in (it's a read-only routing check, but it should have a rate limit).
+- `/api/classify` needs a signed-in person, but it has no rate limit yet (it's a read-only routing check).
 - The weekly AI summary and the forecast screen aren't built yet, so they carry no label yet.
-- Two-step sign-in (MFA) is not switched on for managers and compliance.
+- Two-step sign-in (MFA) is required for managers and compliance (S4-17), but there are no backup codes yet.
 - The POPIA points for Kopano Freight to decide are listed in [popia-note.md](popia-note.md).

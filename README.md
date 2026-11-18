@@ -86,7 +86,7 @@ cd relay
 npm ci
 ```
 
-Copy `.env.example` to `.env.local` and fill in the Supabase and Gemini keys. Samukelo shares them privately; never commit them. Then:
+Copy `.env.example` to `.env.local` and fill in the Supabase and Gemini keys. Samukelo shares them privately; never commit them. The `CRON_SECRET` and `RESEND_API_KEY` lines are for the weekly job and email, and can stay empty on your computer. Then:
 
 ```
 npm run dev
