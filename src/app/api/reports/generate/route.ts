@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { secondStepMissing } from "@/lib/mfa";
 import { forecastRange, Department } from "@/lib/forecast";
 import { todaySast } from "@/lib/risk";
 import { loadForecastHistory } from "@/lib/daily-history";
@@ -13,6 +14,10 @@ export async function POST(request: Request) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "manager") {
     return NextResponse.json({ error: "Only managers can open reports." }, { status: 403 });
+  }
+  // S4-17: managers and compliance also need the second sign-in step.
+  if (await secondStepMissing(profile)) {
+    return NextResponse.json({ error: "Complete the two-step sign-in first." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
