@@ -467,6 +467,6 @@ Sprint 4 added the approval step, the department rules, two-step sign-in and the
 
 **Two-step sign-in (S4-17).** Managers and compliance officers need a six-digit code from an authenticator app. The check is in `src/lib/supabase/middleware.ts`, so it runs before every private page and server action. The `/api` routes that managers use check the second step too; see [`security.md`](security.md).
 
-**Demo reset (S4-14).** `scripts/reset-demo.mjs` runs locally with the service-role key. It restores one scripted set of demo tickets, approvals and replies. It doesn't reset notices, because the database has no notices table yet.
+**Demo reset (S4-14).** `scripts/reset-demo.mjs` runs locally with the service-role key. It restores one scripted set of demo tickets, approvals and replies. It doesn't clear the notices table yet. The table is on the live database.
 
-**Known gaps.** The "waiting for another manager" note on a manager's own requests (on My requests) and the decision for a sole general manager's own leave are open. Notifications, the accessibility audit (S4-16) and the business case figures (S4-19) are not finished.
+**Known gaps.** The "waiting for another manager" note on a manager's own requests (on My requests) and the decision for a sole general manager's own leave are open. Email notifications are built but not switched on: migration 0027 is run, and the Resend key is not set. The accessibility audit (S4-16) still needs its on-device checks. The business case figures (S4-19) are in.

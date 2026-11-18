@@ -185,13 +185,13 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0018_weekly_reports_schedule_fix.sql` | Replaces `generate_weekly_reports()` with the columns `reports` has, and schedules it for Mondays 08:00 SAST via pg_cron (S2-34) | Baphakamise, reviewed by Samukelo |
 | `0019_weekly_summaries_schedule.sql` | `cron_secret` and the secret-checked functions the Monday summary route uses (S2-34) | Baphakamise, reviewed by Samukelo |
 | `0020_request_types_and_approvals.sql` | Request types, amounts, the awaiting-approval status and the approval rules (S4-01, S4-03) | Samukelo |
-| `0021_notices.sql` | In-app notices, the fallback for email notifications (S4-10). **Written, not yet run on the live database** (18 Nov) | Samukelo |
+| `0021_notices.sql` | In-app notices, the fallback for email notifications (S4-10). Run on the live database (checked 18 Nov) | Samukelo |
 | `0022_security_hardening.sql` | Closes functions signed-out visitors could call, and fixes a search path (security advisor, 16 Nov) | Samukelo |
 | `0023_approvals_department_scope.sql` | Managers read only their own department's approvals (S4-03) | Samukelo |
 | `0024_department_scope_everywhere.sql` | A department manager sees only their own department's tickets, and its agents and managers (16 Nov) | Samukelo |
 | `0025_department_scope_people_reports.sql` | Department scope for people lists, role changes, reports, insights, the audit log and self-assignment (17 Nov) | Samukelo |
 | `0026_risk_department_scope.sql` | The risk report counts only a department manager's own department (17 Nov) | Samukelo |
-| `0027_notifications.sql` | Notices only through `notify_ticket_event()`; the email outbox and its secret-checked send functions (S4-10) | Samukelo |
+| `0027_notifications.sql` | Notices only through `notify_ticket_event()`; the email outbox and its secret-checked send functions (S4-10). Run on the live database (checked 18 Nov) | Samukelo |
 
 The next free number is **0028**. Ask Samukelo before writing one.
 
@@ -352,6 +352,7 @@ The submit form calls `classify()` from `src/lib/classifier.ts` directly (faster
 Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs/sprints/SPRINT2_3_STORIES.md). Status as of Thu 5 Nov.
 
 ### Samukelo: platform, carry-over, risk and compliance
+- ✅ **S1-20** and **S1-24** architecture document (`docs/architecture.md`, sections 1 to 9)
 - ✅ **S2-01** PR checks and Preview env vars · **S2-02** role homes and public home page · **S2-06** ticket lifecycle (0006) · **S2-07** audit actions and AiNote · **S2-11** priority and "Department is correct" · **S2-12** audit log screen · **S2-16** take and assign
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
