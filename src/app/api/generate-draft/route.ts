@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { secondStepMissing } from "@/lib/mfa";
 import { loadTemplates, templateForTone } from "@/lib/reply-templates";
 
 // Gemini key stays on the server only (never NEXT_PUBLIC_).
@@ -17,6 +18,10 @@ export async function POST(request: Request) {
   const profile = await getCurrentProfile();
   if (!profile || !["agent", "manager"].includes(profile.role)) {
     return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  }
+  // S4-17: managers and compliance also need the second sign-in step.
+  if (await secondStepMissing(profile)) {
+    return NextResponse.json({ error: "Complete the two-step sign-in first." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
