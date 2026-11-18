@@ -191,8 +191,9 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0024_department_scope_everywhere.sql` | A department manager sees only their own department's tickets, and its agents and managers (16 Nov) | Samukelo |
 | `0025_department_scope_people_reports.sql` | Department scope for people lists, role changes, reports, insights, the audit log and self-assignment (17 Nov) | Samukelo |
 | `0026_risk_department_scope.sql` | The risk report counts only a department manager's own department (17 Nov) | Samukelo |
+| `0027_notifications.sql` | Notices only through `notify_ticket_event()`; the email outbox and its secret-checked send functions (S4-10) | Samukelo |
 
-The next free number is **0027**. Ask Samukelo before writing one.
+The next free number is **0028**. Ask Samukelo before writing one.
 
 ### Tables
 

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { classify } from "@/lib/classifier";
 import { getCurrentProfile } from "@/lib/auth";
 import { checkSensitive, departmentFor, priorityFor } from "@/lib/sensitive";
+import { notifyTicketEvent } from "@/lib/notify";
 
 export type Field = "subject" | "description" | "depot" | "priority";
 
@@ -133,6 +134,10 @@ export async function submitRequest(
   const { data: approvalId, error: approvalError } = await supabase.rpc("request_approval", { p_ticket_id: ticket.id });
   if (approvalError) console.error("Could not ask for approval:", approvalError);
   const needsApproval = !approvalError && approvalId !== null;
+
+  // S4-10: tell the person, and the managers who need to decide. Never stops the request.
+  await notifyTicketEvent(supabase, ticket.id, "received");
+  if (needsApproval) await notifyTicketEvent(supabase, ticket.id, "needs_approval");
 
   revalidatePath("/staff/requests");
   return { status: "sent", reference: ticket.reference, department, subject, sentAt: ticket.created_at, confidence, routedByRule, needsApproval };
