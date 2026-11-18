@@ -8,6 +8,7 @@ import { decideApproval, type DecideState } from "./actions";
 export function DecisionForm({ approvalId }: { approvalId: number }) {
   const [state, action, pending] = useActionState<DecideState, FormData>(decideApproval, {});
   const noteId = `note-${approvalId}`;
+  const errorId = `${noteId}-error`;
 
   return (
     <form action={action} noValidate className="space-y-3">
@@ -19,6 +20,7 @@ export function DecisionForm({ approvalId }: { approvalId: number }) {
         <textarea
           id={noteId}
           name="note"
+          aria-describedby={state.error ? errorId : undefined}
           rows={2}
           className="w-full rounded-md border border-field bg-white p-2.5 text-sm text-ink"
         />
@@ -44,7 +46,7 @@ export function DecisionForm({ approvalId }: { approvalId: number }) {
         </button>
       </div>
       {state.error && (
-        <p role="alert" className="text-[13px] text-[#a4231a]">
+        <p id={errorId} role="alert" className="text-[13px] text-[#a4231a]">
           {state.error}
         </p>
       )}
