@@ -456,3 +456,17 @@ Each control below is also listed in the [risk register](responsible-ai/risk-reg
 | Risk numbers counted in SQL | `risk_metrics()` (migrations 0014, 0016); Risk report | R21 |
 | Open: sign-in or rate limit on `/api/classify` | Not built | R19 |
 | Open: retention and Gemini transfer decisions | [popia-note.md](responsible-ai/popia-note.md) | R11, R22 |
+
+## 9. Sprint 4 as built
+
+Sprint 4 added the approval step, the department rules, two-step sign-in and the demo reset. This section is what was built, so the design in section 6 is not rewritten.
+
+**Approvals (S4-02, S4-03, S4-07, S4-08, S4-09).** A purchase over R5,000 in Finance, or any leave request, waits for a manager's decision. `request_approval()` creates a pending row in `approvals` and sets the ticket to `awaiting_approval`. `decide_approval()` approves (the ticket goes back to `received`) or declines with a required note (the ticket becomes `answered`). A person can't decide their own request, and the database enforces that, not only the screen. The rules are in [`approval-rules.md`](approval-rules.md), and the tests in [`testing/approval-rules.md`](testing/approval-rules.md).
+
+**Department scope (migrations 0024 to 0026).** A department manager sees and acts on their own department only: the dashboard, forecast, reports, risk report, approvals, and agents on Manage users. A general manager (no department) sees everything. The rules are enforced in row-level security and in the database functions, so a page that forgets to filter still shows nothing outside the department.
+
+**Two-step sign-in (S4-17).** Managers and compliance officers need a six-digit code from an authenticator app. The check is in `src/lib/supabase/middleware.ts`, so it runs before every private page and server action. The `/api` routes are not covered yet; see [`security.md`](security.md).
+
+**Demo reset (S4-14).** `scripts/reset-demo.mjs` runs locally with the service-role key. It restores one scripted set of demo tickets, approvals and replies. It doesn't reset notices, because the database has no notices table yet.
+
+**Known gaps.** The "waiting for another manager" note on a manager's own requests (on My requests) and the decision for a sole general manager's own leave are open. Notifications, the accessibility audit (S4-16) and the business case figures (S4-19) are not finished.
