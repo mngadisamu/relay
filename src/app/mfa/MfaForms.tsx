@@ -11,6 +11,8 @@ const noVerifyState: VerifyState = {};
 
 // The code box, shared by set-up and sign-in. The 6-digit code is typed, never shown.
 function CodeField({ id, error, factorId }: { id: string; error?: string; factorId?: string }) {
+  // The error message has this id, so a screen reader reads it with the field.
+  const errorId = `${id}-error`;
   return (
     <div className="space-y-1.5">
       {factorId && <input type="hidden" name="factor_id" value={factorId} />}
@@ -23,16 +25,17 @@ function CodeField({ id, error, factorId }: { id: string; error?: string; factor
         maxLength={8}
         required
         aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
         className="h-12 text-base tracking-[0.2em]"
       />
     </div>
   );
 }
 
-function ErrorText({ message }: { message?: string }) {
+function ErrorText({ id, message }: { id?: string; message?: string }) {
   if (!message) return null;
   return (
-    <p role="alert" className="rounded-md border border-[#f4c7c2] bg-[#fdecea] px-3 py-2.5 text-sm leading-5 text-destructive">
+    <p id={id} role="alert" className="rounded-md border border-[#f4c7c2] bg-[#fdecea] px-3 py-2.5 text-sm leading-5 text-destructive">
       {message}
     </p>
   );
@@ -76,7 +79,7 @@ export function EnrolForm() {
       </div>
 
       <form action={verifyAction} className="space-y-5">
-        <ErrorText message={verify.error} />
+        <ErrorText id="enrol-code-error" message={verify.error} />
         <CodeField id="enrol-code" error={verify.error} factorId={start.factorId} />
         <Button type="submit" size="lg" disabled={verifyPending} className="h-12 w-full text-base">
           {verifyPending ? "Checking…" : "Confirm and continue"}
@@ -92,7 +95,7 @@ export function VerifyForm() {
 
   return (
     <form action={formAction} className="space-y-5">
-      <ErrorText message={state.error} />
+      <ErrorText id="verify-code-error" message={state.error} />
       <CodeField id="verify-code" error={state.error} />
       <Button type="submit" size="lg" disabled={isPending} className="h-12 w-full text-base">
         {isPending ? "Checking…" : "Continue"}
