@@ -350,7 +350,7 @@ No key or password is committed to GitHub. `.env` files are in `.gitignore` (onl
 | Classifier accuracy is reported separately on real and synthetic tickets | Synthetic data can make a model look better than it is | S1-16 | In progress |
 | Staff never see an unsent AI draft | Only what a person approved reaches staff | Migration 0004 | Built |
 
-**Known limits (9 Nov 2026):** drafts have been tested for bias across four names (50 drafts), but not yet across roles or with more drafts per name; `/api/classify` is still open without sign-in; and the POPIA note is written, with its open decisions listed for Kopano Freight. The full list, with owners and status, is in [responsible-ai/risk-register.md](responsible-ai/risk-register.md).
+**Known limits (9 Nov 2026):** drafts have been tested for bias across four names (50 drafts), but not yet across roles or with more drafts per name; `/api/classify` needs a signed-in person but has no rate limit; and the POPIA note is written, with its open decisions listed for Kopano Freight. The full list, with owners and status, is in [responsible-ai/risk-register.md](responsible-ai/risk-register.md).
 
 ---
 
@@ -465,8 +465,8 @@ Sprint 4 added the approval step, the department rules, two-step sign-in and the
 
 **Department scope (migrations 0024 to 0026).** A department manager sees and acts on their own department only: the dashboard, forecast, reports, risk report, approvals, and agents on Manage users. A general manager (no department) sees everything. The rules are enforced in row-level security and in the database functions, so a page that forgets to filter still shows nothing outside the department.
 
-**Two-step sign-in (S4-17).** Managers and compliance officers need a six-digit code from an authenticator app. The check is in `src/lib/supabase/middleware.ts`, so it runs before every private page and server action. The `/api` routes are not covered yet; see [`security.md`](security.md).
+**Two-step sign-in (S4-17).** Managers and compliance officers need a six-digit code from an authenticator app. The check is in `src/lib/supabase/middleware.ts`, so it runs before every private page and server action. The `/api` routes that managers use check the second step too; see [`security.md`](security.md).
 
-**Demo reset (S4-14).** `scripts/reset-demo.mjs` runs locally with the service-role key. It restores one scripted set of demo tickets, approvals and replies. It doesn't reset notices, because the database has no notices table yet.
+**Demo reset (S4-14).** `scripts/reset-demo.mjs` runs locally with the service-role key. It restores one scripted set of demo tickets, approvals and replies. It doesn't clear the notices table yet. The table is on the live database.
 
-**Known gaps.** The "waiting for another manager" note on a manager's own requests (on My requests) and the decision for a sole general manager's own leave are open. Notifications, the accessibility audit (S4-16) and the business case figures (S4-19) are not finished.
+**Known gaps.** The "waiting for another manager" note on a manager's own requests (on My requests) and the decision for a sole general manager's own leave are open. Email notifications are built but not switched on: migration 0027 is run, and the Resend key is not set. The accessibility audit (S4-16) still needs its on-device checks. The business case figures (S4-19) are in.

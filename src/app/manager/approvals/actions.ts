@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { notifyTicketEvent } from "@/lib/notify";
 
 export type DecideState = { error?: string; done?: string };
 
@@ -21,12 +22,22 @@ export async function decideApproval(_prev: DecideState, formData: FormData): Pr
   if (decision === "rejected" && !note) return { error: "Add a reason for declining, so the person knows why." };
 
   const supabase = await createClient();
+
+  // The ticket this decision is about, for the notice to the person who sent it (S4-10).
+  const { data: approval } = await supabase
+    .from("approvals")
+    .select("ticket_id")
+    .eq("id", approvalId)
+    .maybeSingle<{ ticket_id: number }>();
+
   const { error } = await supabase.rpc("decide_approval", {
     p_approval_id: approvalId,
     p_decision: decision,
     p_note: note || null,
   });
   if (error) return { error: error.message };
+
+  if (approval) await notifyTicketEvent(supabase, approval.ticket_id, "decided");
 
   // The list isn't refreshed here, so the message stays on screen. The request leaves the list on the next visit.
   revalidatePath("/agent");

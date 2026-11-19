@@ -45,14 +45,14 @@ Status: **first pass, from the code.** This is not the final audit. The final au
 | "Closed" (`#4a4f57`) | White | 8.24:1 | 4.5:1 |
 | Own-request note (`#0b3d73`) | `#eef3fb` | 9.77:1 | 4.5:1 |
 
-### Open: minor, to fix in a code pull request
+### First-pass findings (now fixed on main)
 
 | # | Screen | Rule | Finding | Fix |
 | --- | --- | --- | --- | --- |
-| 1 | MFA set-up and code screens (`src/app/mfa/MfaForms.tsx`) | 1.3.1 | The error message is announced (`role="alert"`) but is not linked to the code field. | Give the error an `id` and add `aria-describedby` to the code input when there is an error. |
-| 2 | Approvals decline form (`src/app/manager/approvals/DecisionForm.tsx`) | 1.3.1 | The "needed to decline" note field is not linked to its error message. | Same as 1: link the error with `aria-describedby`. |
+| 1 | MFA set-up and code screens (`src/app/mfa/MfaForms.tsx`) | 1.3.1 | The error message is announced (`role="alert"`) but is not linked to the code field. | Done: the error has an `id`, and the code input has `aria-describedby` when there is an error. |
+| 2 | Approvals decline form (`src/app/manager/approvals/DecisionForm.tsx`) | 1.3.1 | The "needed to decline" note field is not linked to its error message. | Done: the error is linked with `aria-describedby`. |
 
-Neither gap stops a person from completing the task, because the error is still announced. Both should be fixed before the panel.
+Neither gap stopped a person from completing the task, because the error was still announced. Both are fixed in the code on main (`src/app/mfa/MfaForms.tsx` and `src/app/manager/approvals/DecisionForm.tsx`). Check the fix on the Vercel preview, as listed below.
 
 ## Still to check (on the Vercel preview)
 

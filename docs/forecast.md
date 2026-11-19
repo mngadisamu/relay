@@ -49,16 +49,6 @@ Each forecast predicts the next 28 days for one department. It starts from how b
 
 **Limits**
 
-- Public holidays are not modelled. A holiday week will look like a normal week, or a quiet one.
-- Some past tickets (before 21 Oct 2026) have their response and close dates set when the data was loaded, not when the events happened, so the timing of that year's data is approximate.
-- The live data is short: 19 tickets so far, and about five for HR. The recent level for HR rests on very few tickets.
-- Requests of a new kind, or a change in how the business works, will not show up until they appear in the data.
-- The 19–20 October 2026 gap is excluded, so it is not treated as a day of zero volume.
-- The backtest covers one starting point, 8 October 2026. In that window the forecast was off by more than a same-as-last-week guess for all four departments (see the accuracy table above). Treat the forecast as less reliable than that simple benchmark until this has been looked at again.
-- The ranges come from a statistical model, so they may cover fewer than 8 in 10 real days.
-
-**Limits**
-
 - Past ticket dates are assigned, not recorded. The response and close dates for tickets before 21 Oct 2026 were set when the data was loaded, so their timing is approximate.
 - Public holidays are not modelled. A holiday week will look like a normal week, or a quiet one.
 - New kinds of request are not known to the forecast until they appear in the data.

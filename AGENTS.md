@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT2_3_STORIES.md` and the contract your story uses (section 5), and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Tue 17 Nov 2026 (Sprint 4, day 2).
+Last updated: Wed 18 Nov 2026 (Sprint 4, day 3).
 
 ---
 
@@ -71,6 +71,8 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=      # Supabase "publishable" key
 SUPABASE_SERVICE_ROLE_KEY=          # Supabase "secret" key: bypasses RLS, local seed script ONLY, never app code
 GEMINI_API_KEY=                     # server only, never prefix with NEXT_PUBLIC_
+CRON_SECRET=                        # Monday summary job: Vercel sends it as the Bearer token. Server only
+RESEND_API_KEY=                     # email notifications (not switched on yet). Server only
 ```
 
 ---
@@ -83,6 +85,19 @@ src/
 ├── lib/
 │   ├── auth.ts                   Role type, HOME_FOR_ROLE map, getCurrentProfile(), requireRole()
 │   ├── classifier.ts             The trained classifier, run in TypeScript (S1-21)
+│   ├── accuracy.ts                   Forecast backtest against "same as last week" (S2-17)
+│   ├── bias-test-doc.ts              Bias test text, generated from docs/responsible-ai/bias-test.md (S2-31)
+│   ├── flag-actions.ts               Flag and resolve actions for replies (S2-26)
+│   ├── flags.ts                      Which sent replies compliance should look at (S2-26)
+│   ├── forecast.ts                   Workload forecast: forecast() and forecastRange() (S2-08, S2-13)
+│   ├── insights.ts                   Weekly AI summary: numbers only go to Gemini (S2-28)
+│   ├── mfa.ts                        secondStepMissing(): the second-step check for /api routes (S4-17)
+│   ├── notify.ts                     sendNotification(): email through Resend, notices table as fallback (S4-10). Not wired in yet
+│   ├── password-reset.ts             "Choose a new password" emails (S2-36)
+│   ├── risk.ts                       Risk report numbers, shared by the page and its PDF (S2-30)
+│   ├── staffing.ts                   Date helpers: Monday of the week, short dates
+│   ├── templates.ts                  Built-in fallback reply templates (S1-04)
+│   ├── utils.ts                      cn() class-name helper for shadcn/ui (S1-12)
 │   ├── sensitive.ts              Sensitive request rules: five kinds, their department and priority (migration 0009)
 │   ├── menus.ts                  Manager and compliance menus; each item is ready: true once its page is merged
 │   ├── daily-history.ts          loadDailyHistory(): past tickets per day, for the forecast (migration 0010)
@@ -90,6 +105,9 @@ src/
 │   └── supabase/                 createClient() for the browser (client.ts), the server (server.ts) and middleware
 ├── components/
 │   ├── AgentHeader.tsx           Agent top bar: Inbox, Templates
+│   ├── AuthShell.tsx                 Look of the pages seen before sign-in (S2-36)
+│   ├── FlagReply.tsx                 Tag for a flagged reply, in text and icon (S2-26)
+│   ├── PageSkeleton.tsx              Grey placeholder shown while a page loads (loading.tsx)
 │   ├── RoleHeader.tsx            Manager and compliance top bar (S2-02); pass current="/path" on each page
 │   ├── RoleHome.tsx              Manager and compliance home: a card per menu item (S2-02)
 │   ├── AiNote.tsx                The AI transparency note: routing, draft, summary, forecast (S2-07)
@@ -99,13 +117,15 @@ src/
 └── app/
     ├── page.tsx                  Public home page (S2-02)
     ├── login/                    Sign-in form and the signIn() / signOut() server actions
+    ├── mfa/                      Two-step sign-in: set up the app and enter a code (S4-17)
+    ├── welcome/, reset-password/, forgot-password/, auth/   Invite, password and expired-link pages (S2-25, S2-36)
     ├── home/page.tsx             Redirects a signed-in user to their role's home
     ├── staff/                    Submit a request (priority, sensitive rule) · My requests · request detail with status history
     ├── agent/                    Inbox (Mine filter, Assigned to; managers see it as Tickets) · ticket view (take, assign,
     │                             confirm, move, AI draft, send) · template library
-    ├── manager/                  Manager home · dashboard · reports · Manage users (S2-25)
+    ├── manager/                  Manager home · dashboard · forecast (S2-27) · approvals (S4-08) · reports · Manage users (S2-25)
     ├── compliance/               Compliance home · audit log (S2-12) · Flagged replies (S2-26) · Risk report and PDF (S2-30)
-    └── api/                      classify (S1-21) · generate-draft (AI drafts; skips Gemini for sensitive tickets)
+    └── api/                      classify (S1-21) · generate-draft (AI drafts; skips Gemini for sensitive tickets) · reports (list, generate, PDF) · cron/weekly-summaries (Monday job, CRON_SECRET). Routes that managers use check the second step
 supabase/migrations/              Applied in order in the Supabase SQL Editor (section 5)
 supabase/functions/invite-user/   Edge Function that sends Manage users invites (deployed in the Supabase dashboard; Deno, not Next.js)
 supabase/seed/                    templates.sql (reply templates) · seed_historical.mjs (the year of past tickets)
@@ -162,20 +182,18 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0015_user_details_and_reset.sql` | `update_user_details()`, `can_manage_user()`, `reset_email_for()` (S2-36) | Samukelo |
 | `0016_risk_ai_unavailable.sql` | `risk_metrics()` counts drafts where Gemini didn't answer (`ai_unavailable`) and sensitive requests kept from Gemini (`sensitive_kept`) (S2-30) | Samukelo |
 | `0017_summary_periods.sql` | Weekly AI summaries saved per period and department (S2-28, S2-33) | Baphakamise |
-| `0018_weekly_reports_schedule_fix.sql` | Monday schedule for the weekly reports (S2-34) | Baphakamise |
-| `0019_weekly_summaries_schedule.sql` | Monday AI summaries for the scheduled reports (S2-34) | Baphakamise |
+| `0018_weekly_reports_schedule_fix.sql` | Replaces `generate_weekly_reports()` with the columns `reports` has, and schedules it for Mondays 08:00 SAST via pg_cron (S2-34) | Baphakamise, reviewed by Samukelo |
+| `0019_weekly_summaries_schedule.sql` | `cron_secret` and the secret-checked functions the Monday summary route uses (S2-34) | Baphakamise, reviewed by Samukelo |
 | `0020_request_types_and_approvals.sql` | Request types, amounts, the awaiting-approval status and the approval rules (S4-01, S4-03) | Samukelo |
-| `0021_notices.sql` | In-app notices, the fallback for email notifications (S4-10) | Samukelo |
+| `0021_notices.sql` | In-app notices, the fallback for email notifications (S4-10). Run on the live database (checked 18 Nov) | Samukelo |
 | `0022_security_hardening.sql` | Closes functions signed-out visitors could call, and fixes a search path (security advisor, 16 Nov) | Samukelo |
 | `0023_approvals_department_scope.sql` | Managers read only their own department's approvals (S4-03) | Samukelo |
 | `0024_department_scope_everywhere.sql` | A department manager sees only their own department's tickets, and its agents and managers (16 Nov) | Samukelo |
 | `0025_department_scope_people_reports.sql` | Department scope for people lists, role changes, reports, insights, the audit log and self-assignment (17 Nov) | Samukelo |
 | `0026_risk_department_scope.sql` | The risk report counts only a department manager's own department (17 Nov) | Samukelo |
-| `0017_summary_periods.sql` | `insights` keyed by exact period and department (S2-28, S2-33) | Samukelo |
-| `0018_weekly_reports_schedule_fix.sql` | Replaces `generate_weekly_reports()` with the columns `reports` has, and schedules it for Mondays 08:00 SAST via pg_cron (S2-34) | Baphakamise, reviewed by Samukelo |
-| `0019_weekly_summaries_schedule.sql` | `cron_secret` and the secret-checked functions the Monday summary route uses (S2-34) | Baphakamise, reviewed by Samukelo |
+| `0027_notifications.sql` | Notices only through `notify_ticket_event()`; the email outbox and its secret-checked send functions (S4-10). Run on the live database (checked 18 Nov) | Samukelo |
 
-The next free number is **0020**. Ask Samukelo before writing one.
+The next free number is **0028**. Ask Samukelo before writing one.
 
 ### Tables
 
@@ -191,7 +209,7 @@ The next free number is **0020**. Ask Samukelo before writing one.
 | `insights` | weekly AI summaries | Written by S2-28, reused by reports (0007) |
 | `reports` | `department`, `week_start`, `metrics`, `ai_summary`, `forecast` | Saved weekly reports (0008) |
 | `flags` | `response_id`, `ticket_id`, `kind` (`sent_without_edits`, `invented_detail`, `person`), `source` (`auto`, `person`), `note`, `flagged_by`, `resolved_by`, `resolved_at`, `outcome` (`ok`, `needs_change`), `resolution_note` | AI replies marked for a second look (0011). Added only through `flag_reply()`, resolved only through `resolve_flag()` |
-| `approvals` | `ticket_id`, `approver`, `decision`, `decided_at` | Sprint 4 |
+| `approvals` | `ticket_id`, `requested_by`, `approver`, `decision`, `decision_note`, `decided_at` | Sprint 4: one pending decision per ticket (S4-02, S4-03) |
 
 ### Who can do what (row-level security)
 
@@ -209,7 +227,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 | `insights` | managers: their department (general manager: all, 0025) | same | same |
 | `reports` | managers: their department (general manager: all, 0008, 0025) | same | same |
 | `flags` | agents, managers, compliance, on tickets they can see (never staff) | only through `supabase.rpc("flag_reply", { p_response_id, p_kind, p_note })` (0011) | only through `supabase.rpc("resolve_flag", { p_flag_id, p_outcome, p_note })`, compliance only |
-| `approvals` | (Sprint 4) | | |
+| `approvals` | managers and compliance (department scope, 0023); the requester reads their own | only through `request_approval()`, called by the person who submitted the request | only through `decide_approval()`: a manager of the department (or a general manager), never the requester |
 
 ### The four contracts (agreed shapes other stories build against; change them only after agreeing it with the team)
 
@@ -225,7 +243,7 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
    **Who does what:** agents take tickets in their own department; a department manager assigns, confirms and closes in their department only; a general manager can do so everywhere; managers still read every ticket. **Only the assigned agent (or a manager, once it's assigned) can send a reply**, checked in the reply box and in `sendReply`.
 2. **Metrics** ([`docs/metrics.md`](docs/metrics.md), migration 0007, Mihlali): `supabase.rpc("dashboard_metrics", { p_from, p_to, p_department })` returns the dashboard's JSON (cards, weekly, daily…). It runs as the caller, so the ticket rules decide what each person sees.
 3. **Audit actions and AiNote** ([`docs/audit-actions.md`](docs/audit-actions.md), Samukelo): every audit action and what goes in `details`; add new actions there in the same PR. Every piece of AI output shows `<AiNote kind="routing" confidence={c} />`, `"draft"`, `"summary"` or `"forecast"`.
-4. **Forecast** ([`docs/forecast.md`](docs/forecast.md), Elzel): `forecast(history, { department, asOf, days })` in `src/lib/forecast.ts`. It learns from the **past tickets only**, takes the history and `asOf` as inputs (no clock, no `generatedAt`), and uses the last 8 weeks of the history plus a month-end factor. The app loads the history with `loadDailyHistory(supabase, department)` from `src/lib/daily-history.ts`, which calls `daily_ticket_counts()` (migration 0010).
+4. **Forecast** ([`docs/forecast.md`](docs/forecast.md), Elzel): `forecast(department, history, asOf?)` and `forecastRange()` in `src/lib/forecast.ts`. They learn from the **past tickets only**, take the history and `asOf` as inputs (no clock), and use the last **14 days** of history plus a month-end factor from the 25th. The manager's forecast page loads the history with `loadForecastHistory(supabase, department, today)` from `src/lib/daily-history.ts`, which calls `dashboard_metrics()`. The contract is in [`docs/api-reference.md`](docs/api-reference.md).
 
 ### Sensitive requests (migration 0009, `src/lib/sensitive.ts`)
 
@@ -334,6 +352,7 @@ The submit form calls `classify()` from `src/lib/classifier.ts` directly (faster
 Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs/sprints/SPRINT2_3_STORIES.md). Status as of Thu 5 Nov.
 
 ### Samukelo: platform, carry-over, risk and compliance
+- ✅ **S1-20** and **S1-24** architecture document (`docs/architecture.md`, sections 1 to 9)
 - ✅ **S2-01** PR checks and Preview env vars · **S2-02** role homes and public home page · **S2-06** ticket lifecycle (0006) · **S2-07** audit actions and AiNote · **S2-11** priority and "Department is correct" · **S2-12** audit log screen · **S2-16** take and assign
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
@@ -342,7 +361,7 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ **S2-30** risk report (0014, `src/lib/risk.ts`, `/compliance/risk`) · **S2-36** edit details, forgot password, designed sign-in pages and emails (0015)
 - ✅ **S2-21** bias test complete: classifier and 50 Gemini drafts (9 Nov), results in `docs/responsible-ai/`
 - In review: **S2-31** responsible AI documents (`docs/responsible-ai/`, with `docs/architecture.md` section 8)
-- Open: Gemini transfer and retention decisions for Kopano Freight (`docs/responsible-ai/popia-note.md`); MFA for managers and compliance (Sprint 4)
+- Open: Gemini transfer and retention decisions for Kopano Freight (`docs/responsible-ai/popia-note.md`); backup codes for the second step (S4-17 follow-up)
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)

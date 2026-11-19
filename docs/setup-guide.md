@@ -21,6 +21,8 @@ Copy `.env.example` to `.env.local` on your own computer. Never commit `.env.loc
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | App | The publishable key. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Local scripts only (seed, demo reset) | Skips the database's access rules. Never in app code. |
 | `GEMINI_API_KEY` | Server only | Never prefix with `NEXT_PUBLIC_`. |
+| `CRON_SECRET` | Server only (Monday summary job) | Vercel sends it as the Bearer token. Must match the value set in migration 0019. |
+| `RESEND_API_KEY` | Server only | Email notifications. Not switched on yet, so it can stay empty. |
 
 ## 3. Supabase project settings
 

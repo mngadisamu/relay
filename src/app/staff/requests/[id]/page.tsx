@@ -23,6 +23,13 @@ type Ticket = {
   closed_at: string | null;
 };
 
+type ApprovalRow = {
+  requested_at: string;
+  decided_at: string | null;
+  decision: "pending" | "approved" | "rejected";
+  decision_note: string | null;
+};
+
 // Request detail (S1-26, mockup screen 5) with the agent's replies once sent (S1-28),
 // and "This solved it" / "I still need help" while it's Answered (S2-20).
 export default async function RequestDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -44,7 +51,7 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
 
   // Every reply that was sent (RLS never shows staff an unsent AI draft) and every
   // "I still need help" message (S2-20), oldest first.
-  const [{ data: replyRows }, { data: messageRows }] = await Promise.all([
+  const [{ data: replyRows }, { data: messageRows }, { data: approvalRow }] = await Promise.all([
     supabase
       .from("responses")
       .select("final_text, sent_at, ai_generated")
@@ -52,9 +59,18 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
       .not("sent_at", "is", null)
       .order("sent_at", { ascending: true }),
     supabase.from("ticket_messages").select("body, created_at").eq("ticket_id", ticket.id).order("created_at", { ascending: true }),
+    // S4-11: the latest approval, if the request needed one.
+    supabase
+      .from("approvals")
+      .select("requested_at, decided_at, decision, decision_note")
+      .eq("ticket_id", ticket.id)
+      .order("requested_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<ApprovalRow>(),
   ]);
   const replies = (replyRows ?? []) as { final_text: string; sent_at: string; ai_generated: boolean }[];
   const messages = (messageRows ?? []) as { body: string; created_at: string }[];
+  const approval = approvalRow ?? null;
 
   // The replies and follow-ups as one conversation, in the order they happened.
   const thread = [
@@ -65,14 +81,23 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
   // Status history from the ticket's timestamps, plus each time the person asked
   // for more help and each later reply. answered_at keeps the first reply's time.
   const history = [
-    { label: "Received", at: ticket.created_at, dot: "bg-[#3d4651]" },
+    { label: "Submitted", at: ticket.created_at, dot: "bg-[#3d4651]" },
+    ...(approval ? [{ label: "Waiting for approval", at: approval.requested_at, dot: "bg-[#8a3b00]" }] : []),
+    ...(approval?.decided_at
+      ? [{
+          label: approval.decision === "approved" ? "Approved" : "Declined",
+          at: approval.decided_at,
+          dot: approval.decision === "approved" ? "bg-[#1b6b36]" : "bg-[#a4231a]",
+          note: approval.decision === "rejected" ? approval.decision_note ?? undefined : undefined,
+        }]
+      : []),
     { label: "Assigned", at: ticket.assigned_at, dot: "bg-[#0b4c94]" },
     { label: "Answered", at: ticket.answered_at, dot: "bg-[#1b6b36]" },
     ...messages.map((m) => ({ label: "You asked for more help", at: m.created_at, dot: "bg-[#8a3b00]" })),
     ...replies.slice(1).map((r) => ({ label: "Answered again", at: r.sent_at, dot: "bg-[#1b6b36]" })),
     { label: "Closed", at: ticket.closed_at, dot: "bg-[#4a4f57]" },
   ]
-    .filter((step): step is { label: string; at: string; dot: string } => Boolean(step.at))
+    .filter((step): step is { label: string; at: string; dot: string; note?: string } => Boolean(step.at))
     .sort((a, b) => a.at.localeCompare(b.at));
 
   const team = ticket.department ?? "the support team";
@@ -163,6 +188,7 @@ export default async function RequestDetail({ params }: { params: Promise<{ id: 
                 <div className={`flex flex-col gap-0.5 ${i < history.length - 1 ? "pb-3.5" : ""}`}>
                   <span className="text-[15px] font-medium text-ink">{step.label}</span>
                   <span className="text-[13px] text-muted">{formatWhen(step.at)}</span>
+                  {step.note && <span className="text-[14px] leading-[20px] text-ink-2">Reason: {step.note}</span>}
                 </div>
               </li>
             ))}

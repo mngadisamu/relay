@@ -1,11 +1,12 @@
 # Business case: Relay for Kopano Freight
 
-Status: **draft.** The volumes are from the database. The cost and time figures are waiting for the team's assumptions, and they are marked **[input needed]** until they are added. Every number here is labelled with its source.
+Status: **draft with assumptions.** The volumes come from the database. The staff cost, minutes per ticket and exchange rate are **assumptions** the team must replace with real figures before the panel. The running costs are **current published prices**, checked on the dates shown.
 
-Sources used:
-- **Database:** counts from the `tickets` table (the seeded past year, `is_historical = true`).
-- **Assumption:** a figure the team has stated, not measured.
-- **Price:** a current published price, with the date checked.
+Every number is labelled with its source:
+- **Database:** a count from the `tickets` table.
+- **Assumption:** a figure chosen for this draft, to be replaced.
+- **Price:** a published price, with the date it was checked.
+- **Calculated:** worked out from the rows above it.
 
 ## 1. Volume: what the help desk handles
 
@@ -19,34 +20,61 @@ Sources used:
 
 The past-year tickets were seeded from a realistic pattern, not recorded (see `data/README.md`). Treat the volumes as the expected load, not a measured one.
 
-## 2. Cost of current handling
+## 2. Assumptions to replace
+
+| Assumption | Value used | Replace with |
+| --- | --- | --- |
+| Loaded hourly cost of an agent (salary, benefits, overheads) | R250 per hour | Kopano Freight's real figure |
+| Minutes an agent spends per ticket today (read, route, draft, send) | 12 minutes | Timed sample of real tickets |
+| Minutes saved per ticket with Relay (AI routing and draft) | 5 minutes | Measured in the pilot |
+| Exchange rate, rand per US dollar | R18 per USD | The rate on the day of the panel |
+| Tokens per AI draft (input and output) | 1,500 in, 300 out | Read from the Gemini usage log |
+
+## 3. Cost of current handling
 
 | Item | Value | Source |
 | --- | --- | --- |
-| Minutes spent per ticket, today | **[input needed]** | Assumption |
-| Loaded hourly cost of an agent (R) | **[input needed]** | Assumption |
-| Cost per ticket today (R) | minutes ÷ 60 × hourly cost | Calculated |
-| Cost per year at 15,579 tickets (R) | cost per ticket × 15,579 | Calculated |
+| Cost per ticket today | 12 min ÷ 60 × R250 = **R50.00** | Calculated from the assumptions |
+| Cost per year at 15,579 tickets | 15,579 × R50 = **R778,950** | Calculated (database volume × assumption) |
 
-## 3. Time saved per ticket with Relay
+## 4. Time saved with Relay
 
 | Item | Value | Source |
 | --- | --- | --- |
-| Minutes saved per ticket (drafting and routing) | **[input needed]** | Assumption |
-| Share of tickets routed correctly by the model | To be measured from the classifier results | `ml/model/` |
-| Hours saved per year | minutes saved × 15,579 ÷ 60 | Calculated |
+| Saved per ticket | 5 min ÷ 60 × R250 = **R20.83** | Calculated from the assumptions |
+| Hours saved per year | 15,579 × 5 ÷ 60 = **about 1,298 hours** | Calculated (database volume × assumption) |
+| Value of the hours saved per year | 1,298 × R250 = **R324,562** | Calculated |
 
-## 4. Running costs
+The reply is still checked and edited by a person, so the saving is the time the draft and the routing replace, not the whole ticket.
 
-| Service | Used for | Price | Source |
-| --- | --- | --- | --- |
-| Google Gemini API | Reply drafts (not used for sensitive requests) | **[check current price]** | Price |
-| Vercel | Hosting | **[check current price]** | Price |
-| Supabase | Database and sign-in | **[check current price]** | Price |
+## 5. Running costs
 
-## 5. Risks
+| Service | Used for | Price used | Monthly / yearly | Source and date |
+| --- | --- | --- | --- | --- |
+| Supabase Pro | Database and sign-in | From $25 per month | $300 per year | Price, supabase.com/pricing, checked 18 Nov 2026 |
+| Vercel Pro | Hosting, four developer seats | $20 per seat per month × 4 | $960 per year | Price, vercel.com/pricing, checked 18 Nov 2026 |
+| Google Gemini API (3.8 Flash) | Reply drafts (not sent for sensitive requests) | $0.75 per million input tokens, $3.75 per million output tokens | about $35 per year | Price, benchlm.ai/google/api-pricing, checked 23 Oct 2026 |
+| **Total** | | | **about $1,295 per year (about R23,311 at R18 per USD)** | Calculated |
+
+Notes on the running costs:
+- The Gemini price is an introductory rate that runs to 31 December 2026 and doubles on 1 January 2027. At the doubled rate the yearly figure is still about $70, so the total barely moves.
+- Vercel's Hobby plan may be enough for a demo, but the Pro plan is used here, because the team has four developers and the figure is the stricter one.
+- A spreadsheet of usage for the first month of live use would replace the estimates above.
+
+## 6. Net value (calculated)
+
+| Item | Per year |
+| --- | --- |
+| Value of hours saved | R324,562 |
+| Running costs | about R23,311 |
+| **Net value, on the assumptions above** | **about R301,251** |
+
+Compared with the cost of handling tickets today (R778,950), this is the saving on the assumptions above. It is not a promise. It changes in proportion to the hourly cost and the minutes saved, so check it against the pilot.
+
+## 7. Risks
 
 - **Wrong routing.** The model sends some requests to the wrong team. An agent can move them, and the audit log records each move.
 - **Sensitive requests.** Some requests are about health, conduct or safety. They are routed by fixed rules, never sent to Gemini, and can't be sent unchanged.
-- **Approvals.** A manager can't approve their own request, and a sole general manager's own leave has no second approver until a second general manager is added.
+- **Approvals.** A manager can't approve their own request. A sole general manager's own leave has no second approver until a second general manager is added.
 - **Personal data.** Staff details are protected under POPIA. See `docs/responsible-ai/popia-note.md`.
+- **Assumptions.** The hourly cost, minutes per ticket and minutes saved drive the whole result. If they are wrong, the value is wrong by the same proportion.

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { autoFlagReply, type Flag } from "@/lib/flags";
+import { notifyTicketEvent } from "@/lib/notify";
 
 type Tone = "formal" | "friendly" | "urgent";
 const DEPARTMENTS = ["HR", "IT", "Finance", "Operations"] as const;
@@ -110,6 +111,9 @@ export async function sendReply(input: {
     }),
   ]);
   if (ticketError) return { error: "Reply saved, but the status didn't update: " + ticketError.message };
+
+  // S4-10: tell the person who sent the request. Never stops the reply.
+  await notifyTicketEvent(supabase, input.ticketId, "reply_sent");
 
   // Refresh the inbox and this ticket so they show the new status.
   revalidatePath("/agent");
