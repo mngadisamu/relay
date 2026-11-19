@@ -102,6 +102,16 @@ export async function submitRequest(
     return { status: "error", fieldErrors: {}, message: "Your request couldn't be sent. Please try again.", values };
   }
 
+  
+  // 2b. Give it to the least-busy active agent in its department (S4-05). Sensitive
+  //     tickets stay unassigned for a manager. If this fails, the ticket is still saved.
+  const { error: assignError } = await supabase.rpc("auto_assign_ticket", {
+    p_ticket_id: ticket.id,
+    p_actor: profile.id,
+  });
+  if (assignError) console.error("Could not auto-assign the ticket:", assignError);
+  
+
   // 3. Keep the classifier's decision (S1-21) and an audit entry (Sprint 3 compliance),
   //    both saved at the same time. Neither stops the request if it fails.
   const [{ error: classifyError }, { error: auditError }] = await Promise.all([
