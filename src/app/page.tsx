@@ -10,6 +10,11 @@ const STEPS = [
   { title: "Answered", text: "The team gets an AI-drafted reply to start from, checks and edits it, and sends it. You see every update." },
 ];
 
+// The demo runs as its own deployment with its own database, so it is a separate address.
+// Set NEXT_PUBLIC_DEMO_URL on this project (the live site) to show the Demo button.
+// It is a public address, not a secret.
+const DEMO_URL = process.env.NEXT_PUBLIC_DEMO_URL;
+
 // Public home page (S2-02): what Relay does, and Sign in.
 // Text colours on the navy and white backgrounds meet WCAG 2.1 AA contrast.
 export default function Home() {
@@ -43,9 +48,11 @@ export default function Home() {
                 Relay sends each staff request to the team that can answer it, and that team replies fast.
               </p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
-                <Button asChild size="lg" className="h-12 bg-white px-7 text-base text-navy hover:bg-[#e7f0fb]">
-                  <Link href="/demo">Demo</Link>
-                </Button>
+                {DEMO_URL && (
+                  <Button asChild size="lg" className="h-12 bg-white px-7 text-base text-navy hover:bg-[#e7f0fb]">
+                    <a href={DEMO_URL}>Demo</a>
+                  </Button>
+                )}
                 <p className="text-sm text-[#b9cce6]">No account yet? Your company&apos;s Relay admin adds you.</p>
               </div>
             </div>
