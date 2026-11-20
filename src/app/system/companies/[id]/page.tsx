@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requirePlatformAdmin, PEOPLE_TABS, tabFor, type PeopleTab, type PlatformPerson } from "@/lib/platform";
 import { SystemShell } from "../../SystemShell";
+import { InviteAdminForm } from "../../InviteAdminForm";
 
 // One company's people, in tabs (story P5). A platform admin sees names, emails and roles only.
 export default async function CompanyPeoplePage({
@@ -82,6 +83,16 @@ export default async function CompanyPeoplePage({
           ))}
         </ul>
       )}
+
+      <section aria-labelledby="invite-admin-heading" className="space-y-3">
+        <div className="space-y-1">
+          <h2 id="invite-admin-heading" className="text-base font-semibold text-ink sm:text-lg">Invite a system admin</h2>
+          <p className="text-sm text-ink-2">
+            They get an invite email and choose their own password. They become the general manager of this company.
+          </p>
+        </div>
+        <InviteAdminForm companyId={company.company_id} />
+      </section>
     </SystemShell>
   );
 }

@@ -11,7 +11,7 @@ export async function SystemShell({ current, children }: { current?: string; chi
 
   return (
     <div className="min-h-screen bg-page">
-      <RoleHeader profile={profile} home="/system" menu={SYSTEM_MENU} current={current} />
+      <RoleHeader profile={profile} home="/system" menu={SYSTEM_MENU} current={current} label="Platform admin" />
       <main className="mx-auto max-w-[1100px] space-y-6 px-4 pb-12 pt-7 text-ink sm:px-6">{children}</main>
     </div>
   );
