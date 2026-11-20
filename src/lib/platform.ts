@@ -1,3 +1,4 @@
+import type { MenuItem } from "@/components/RoleHeader";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -45,3 +46,13 @@ export function tabFor(p: PlatformPerson): PeopleTab {
   if (p.person_role === "compliance") return "compliance";
   return p.person_department ? "managers" : "admins";
 }
+
+// The top bar's pages for a platform admin (same look as the manager and compliance bars).
+export const SYSTEM_MENU: MenuItem[] = [
+  {
+    label: "Companies",
+    href: "/system",
+    description: "Companies, counts and the people in each company.",
+    ready: true,
+  },
+];
