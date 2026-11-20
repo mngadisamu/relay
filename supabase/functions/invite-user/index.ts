@@ -69,11 +69,12 @@ Deno.serve(async (req) => {
     if (fullName.length < 2) return reply(400, { error: "Enter the system admin's full name", field: "adminName" });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply(400, { error: "Enter a valid email address", field: "adminEmail" });
 
-    const { data: company } = await admin.from("companies").select("id").eq("id", companyId).maybeSingle();
+    const { data: company } = await admin.from("companies").select("id, name").eq("id", companyId).maybeSingle();
     if (!company) return reply(404, { error: "Company not found" });
 
+    // company_name goes into the invite email, so it says which company the person has joined.
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-      data: { full_name: fullName },
+      data: { full_name: fullName, company_name: company.name },
       redirectTo,
     });
     if (inviteError || !invited.user) {

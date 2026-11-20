@@ -52,7 +52,10 @@ export async function updateSession(request: NextRequest) {
   // S4-17: managers and compliance officers also need a code from their authenticator app.
   // Until they have given it this session, every private page sends them to the second step.
   // The /mfa pages themselves are left open, or the redirect would loop.
-  if (user && !isPublic && !path.startsWith("/mfa")) {
+  // A new person sets their password here before their second step (invite or reset link),
+  // so these pages are open to a signed-in person who has not finished the second step.
+  const SETUP_PATHS = ["/welcome", "/reset-password"];
+  if (user && !isPublic && !path.startsWith("/mfa") && !SETUP_PATHS.includes(path)) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
