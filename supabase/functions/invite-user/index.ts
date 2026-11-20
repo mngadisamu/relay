@@ -53,6 +53,56 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await admin.auth.getUser(token);
   if (userError || !userData.user) return reply(401, { error: "Sign in first" });
 
+  // Read once, here, so the platform branches below and the manager branches can both use it.
+  const body = await req.json().catch(() => null);
+
+  // Platform admins create a company's first system admin (P3). The person is in no company yet,
+  // so this branch comes before the manager check. They become a general manager of that company.
+  if (body?.action === "platform_create_company_admin") {
+    const { data: isPlatform } = await asCaller.rpc("is_platform_admin");
+    if (isPlatform !== true) return reply(403, { error: "Only platform admins can add a company admin" });
+    const companyId = Number(body?.companyId);
+    const fullName = String(body?.fullName ?? "").trim();
+    const email = String(body?.email ?? "").trim().toLowerCase();
+    const redirectTo = typeof body?.redirectTo === "string" ? body.redirectTo : undefined;
+    if (!Number.isInteger(companyId) || companyId <= 0) return reply(400, { error: "Choose a company" });
+    if (fullName.length < 2) return reply(400, { error: "Enter the system admin's full name", field: "adminName" });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return reply(400, { error: "Enter a valid email address", field: "adminEmail" });
+
+    const { data: company } = await admin.from("companies").select("id").eq("id", companyId).maybeSingle();
+    if (!company) return reply(404, { error: "Company not found" });
+
+    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      data: { full_name: fullName },
+      redirectTo,
+    });
+    if (inviteError || !invited.user) {
+      const taken = /already|registered|exists/i.test(inviteError?.message ?? "");
+      return reply(400, {
+        error: taken ? "Someone with this email is already in Relay." : `The invite couldn't be sent: ${inviteError?.message}`,
+        field: taken ? "adminEmail" : undefined,
+      });
+    }
+
+    // The sign-up trigger (0002) gave them a staff profile in the default company. Move them into
+    // this company as its general manager (no department). If that fails, undo the invite.
+    const { error: profileError } = await admin
+      .from("profiles")
+      .update({ company_id: companyId, role: "manager", department: null, full_name: fullName })
+      .eq("id", invited.user.id);
+    if (profileError) {
+      await admin.auth.admin.deleteUser(invited.user.id);
+      return reply(400, { error: `The admin couldn't be set up: ${profileError.message}` });
+    }
+
+    // Audit: ids and the role only, never the email (docs/audit-actions.md).
+    await admin.from("audit_log").insert({
+      actor: userData.user.id, action: "user_create", ticket_id: null,
+      details: { user_id: invited.user.id, role: "manager", department: null }, company_id: companyId,
+    });
+    return reply(200, { userId: invited.user.id });
+  }
+
   // Platform admins change a person's email in any company (P5, migration 0033). They are not
   // managers of that company, so this branch comes before the manager check below.
   if (body?.action === "platform_update_email") {
@@ -86,8 +136,6 @@ Deno.serve(async (req) => {
   // hold a sign-in token for up to an hour, so "active" is checked too.
   const { data: me } = await asCaller.from("profiles").select("role, active").eq("id", userData.user.id).single();
   if (me?.role !== "manager" || !me.active) return reply(403, { error: "Only managers can manage people" });
-
-  const body = await req.json().catch(() => null);
 
   // Changing someone's email (S2-36, "Edit details" on Manage users).
   if (body?.action === "update_email") {
