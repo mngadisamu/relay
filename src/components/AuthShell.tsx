@@ -6,6 +6,10 @@ import { BrandMark } from "@/components/BrandMark";
 // A navy panel with a faint route map (decoration only), and the page's card beside it
 // (below it on phones). Company-neutral: no company name appears here.
 
+// Where the Relay logo on the sign-in panel goes. On the live site this is "/".
+// On the demo deployment, set NEXT_PUBLIC_HOME_URL to the live home page.
+const HOME_URL = process.env.NEXT_PUBLIC_HOME_URL || "/";
+
 // Faint route map (decoration only).
 function RouteMap() {
   return (
@@ -82,7 +86,13 @@ export function AuthShell({
       >
         <RouteMap />
         <div className="relative space-y-2">
-          <BrandMark size="lg" inverted />
+          <a
+            href={HOME_URL}
+            aria-label="Relay home"
+            className="inline-block rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+          >
+            <BrandMark size="lg" inverted />
+          </a>
           <p className="text-[15px] leading-[21px] text-[#d6e2f2] lg:hidden">{blurb}</p>
         </div>
         <div className="relative hidden max-w-[460px] space-y-[18px] lg:block">
