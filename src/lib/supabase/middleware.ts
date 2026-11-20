@@ -1,11 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isDemoAccount } from "@/lib/demo";
+import { companySlugFromHost } from "@/lib/company-host";
 
 // Pages anyone can open without signing in. /auth/... is where an invite
 // email's link lands, before the person has a session (S2-25).
 // /forgot-password asks for a reset email (S2-36). /reset-password is not public:
 // the email's link signs the person in first.
-const PUBLIC_PATHS = ["/", "/login", "/forgot-password", "/auth/confirm", "/auth/link-expired"];
+const PUBLIC_PATHS = ["/", "/login", "/demo", "/forgot-password", "/auth/confirm", "/auth/link-expired"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -57,7 +59,32 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.sub)
       .single();
 
-    if (profile && (profile.role === "manager" || profile.role === "compliance")) {
+    // P7 and the company's two-step setting (migration 0030). Before 0030 runs this lookup
+    // fails, and then the company is unknown: the two-step rule below stays on (fail closed).
+    const { data: membership, error: membershipError } = await supabase
+      .from("profiles")
+      .select("companies(slug, require_two_step)")
+      .eq("id", user.sub)
+      .single();
+    const company = membershipError
+      ? null
+      : ((membership?.companies ?? null) as unknown as { slug: string; require_two_step: boolean } | null);
+
+    // A company's address (kopano.<base>) only lets in its own people. The check is done on the
+    // server, on every private page. Only active when RELAY_BASE_DOMAIN is set.
+    const siteCompany = companySlugFromHost(request.headers.get("host"), process.env.RELAY_BASE_DOMAIN);
+    if (siteCompany && (membershipError || company?.slug !== siteCompany)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    // Demo accounts (Kopano Freight) skip the second step. See lib/demo.ts.
+    const demo = isDemoAccount(String(user.email ?? ""));
+    // The company's setting decides the second step for managers and compliance (unknown company: on).
+    const requireTwoStep = company ? company.require_two_step : true;
+    if (profile && !demo && requireTwoStep && (profile.role === "manager" || profile.role === "compliance")) {
       const { data: level } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
       if (level && level.currentLevel !== "aal2") {
         // Has an app set up already: ask for a code. Not set up yet: start set-up.

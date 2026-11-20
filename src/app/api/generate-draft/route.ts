@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { secondStepMissing } from "@/lib/mfa";
 import { loadTemplates, templateForTone } from "@/lib/reply-templates";
+import { isDemoAccount } from "@/lib/demo";
 
 // Gemini key stays on the server only (never NEXT_PUBLIC_).
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -97,7 +98,15 @@ Sign off as "${profile.fullName}, ${ticket.department} team".
   // the template below, and the agent writes the reply from it.
   let draftText = "";
   let aiGenerated = true;
-  if (!ticket.is_sensitive) {
+  // Demo accounts share a daily limit on Gemini calls (migration 0034). Over the limit, the template is used.
+  let geminiAllowed = !ticket.is_sensitive;
+  if (geminiAllowed && isDemoAccount(profile.email)) {
+    const { data: taken } = await supabase.rpc("use_demo_gemini_call", {
+      p_limit: Number(process.env.DEMO_GEMINI_DAILY_LIMIT ?? 50),
+    });
+    geminiAllowed = taken === true;
+  }
+  if (geminiAllowed) {
     try {
       const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Gemini timeout")), 10_000));
       const result = await Promise.race([
