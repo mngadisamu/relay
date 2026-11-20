@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { HOME_FOR_ROLE, type Role } from "@/lib/auth";
+import { isDemoAccount } from "@/lib/demo";
 
 export type LoginState = { error: string | null };
 
@@ -54,9 +55,14 @@ export async function signIn(
   redirect(HOME_FOR_ROLE[role]);
 }
 
-// Signs the user out and sends them back to the login page.
+// Signs the user out. Demo accounts go back to the demo page; everyone else to /login.
 export async function signOut() {
   const supabase = await createClient();
+
+  // Read the email before signing out, because it is gone afterwards.
+  const { data: { user } } = await supabase.auth.getUser();
+  const wasDemo = isDemoAccount(user?.email ?? "");
+
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect(wasDemo ? "/demo" : "/login");
 }

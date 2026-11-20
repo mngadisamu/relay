@@ -20,7 +20,6 @@ export type SubmitState =
   // confidence and routedByRule say how the department was chosen, for the AI note on the confirmation.
   | { status: "sent"; reference: string; department: string; subject: string; sentAt: string; confidence: number; routedByRule: boolean; needsApproval: boolean };
 
-const DEPOTS = ["Head Office", "City Deep depot", "Pomona depot"];
 // How urgent the person says it is (S2-11). The inbox puts urgent first (S1-19).
 const PRIORITIES = ["low", "medium", "high", "urgent"];
 
@@ -40,12 +39,17 @@ export async function submitRequest(
 
   const values: SubmitValues = { subject, description, depot, priority };
 
+  // The depots this person's company has switched on (migration 0032, story P4).
+  const depotClient = await createClient();
+  const { data: depotRows } = await depotClient.from("company_depots").select("name").eq("active", true);
+  const depots = (depotRows ?? []).map((r) => r.name as string);
+
   // Check every field at once, so the person sees all problems together.
   const fieldErrors: Partial<Record<Field, string>> = {};
   if (!subject) fieldErrors.subject = "Please add a subject";
   // Wording of this message is fixed by the S1-22 acceptance criteria.
   if (!description) fieldErrors.description = "Please describe your request";
-  if (!DEPOTS.includes(depot)) fieldErrors.depot = "Please choose your depot";
+  if (!depots.includes(depot)) fieldErrors.depot = "Please choose your depot";
   if (!PRIORITIES.includes(priority)) fieldErrors.priority = "Please choose how urgent it is";
   if (Object.keys(fieldErrors).length > 0) return { status: "error", fieldErrors, values };
 

@@ -44,7 +44,7 @@ export default function Home() {
               </p>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
                 <Button asChild size="lg" className="h-12 bg-white px-7 text-base text-navy hover:bg-[#e7f0fb]">
-                  <Link href="/login">Sign in</Link>
+                  <Link href="/demo">Demo</Link>
                 </Button>
                 <p className="text-sm text-[#b9cce6]">No account yet? Your company&apos;s Relay admin adds you.</p>
               </div>

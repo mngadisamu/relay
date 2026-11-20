@@ -27,6 +27,10 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 | `reroute` | The agent or manager (`reroute_ticket()`, migration 0004) | A ticket is moved to another department | yes | `from`, `to` (departments) |
 | `confirm_department` | The agent or manager (`confirm_department()`, 0006) | "Department is correct" on a Needs review ticket | yes | `department` |
 | `assign` | The agent or manager (`assign_ticket()`, 0006) | Take ticket, or a manager assigns it | yes | `assigned_to` (profile id), `previous` (profile id or null) |
+| `company_create` | The platform admin (`create_company()`, migration 0031) | A company is created | no | `company_id`, `slug`, `require_two_step` |
+| `company_settings_save` | The general manager (`save_company_settings()`, migration 0032) | Depots or allowed domains are saved | no | `depots` (count), `domains` (count) |
+| `platform_user_edit` | The platform admin (`platform_update_person()`, migration 0033) | A person's name, department or depot is changed | no | `user_id`, `fields` (names of the fields set, never their values) |
+| `platform_user_email_change` | The platform admin (invite-user function, `platform_update_email`) | A person's email is changed in any company | no | `user_id` (never the email) |
 | `close` | The sender, agent or manager (`close_ticket()`, 0006) | "This solved it", or Close ticket | yes | `closed_by_role` (`staff`, `agent` or `manager`) |
 | `reopen` *(added by 0006)* | The sender (`reopen_ticket()`, 0006) | "I still need help" | yes | `message_id` (row in `ticket_messages`) |
 | `template_edit` | The agent or manager (`src/app/agent/templates/actions.ts`) | A reply template is saved | no | `template_id`, `department`, `name` |

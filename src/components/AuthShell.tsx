@@ -3,10 +3,10 @@ import { BrandMark } from "@/components/BrandMark";
 
 // The look of every page someone sees before they're in Relay: sign in, the
 // invite's Welcome, forgot and reset password, and an expired link.
-// A navy panel with a faint route map between Kopano Freight's three sites
-// (the login design, S1-09), and the page's card beside it (below it on phones).
+// A navy panel with a faint route map (decoration only), and the page's card beside it
+// (below it on phones). Company-neutral: no company name appears here.
 
-// Faint route map between the three Kopano Freight sites (decoration only).
+// Faint route map (decoration only).
 function RouteMap() {
   return (
     <svg aria-hidden="true" viewBox="0 0 720 900" preserveAspectRatio="xMidYMid slice" fill="none" className="absolute inset-0 h-full w-full">
@@ -26,11 +26,6 @@ function RouteMap() {
         <circle cx="380" cy="700" r="11" />
         <circle cx="590" cy="770" r="9" />
         <circle cx="620" cy="660" r="7" />
-      </g>
-      <g fill="#FFFFFF" fillOpacity="0.5" fontFamily="Inter, system-ui, sans-serif" fontSize="12" fontWeight="600" letterSpacing="1">
-        <text x="104" y="784">CITY DEEP</text>
-        <text x="336" y="736">HEAD OFFICE</text>
-        <text x="556" y="802">POMONA</text>
       </g>
     </svg>
   );
@@ -70,12 +65,14 @@ export function AuthShell({
   icon,
   children,
   footer,
+  aside,
 }: {
   heading: string; // the big line on the navy panel (desktop)
   blurb: string; // the line under it, also shown on phones
   icon?: keyof typeof ICONS;
   children: ReactNode; // the card's content, starting with its h1
   footer?: ReactNode; // small print under the card
+  aside?: ReactNode; // extra content under the chips on the navy panel (desktop)
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-page lg:flex-row">
@@ -98,8 +95,9 @@ export function AuthShell({
               </span>
             ))}
           </div>
+          {aside}
         </div>
-        <p className="relative hidden text-[13px] text-[#b9cce6] lg:block">Kopano Freight (Pty) Ltd · Johannesburg</p>
+        <p className="relative hidden text-[13px] text-[#b9cce6] lg:block">Relay</p>
       </section>
 
       <section className="-mt-28 flex flex-1 items-start justify-center px-6 pb-8 lg:mt-0 lg:items-center lg:px-6 lg:py-12">
@@ -115,7 +113,7 @@ export function AuthShell({
             {children}
           </div>
           {footer}
-          <p className="text-center text-xs text-muted lg:hidden">Kopano Freight (Pty) Ltd · Johannesburg</p>
+          <p className="text-center text-xs text-muted lg:hidden">Relay</p>
         </div>
       </section>
     </div>

@@ -53,6 +53,35 @@ Deno.serve(async (req) => {
   const { data: userData, error: userError } = await admin.auth.getUser(token);
   if (userError || !userData.user) return reply(401, { error: "Sign in first" });
 
+  // Platform admins change a person's email in any company (P5, migration 0033). They are not
+  // managers of that company, so this branch comes before the manager check below.
+  if (body?.action === "platform_update_email") {
+    const { data: isPlatform } = await asCaller.rpc("is_platform_admin");
+    if (isPlatform !== true) return reply(403, { error: "Only platform admins can change this" });
+    const userId = String(body?.userId ?? "");
+    const newEmail = String(body?.email ?? "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return reply(400, { error: "Enter a valid email address", field: "email" });
+
+    const { data: target } = await admin.from("profiles").select("company_id").eq("id", userId).maybeSingle();
+    if (!target) return reply(404, { error: "Person not found" });
+
+    // Confirmed straight away, as with update_email: the platform admin sets the work email.
+    const { error: updateError } = await admin.auth.admin.updateUserById(userId, { email: newEmail, email_confirm: true });
+    if (updateError) {
+      const taken = /already|registered|exists/i.test(updateError.message);
+      return reply(400, {
+        error: taken ? "Someone else in Relay already uses this email." : `The email couldn't be changed: ${updateError.message}`,
+        field: taken ? "email" : undefined,
+      });
+    }
+    // Audit: the person and the company only, never the email itself.
+    await admin.from("audit_log").insert({
+      actor: userData.user.id, action: "platform_user_email_change", ticket_id: null,
+      details: { user_id: userId }, company_id: target.company_id,
+    });
+    return reply(200, { ok: true });
+  }
+
   // A manager who has been removed from Relay (S2-35, migration 0013) may still
   // hold a sign-in token for up to an hour, so "active" is checked too.
   const { data: me } = await asCaller.from("profiles").select("role, active").eq("id", userData.user.id).single();
@@ -97,6 +126,14 @@ Deno.serve(async (req) => {
   if (!ROLES.includes(role)) return reply(400, { error: "Choose a role", field: "role" });
   if (department && !DEPARTMENTS.includes(department)) return reply(400, { error: "Choose a department", field: "department" });
   if (role === "agent" && !department) return reply(400, { error: "Choose a department for this agent", field: "department" });
+
+  // Allowed email domains (P4, migration 0032). Null or empty means any domain.
+  // The company row is visible to its own members only (0030), so this reads the caller's company.
+  const { data: company } = await asCaller.from("companies").select("allowed_domains").maybeSingle();
+  const allowedDomains: string[] | null = company?.allowed_domains ?? null;
+  if (allowedDomains && allowedDomains.length > 0 && !allowedDomains.includes(email.split("@")[1])) {
+    return reply(400, { error: "This email is not on the company's list of allowed domains", field: "email" });
+  }
 
   // A department manager adds agents of their own department only. Checked before the
   // invite email is sent, so an out-of-scope person is never invited.

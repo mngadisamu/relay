@@ -36,12 +36,12 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 // Submit form (S1-22, mockup screen 2) and the "Request sent" view (mockup screen 3).
 // "Send another request" used to link to /staff, the page you're already on, so
 // nothing changed. Giving the form a new key starts it again, empty.
-export function SubmitForm() {
+export function SubmitForm({ depots }: { depots: string[] }) {
   const [formKey, setFormKey] = useState(0);
-  return <RequestForm key={formKey} onSendAnother={() => setFormKey((k) => k + 1)} />;
+  return <RequestForm key={formKey} depots={depots} onSendAnother={() => setFormKey((k) => k + 1)} />;
 }
 
-function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
+function RequestForm({ onSendAnother, depots }: { onSendAnother: () => void; depots: string[] }) {
   const [state, formAction, isPending] = useActionState(submitRequest, initialState);
 
   if (state.status === "sent") {
@@ -166,13 +166,13 @@ function RequestForm({ onSendAnother }: { onSendAnother: () => void }) {
         <select
           id="depot"
           name="depot"
-          defaultValue={values?.depot || "City Deep depot"}
+          defaultValue={values?.depot || depots[0] || ""}
           className={`${fieldClass(!!errors.depot)} h-12`}
           {...errorProps("depot")}
         >
-          <option>Head Office</option>
-          <option>City Deep depot</option>
-          <option>Pomona depot</option>
+          {depots.map((d) => (
+            <option key={d}>{d}</option>
+          ))}
         </select>
         <FieldError id="depot-error" message={errors.depot} />
       </div>

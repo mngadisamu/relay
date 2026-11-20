@@ -12,13 +12,14 @@ const initialState: LoginState = { error: null };
 
 // Sign in (S1-09, mockup screens 1 and 1b): navy band on phones, split screen on
 // desktop (the shared AuthShell). "Forgot your password?" opens /forgot-password.
+// Company-neutral: the company's name is not shown on this page.
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(signIn, initialState);
 
   return (
     <AuthShell
-      heading="One place to ask for help at Kopano Freight."
-      blurb="Send a request from the depot, the road or the office. Relay gets it to the right team and keeps you posted until it's sorted."
+      heading="One place to ask for help at work."
+      blurb="Send a request and Relay gets it to the right team, then keeps you posted until it's sorted."
       footer={
         <p className="mx-auto max-w-[300px] text-center text-sm leading-5 text-muted lg:max-w-none">
           No account yet? Ask your manager to add you to Relay.
@@ -28,7 +29,7 @@ export default function LoginPage() {
       <div className="space-y-1.5">
         {/* The page's main heading, so it's an h1. */}
         <h1 className="text-xl font-semibold text-ink lg:text-2xl">Sign in</h1>
-        <p className="text-sm text-ink-2">Use your Kopano Freight work email.</p>
+        <p className="text-sm text-ink-2">Use your work email.</p>
       </div>
       <form action={formAction} className="space-y-5">
         {state.error && (

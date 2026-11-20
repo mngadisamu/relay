@@ -1,3 +1,4 @@
+import { isDemoAccount } from "@/lib/demo";
 import { headers } from "next/headers";
 import { createClient as createPlainClient } from "@supabase/supabase-js";
 
@@ -22,6 +23,11 @@ export async function sendPasswordResetEmail(email: string) {
   const supabase = createPlainClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false },
   });
+  // Demo accounts cannot change their password (docs/kopano-demo.md). Answer as for any address,
+  // so nobody can tell from the reply which accounts are demo accounts.
+  if (isDemoAccount(email)) {
+    return { data: {}, error: null } as Awaited<ReturnType<typeof supabase.auth.resetPasswordForEmail>>;
+  }
   // The link opens /auth/confirm, which signs them in and opens /reset-password.
   const redirectTo = `${await siteOrigin()}/auth/confirm?next=/reset-password`;
   return supabase.auth.resetPasswordForEmail(email, { redirectTo });

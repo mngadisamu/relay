@@ -4,6 +4,7 @@ import { RoleHeader } from "@/components/RoleHeader";
 import { MANAGER_MENU } from "@/lib/menus";
 import { AddPersonForm } from "./AddPersonForm";
 import { PersonRow, type Person } from "./PersonRow";
+import { CompanyTabs } from "../CompanyTabs";
 
 // Manage users (S2-25): managers add people and set their role and department,
 // so nobody has to open the Supabase dashboard. Agents and others are sent
@@ -27,6 +28,7 @@ export default async function ManageUsersPage() {
       <main className="mx-auto max-w-[1100px] space-y-6 px-4 pb-12 pt-7 sm:px-6">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold text-ink sm:text-2xl">Manage users</h1>
+          <CompanyTabs current="people" isGeneral={profile.department === null} />
           <p className="text-[15px] text-ink-2">
             Add people to Relay and choose what they can do. New people get an email to set their password.
             {profile.department
