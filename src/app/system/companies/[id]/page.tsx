@@ -31,6 +31,9 @@ export default async function CompanyPeoplePage({
 
   return (
     <SystemShell current="/system">
+      <Link href="/system" className="text-sm font-semibold text-brand hover:text-brand-dark">
+        Back to companies
+      </Link>
       <div className="space-y-1">
         <h1 className="text-xl font-semibold text-ink sm:text-2xl">{company.company_name}</h1>
         <p className="text-[15px] text-ink-2">People in this company. Tickets are never shown here.</p>
