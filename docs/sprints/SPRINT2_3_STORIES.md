@@ -1,5 +1,7 @@
 # Sprint 2+3 stories (2 to 13 Nov 2026)
 
+> **Status note (23 Nov 2026):** this file holds the acceptance criteria only. The status of each story is in [`AGENTS.md`](../../AGENTS.md) section 9 and in the sprint plan's Completion column.
+
 Every story in the Sprint 2+3 plan, with its acceptance criteria, in a form AI tools can read.
 The plan itself (`docs/sprints/Relay Sprint 2+3 Plan (1).docx`) also has how to build each story, what it depends on and what's out of scope.
 Where a decision made after planning changes a story, it's in a **Note** under it.

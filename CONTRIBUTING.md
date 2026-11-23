@@ -45,4 +45,4 @@ Never change tables by hand in the Supabase dashboard. Add a new numbered file t
 
 ## Definition of done
 
-A story is done when its acceptance criteria are met on the live Vercel URL, the screens work at phone width, AI output is labelled and editable, data is saved with timestamps, the PR is reviewed and merged, docs are updated, and the Jira story is moved to Done.
+A story is done when its acceptance criteria are met on the live Vercel URL, the screens work at phone width, AI output is labelled and editable, data is saved with timestamps, the PR is reviewed and merged, docs are updated, and the story's Completion column in the sprint plan is set to Done.

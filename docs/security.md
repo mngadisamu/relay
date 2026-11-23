@@ -82,22 +82,21 @@ These live in Supabase, not in Git, so check them after any change to the projec
   company's own email domain.
 - **Rate limits** on sign-in and invites are Supabase's defaults.
 
-## Later: many companies on one Relay (system admin)
+## Many companies on one Relay (built, 23 Nov 2026)
 
-Relay is built for Kopano Freight now, but the plan is to offer it to any company. When that starts, these rules apply:
+Relay now holds several companies (migrations 0030 to 0038; the live database has eight). These are the rules as built. Where the built system differs from the first plan, the difference is stated.
 
-1. **Every company's data is separated in the database, not only on the page.** A `companies` table, a `company_id` on every
-   table (profiles, tickets, templates, responses, audit log…), and every row-level security rule also checks
-   `company_id = current_user_company()`. A test checks that a user from company A sees **0 rows** from company B, for every
-   table.
-2. **The system admin is not a company role.** Relay's own staff are listed in a separate `platform_admins` table, with
-   two-step sign-in required. A system admin can create a company and invite its first general manager, and see usage
-   numbers, but **can't read any company's tickets, replies or people** by default.
-3. **Support access is asked for, time-limited and recorded.** If a company needs help, its general manager grants a system
-   admin access for a set time (e.g. 24 hours); every grant and everything done with it is in that company's audit log.
-4. **Each company manages its own people** with the rules above: its general managers are its admins. Nobody in one company can
-   add, change or remove someone in another.
-5. **Optional per company:** only allow emails from the company's own domain, and require two-step sign-in for everyone.
+1. **Each company's data is separated in the database, not only on the page.** A `companies` table, a `company_id` on the company tables, and a "Same company only" rule on each (migration 0032). The people list is limited to the caller's company (0038). The test script `0032_companies_tests.sql` checks that a user from one company can't see another's rows. Confirm it passed before relying on it, because the run isn't recorded in the repo.
+2. **Platform admins are not a company role.** They are listed in `platform_admins` (0030), which nobody reads directly. Platform admins can:
+   - see every company and its counts (`system_summary()`, `platform_list_companies()`),
+   - create a company and invite its first system admin, who becomes a general manager of that company (`create_company()`, 0033, and `invite-user`),
+   - see and edit the **people** in any company: name, department and depot (`platform_list_company_people()`, `platform_update_person()`, 0035), and change an email through `invite-user`.
+
+   They **cannot** read tickets or replies. No row policy grants them access to those tables. **Difference from the first plan:** the plan said a system admin couldn't read a company's people by default. The built system lets platform admins see and edit them. The team needs to decide whether to keep this.
+3. **Support access is not built.** There is no grant that lets a platform admin read a company's tickets for a set time. The plan (time-limited, recorded in that company's audit log) is still open. Until it is built, a platform admin can't see a company's tickets.
+4. **Each company manages its own people.** General managers add, change and remove people in their own company only. Nobody in one company can change someone in another.
+5. **Optional per company:** the allowed email domains (`companies.allowed_domains`, set on Manage users → Company, 0034) are built. Two-step sign-in can be required per company (`companies.require_two_step`), enforced in `src/lib/supabase/middleware.ts`.
+6. **Open (23 Nov):** the `notices` and `email_outbox` tables have a "Same company only" rule for every command, so any signed-in person in a company can read and change those rows directly. The intended rule is that only the functions write them. This needs a new migration (Samukelo).
 
 ## Secret scan (18 Nov 2026)
 

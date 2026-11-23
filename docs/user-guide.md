@@ -2,7 +2,9 @@
 
 For people using Relay at Kopano Freight. Each section covers one role. Find your section by the role your manager gave you.
 
-Relay has no sign-up page. Your manager adds you on **Manage users**. You get an invite email, choose a password, and then sign in with your work email.
+Relay has no sign-up page. Your manager adds you on **Manage users**. You get an invite email, choose a password, and then sign in with your work email. Forgot your password? Choose **Forgot your password?** on the sign-in page, and Relay emails you a link to choose a new one.
+
+Relay can hold more than one company. You only see your own company's people, requests and reports.
 
 ## Staff: send and follow a request
 
@@ -49,6 +51,8 @@ Your menu also has **Tickets** (the department's inbox, as for agents), **Submit
 
 **Manage users.** Add people, change roles, edit names, emails and depots, and remove people who have left. Department managers can add and change agents in their own department only. A general manager adds staff, managers and compliance officers. A removed person keeps their history.
 
+**Company settings.** On **Manage users**, a general manager sets the company's depots and the email domains people can be invited with. Leave the domains empty to allow any domain. Save with **Save settings**.
+
 **Forecast.** The expected number of requests for the next 28 days, with a range. It is a guide to typical volume.
 
 **Reports.** Weekly reports for a department, with a PDF download. Department managers see their own department's reports.
@@ -69,3 +73,14 @@ Your menu also has **Tickets** (the department's inbox, as for agents), **Submit
 
 - If something on the screen doesn't match this guide, note the reference number and tell your manager.
 - Your manager can put you in touch with the Relay team.
+
+## Platform admin: set up a company
+
+This section is for Relay's own platform team, not for company staff. A platform admin:
+
+- sees every company and its counts on the **Companies** page (`/system`),
+- creates a company with its name, a short address name and the name and email of its **system admin**. The system admin gets an invite email and becomes that company's general manager,
+- opens a company to see its people in tabs (Staff, Agents, Managers, Company admins and Compliance), and to **invite another system admin** into that company,
+- can edit a person's name, department, depot and email, but can't see the company's tickets or replies.
+
+Platform admins use two-step sign-in, as set for their company.
