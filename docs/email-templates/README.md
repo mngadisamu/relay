@@ -7,7 +7,7 @@ password and Send password reset, S2-36). These files are Relay's own designs fo
 | File | Paste into (Supabase → Authentication → Emails) | Subject |
 | --- | --- | --- |
 | [`invite.html`](invite.html) | **Invite user** | You've been invited to Relay |
-| [`reset-password.html`](reset-password.html) | **Reset password** | Choose a new Relay password |
+| [`reset-password.html`](reset-password.html) | **Reset password** | Choose a new password for Relay |
 
 The header image loads from the live site (`https://relay-gilt-nine.vercel.app/email/header.png`), so it only appears
 once `public/email/header.png` is merged to `main`.

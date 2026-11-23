@@ -1,6 +1,6 @@
 # Separate demo deployment (plan)
 
-**Status: decided (19 Nov 2026, option c). Plan only. Nothing here is set up yet.**
+**Status (23 Nov 2026): set up.** The `relay-demo` Supabase project exists and runs, and it has its own Vercel project. Its migrations are not all in place yet: 0033, 0035 and 0036 are missing, and 0028 and 0029 are present (see [rollout-checklist.md](rollout-checklist.md), section 2). The steps below are the plan it was set up from. Use them as a reference, and check the status in the rollout checklist before changing anything.
 
 ## Why
 
@@ -27,7 +27,7 @@ The demo and the real company share one database, one email sender and one deplo
 ## Steps for Samukelo
 
 1. Create a second Supabase project, `relay-demo`, in the same organisation.
-2. Run every migration on it, in the same order as the rollout checklist (`docs/rollout-checklist.md`), including the drafts that were renamed into `supabase/migrations/`.
+2. Run every migration on it, in order, from 0001 to the latest (see AGENTS.md, section 5). Its migration history is currently empty, so record each one as it is run.
 3. Seed the demo: the templates (`supabase/seed/templates.sql`), the historical tickets (`supabase/seed/seed_historical.mjs`), and the scripted set through the reset function.
 4. Create the eight demo accounts in that project and record their details only in the demo's Vercel settings.
 5. Create a second Vercel project from the same repository. Give it only the demo's environment variables: `NEXT_PUBLIC_SUPABASE_URL` and key for the demo project, `CRON_SECRET`, `DEMO_ENABLED=true`, the `DEMO_*` pairs, `DEMO_ACCOUNT_EMAILS`, and `GEMINI_API_KEY` (a separate key). Leave out `RESEND_API_KEY`.

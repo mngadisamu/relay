@@ -4,7 +4,7 @@
 >
 > **For a teammate using a chat AI** (ChatGPT, Gemini, Claude.ai and so on) that can't see the repo: paste this file into the chat, or attach it, together with `docs/sprints/SPRINT2_3_STORIES.md` and the contract your story uses (section 5), and then say which story you're working on. A starter prompt is at the end of this file.
 
-Last updated: Wed 18 Nov 2026 (Sprint 4, day 3).
+Last updated: Mon 23 Nov 2026 (after Sprint 4). Checked against the live Supabase project and the `main` code on this date.
 
 ---
 
@@ -23,8 +23,10 @@ The bootcamp runs **8 weeks**. Work is graded on technical delivery *and* profes
 | Sprint | Dates | Modules | Status |
 | --- | --- | --- | --- |
 | 1 | 19–30 Oct 2026 | Ticket classification · AI response generator | Done |
-| 2 + 3 | 2–13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | **In progress** |
-| 4 | 16–19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | In progress |
+| 2 + 3 | 2–13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | Done, with the open items in section 9 |
+| 4 | 16–19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | Built and merged. Migrations 0028 and 0029 are **not yet on the live database** (see section 5). Showcase and documentation in progress |
+
+**Platform (added after Sprint 4):** several companies on one Relay (migrations 0030 to 0038). Platform admins create companies and add each company's first system admin from `/system`. Each person belongs to one company, and every page and function only shows that company's data. The live database holds eight companies: Kopano Freight, Capaciti, ALX, BUCO, ONOMO, Mbali INK, MIHLALI CO and CALTEX. Invite emails name the company, and the invite and password-reset emails are in `docs/email-templates/`.
 
 Sprints 2 and 3 were combined into one two-week sprint by the programme.
 
@@ -73,7 +75,14 @@ SUPABASE_SERVICE_ROLE_KEY=          # Supabase "secret" key: bypasses RLS, local
 GEMINI_API_KEY=                     # server only, never prefix with NEXT_PUBLIC_
 CRON_SECRET=                        # Monday summary job: Vercel sends it as the Bearer token. Server only
 RESEND_API_KEY=                     # email notifications (not switched on yet). Server only
+RESEND_FROM=                        # sender address on a domain verified in Resend. Server only
+APP_URL=                            # live address, used for links in emails
+NEXT_PUBLIC_DEMO_URL=               # live site only: shows the Demo button on the home page
+NEXT_PUBLIC_HOME_URL=               # demo site only: where sign-in pages send people back to
+RELAY_BASE_DOMAIN=                  # company addresses (kopano.relay.example); blank = off. Server only
+DEMO_ENABLED=                       # true turns the demo on. Demo sign-in details are DEMO_* variables, server only
 ```
+The `DEMO_*` email and password pairs and `DEMO_GEMINI_DAILY_LIMIT` (default 50) are listed in `.env.example`. Never commit their values.
 
 ---
 
@@ -125,6 +134,12 @@ src/
     │                             confirm, move, AI draft, send) · template library
     ├── manager/                  Manager home · dashboard · forecast (S2-27) · approvals (S4-08) · reports · Manage users (S2-25)
     ├── compliance/               Compliance home · audit log (S2-12) · Flagged replies (S2-26) · Risk report and PDF (S2-30)
+    ├── system/                   Platform admin: Companies list and create (name, slug, first system admin) · company page with people tabs and "Invite a system admin" · person edit (`SystemShell`, Relay layout)
+    ├── demo/                     Demo sign-in page (S4-14). Off unless `DEMO_ENABLED=true`; passwords are read on the server only
+    ├── auth/confirm, auth/link-expired   Invite and password link landing pages (S2-25, S2-36)
+    ├── lib/platform.ts           Platform admin menu (`SYSTEM_MENU`) and platform helpers
+    ├── lib/company-host.ts       Which company a visit is for, from its address (`kopano.<RELAY_BASE_DOMAIN>`); off while `RELAY_BASE_DOMAIN` is blank
+    ├── lib/demo.ts               The demo company's roles and sign-in details (server only)
     └── api/                      classify (S1-21) · generate-draft (AI drafts; skips Gemini for sensitive tickets) · reports (list, generate, PDF) · cron/weekly-summaries (Monday job, CRON_SECRET). Routes that managers use check the second step
 supabase/migrations/              Applied in order in the Supabase SQL Editor (section 5)
 supabase/functions/invite-user/   Edge Function that sends Manage users invites (deployed in the Supabase dashboard; Deno, not Next.js)
@@ -191,9 +206,23 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0024_department_scope_everywhere.sql` | A department manager sees only their own department's tickets, and its agents and managers (16 Nov) | Samukelo |
 | `0025_department_scope_people_reports.sql` | Department scope for people lists, role changes, reports, insights, the audit log and self-assignment (17 Nov) | Samukelo |
 | `0026_risk_department_scope.sql` | The risk report counts only a department manager's own department (17 Nov) | Samukelo |
-| `0027_notifications.sql` | Notices only through `notify_ticket_event()`; the email outbox and its secret-checked send functions (S4-10). Run on the live database (checked 18 Nov) | Samukelo |
+| `0027_notifications.sql` | Notices only through `notify_ticket_event()`; the email outbox and its secret-checked send functions (S4-10). Run on the live and demo databases (checked 23 Nov) | Samukelo |
+| `0028_auto_assign.sql` | `auto_assign_ticket()`: a new ticket goes to the least-busy active agent in its department (S4-05). Sensitive tickets stay unassigned. **Not on the live database (checked 23 Nov).** Until it is, the staff submit action saves the ticket but assigns nobody. Demo: present | Samukelo |
+| `0029_escalation.sql` | `escalate_urgent_tickets()` and its pg_cron job every 15 minutes (S4-06). **Not on the live database (checked 23 Nov), so the job is not scheduled.** Demo: function present (check its job is scheduled) | Samukelo |
+| `0030_platform_admins.sql` | `platform_admins` table, `is_platform_admin()` and `system_summary()` (platform admin area). Live and demo | Samukelo |
+| `0031_demo_reset.sql` | `reset_demo_company()`: resets the demo company. Live and demo | Samukelo |
+| `0032_companies_foundation.sql` | `companies` table, `company_id` on the tables, the "Same company only" row rules, `current_user_company()`, `kopano_company_id()`. Live and demo | Samukelo |
+| `0032_companies_tests.sql` | Checks for 0032. Test script, not a schema change | Samukelo |
+| `0033_create_company.sql` | `create_company()`: a platform admin creates a company (the invite of its first system admin goes through `invite-user`). Live only; **not on the demo database** | Samukelo |
+| `0034_company_settings.sql` | `company_depots` table and `save_company_settings()` (depots and allowed email domains, general managers only). Live and demo | Samukelo |
+| `0035_platform_company_users.sql` | Platform admin reads and edits people and depots in any company: `platform_list_companies()`, `platform_list_company_people()`, `platform_company_depots()`, `platform_update_person()`. Live only; **not on the demo database** | Samukelo |
+| `0036_demo_gemini_cap.sql` | `demo_gemini_usage` table and `use_demo_gemini_call()`: a daily cap on AI drafts in the demo. Live only; **not on the demo database** | Samukelo |
+| `0037_tighten_email_functions.sql` | Tightens the email outbox functions (`take_pending_emails()`, `mark_emails_sent()`). Functions present on live and demo | Samukelo |
+| `0038_people_company_scope.sql` | `list_people()` only lists the caller's own company (and, for a department manager, their department). Applied on live (20 Nov) | Samukelo |
 
-The next free number is **0028**. Ask Samukelo before writing one.
+The next free number is **0039**. Ask Samukelo before writing one.
+
+**Database check, 23 Nov:** the live project (`krxzxwulkdxhirgarkwa`) has every function the code calls except `auto_assign_ticket`. The demo project (`bkdqnndsevayxpjckubw`) is missing `create_company`, `use_demo_gemini_call` and the platform company functions from 0035, so the platform admin area won't work there yet. Its migration history is empty, so it was set up by hand. Samukelo should check both projects before the showcase.
 
 ### Tables
 
@@ -210,6 +239,12 @@ The next free number is **0028**. Ask Samukelo before writing one.
 | `reports` | `department`, `week_start`, `metrics`, `ai_summary`, `forecast` | Saved weekly reports (0008) |
 | `flags` | `response_id`, `ticket_id`, `kind` (`sent_without_edits`, `invented_detail`, `person`), `source` (`auto`, `person`), `note`, `flagged_by`, `resolved_by`, `resolved_at`, `outcome` (`ok`, `needs_change`), `resolution_note` | AI replies marked for a second look (0011). Added only through `flag_reply()`, resolved only through `resolve_flag()` |
 | `approvals` | `ticket_id`, `requested_by`, `approver`, `decision`, `decision_note`, `decided_at` | Sprint 4: one pending decision per ticket (S4-02, S4-03) |
+| `notices` | in-app notices for ticket events | Sprint 4 (0021, 0027). Written only by `notify_ticket_event()` |
+| `email_outbox` | emails waiting to be sent, read and marked sent by secret-checked functions | Sprint 4 (0027, S4-10). Emails are not switched on until `RESEND_API_KEY` is set |
+| `companies` | one row per company: `name`, `slug`, `allowed_domains`, `require_two_step` | Platform (0032). Every company table carries `company_id` |
+| `company_depots` | a company's depots | Platform (0034) |
+| `platform_admins` | who may act across companies | Platform (0030). Read only by the platform functions |
+| `demo_gemini_usage` | the daily count of AI drafts in the demo | Platform (0036). Live only |
 
 ### Who can do what (row-level security)
 
@@ -228,6 +263,12 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 | `reports` | managers: their department (general manager: all, 0008, 0025) | same | same |
 | `flags` | agents, managers, compliance, on tickets they can see (never staff) | only through `supabase.rpc("flag_reply", { p_response_id, p_kind, p_note })` (0011) | only through `supabase.rpc("resolve_flag", { p_flag_id, p_outcome, p_note })`, compliance only |
 | `approvals` | managers and compliance (department scope, 0023); the requester reads their own | only through `request_approval()`, called by the person who submitted the request | only through `decide_approval()`: a manager of the department (or a general manager), never the requester |
+| `companies` | people in their own company, and platform admins (live policy "Members read their company") | nobody directly: only through `create_company()` (platform admin, 0033) | nobody directly: only through `save_company_settings()` (0034) |
+| `company_depots` | people in their own company | people in their own company (live policy "Same company only") | people in their own company (same policy). Prefer `save_company_settings()` |
+| `platform_admins` | nobody directly (no policy; read only by the platform functions, 0030) | nobody directly: added by hand in the SQL Editor (the first platform admin) | nobody directly |
+| `notices` | the person it is for (their own notices), and the company's rows under "Same company only" (**see open items**) | people in their own company (same policy). Intended: only `notify_ticket_event()` | people in their own company (same policy). Intended: only the person it is for, to mark it read |
+| `email_outbox` | people in their own company (same policy). Intended: only the secret-checked functions in 0027 and 0037 (**see open items**) | people in their own company (same policy). Intended: only `notify_ticket_event()` | people in their own company (same policy). Intended: only `mark_emails_sent()` |
+| `demo_gemini_usage` | nobody directly (no policy); only `use_demo_gemini_call()` (0036) | nobody directly | nobody directly |
 
 ### The four contracts (agreed shapes other stories build against; change them only after agreeing it with the team)
 
@@ -349,19 +390,29 @@ The submit form calls `classify()` from `src/lib/classifier.ts` directly (faster
 
 ## 9. Each member's stories (Sprint 2+3)
 
-Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs/sprints/SPRINT2_3_STORIES.md). Status as of Thu 5 Nov.
+Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs/sprints/SPRINT2_3_STORIES.md). Status below was last checked on Mon 23 Nov for Samukelo's platform and email work. The other members' lines are as of 5 Nov and each owner should confirm them.
+
+**Since 5 Nov (all checked 23 Nov):**
+- Platform: companies, company settings, platform admin area at `/system`, invite of a company's first system admin, system admin invite into an existing company (migrations 0030 to 0038; see section 5). Company name in the top bar.
+- Fixes: Manage users lists only the caller's own company (0038, live). New invitees set their password before the two-step setup (`SETUP_PATHS` in `src/lib/supabase/middleware.ts`).
+- Emails: the invite and reset password templates in `docs/email-templates/` name the company, and their header picture has no company name. Merged to `main` in PR #145.
 
 ### Samukelo: platform, carry-over, risk and compliance
 - ✅ **S1-20** and **S1-24** architecture document (`docs/architecture.md`, sections 1 to 9)
 - ✅ **S2-01** PR checks and Preview env vars · **S2-02** role homes and public home page · **S2-06** ticket lifecycle (0006) · **S2-07** audit actions and AiNote · **S2-11** priority and "Department is correct" · **S2-12** audit log screen · **S2-16** take and assign
 - ✅ Extra: only the assigned agent replies; sensitive request rule (0009); S2-03 history fix and the forecast contract
 - ✅ Extra: migration 0010 and `loadDailyHistory()` (daily counts for the forecast)
-- ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (classifier part; Gemini drafts part waiting for the daily limit)
+- ✅ **S2-20** close a ticket · **S2-26** flagged replies (0011, `src/lib/flags.ts`, `/compliance/flags`) · **S2-21** bias test (see the 9 Nov line below)
 - ✅ **S2-25** Manage users (0012, the invite-user Edge Function, `/manager/users`, `/welcome`) · **S2-35** remove people who leave (0013)
 - ✅ **S2-30** risk report (0014, `src/lib/risk.ts`, `/compliance/risk`) · **S2-36** edit details, forgot password, designed sign-in pages and emails (0015)
 - ✅ **S2-21** bias test complete: classifier and 50 Gemini drafts (9 Nov), results in `docs/responsible-ai/`
 - In review: **S2-31** responsible AI documents (`docs/responsible-ai/`, with `docs/architecture.md` section 8)
 - Open: Gemini transfer and retention decisions for Kopano Freight (`docs/responsible-ai/popia-note.md`); backup codes for the second step (S4-17 follow-up)
+- Open (23 Nov): migrations **0028** (auto-assign) and **0029** (escalation) are not on the live database, so new tickets aren't auto-assigned and the escalation job isn't scheduled. Run them after review (section 6 rule for migrations). The demo database also needs 0033, 0035 and 0036 (section 5).
+- Open (23 Nov): the Supabase invite and reset emails need the templates pasted into Authentication → Emails (confirm when done). The invite flow still needs an end-to-end test on live: password page before two-step setup, and only that company's people on Manage users.
+- Open (23 Nov): the Company tab on Manage users showed a grey placeholder during a live test. It couldn't be reproduced; it needs the time it happened so the Vercel logs can be checked (Hobby plan keeps logs for one hour).
+- Open (23 Nov): `notices` and `email_outbox` have a "Same company only" policy for all commands (migrations 0021 and 0027). That lets any signed-in person in a company read and change its notices and queued emails directly, not only through the functions. Samukelo should tighten these to the intended rules (a new migration).
+- Open (23 Nov): remove the test account `towe.triage@gmail.com` in Supabase Authentication → Users.
 
 ### Elzel: workload forecasting
 - ✅ **S2-03** daily history (full year; `data/processed/daily_counts.csv`)

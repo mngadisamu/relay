@@ -23,6 +23,13 @@ Copy `.env.example` to `.env.local` on your own computer. Never commit `.env.loc
 | `GEMINI_API_KEY` | Server only | Never prefix with `NEXT_PUBLIC_`. |
 | `CRON_SECRET` | Server only (Monday summary job) | Vercel sends it as the Bearer token. Must match the value set in migration 0019. |
 | `RESEND_API_KEY` | Server only | Email notifications. Not switched on yet, so it can stay empty. |
+| `RESEND_FROM` | Server only | Sender address on a domain verified in Resend. Needed with `RESEND_API_KEY`. |
+| `APP_URL` | Server only | The live address, used for links in emails. |
+| `NEXT_PUBLIC_DEMO_URL` | Public (not secret) | Live site only: shows the Demo button on the home page. |
+| `NEXT_PUBLIC_HOME_URL` | Public (not secret) | Demo site only: sign-in pages link back to the live home page. |
+| `RELAY_BASE_DOMAIN` | Server only | Company addresses such as `kopano.<domain>`. Leave blank unless the wildcard domain is set up. |
+| `DEMO_ENABLED` | Server only | `true` turns the Kopano Freight demo on. Off by default. |
+| `DEMO_*` (email and password pairs), `DEMO_ACCOUNT_EMAILS`, `DEMO_GEMINI_DAILY_LIMIT` | Server only | Demo sign-in details (one pair per role) and the daily AI draft limit (default 50). Values go only in Vercel. See `.env.example`. |
 
 ## 3. Supabase project settings
 

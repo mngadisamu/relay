@@ -9,7 +9,7 @@ One Relay can host several companies. Each company has its own departments, depo
 ## Rules (from the security note, `docs/security.md`)
 
 1. Every company is a row in `companies`. Every company-owned table gets a `company_id`. Row-level security checks the caller's company.
-2. Platform admins are listed in `platform_admins` (draft `supabase/drafts/0028_platform_admins.sql`). Only functions read that table.
+2. Platform admins are listed in `platform_admins` (migration 0030). Only functions read that table.
 3. A platform admin sees counts (people, tickets, replies, emails), never ticket text, replies or names, unless a company grants time-limited support access, which is logged.
 4. A company admin manages people in their own company only.
 5. Domain rules are optional and per company (for example, only `@kopanofreight.example` may be invited). They are checked in the invite function.
@@ -47,8 +47,8 @@ One Relay can host several companies. Each company has its own departments, depo
 
 ## Phase 3 progress
 
-- P1 and P2: draft migration `supabase/drafts/0030_companies_foundation.sql` and cross-company tests `supabase/drafts/0030_companies_tests.sql`. Not run. The tests must run on a Supabase branch before live.
-- Security approach: a restrictive "Same company only" policy on each company table, so existing policies (0003 to 0027) are not dropped.
+- P1 and P2: migration `0032_companies_foundation.sql` (applied on live and demo) and the cross-company test script `0032_companies_tests.sql`. The team's record of the test run is not in the repo; confirm it passed before relying on it.
+- Security approach: a restrictive "Same company only" policy on each company table, so existing policies (0003 to 0038) are not dropped.
 - Known temporary step: new profiles fall back to Kopano until company-aware invites (P4).
 
 ## Two-step and company addresses (19 Nov, P6 and P7)

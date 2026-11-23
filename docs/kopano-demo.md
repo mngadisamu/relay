@@ -1,6 +1,6 @@
 # Kopano Freight demo
 
-**Status: built on the branch `feature/kopano-demo`. Not live yet.** The database draft (`supabase/drafts/0029_demo_reset.sql`) has not been run, and no demo accounts exist. Both need Samukelo's go-ahead.
+**Status (23 Nov): running on the demo project (`relay-demo`).** The reset is migration 0031, and the demo sign-in buttons have been tested by the team. Checked on 23 Nov: the Gemini daily cap (0036) is **not** on the demo project, so the cap doesn't apply there yet. The company-creation function (0033) and the platform company functions (0035) are missing there too. Samukelo should check these before the showcase (see [rollout-checklist.md](rollout-checklist.md)).
 
 ## What it is
 
@@ -30,7 +30,7 @@ Kopano Freight is a fictional company, created for demonstrations. The demo give
 ## Nightly reset
 
 - `src/app/api/cron/reset-demo/route.ts` runs at 02:17 SAST. It checks `Authorization: Bearer $CRON_SECRET` and then calls `reset_demo_company(p_secret, p_staff_email)`.
-- The function (draft `supabase/drafts/0029_demo_reset.sql`) deletes only live tickets (`is_historical = false`) and their child rows, children first. It then recreates the scripted set: a Finance purchase and a leave request waiting for approval, and an HR ticket with an AI draft waiting for an agent. It mirrors `scripts/reset-demo.mjs`.
+- The function (migration 0031, `reset_demo_company`) deletes only live tickets (`is_historical = false`) and their child rows, children first. It then recreates the scripted set: a Finance purchase and a leave request waiting for approval, and an HR ticket with an AI draft waiting for an agent. It mirrors `scripts/reset-demo.mjs`.
 - It uses the anon key plus `CRON_SECRET` (the same pattern as migration 0019). No service-role key is used in app code.
 - With `DEMO_ENABLED` unset, the route does nothing.
 
@@ -45,7 +45,7 @@ A role whose variables are missing shows as "(not set up yet)" and cannot be pre
 
 ## Steps to turn it on (after approval)
 
-1. Samukelo runs `supabase/drafts/0028_platform_admins.sql` and `0029_demo_reset.sql` in the Supabase SQL Editor, as new numbered migrations (renamed into `supabase/migrations/`) once approved.
+1. Samukelo checks the demo project has every migration it needs: 0030 to 0036 (see AGENTS.md section 5 for which are missing on the demo project).
 2. Create the eight demo accounts in Supabase (Manage users or the dashboard). Record the emails and passwords only in Vercel's environment variables.
 3. Set the variables in Vercel for Production and Preview, with `DEMO_ENABLED=true`.
 4. Run `reset-demo.mjs` locally once to check the scripted set, or call the reset route once with `CRON_SECRET`.
@@ -55,8 +55,8 @@ A role whose variables are missing shows as "(not set up yet)" and cannot be pre
 
 - **Password resets:** blocked for demo accounts in `src/lib/password-reset.ts`. The reply is the same as for any address.
 - **Profile edits:** there is no page where a person edits their own profile. Managers can still change a demo person's email through Manage users; blocking that needs the demo list in the invite function (see below).
-- **Email functions:** draft `supabase/drafts/0035_tighten_email_functions.sql` removes the public execute permission from the two email functions. Anon and authenticated keep it.
-- **Gemini cap:** demo accounts share a daily limit, `DEMO_GEMINI_DAILY_LIMIT` (default 50). Draft `supabase/drafts/0034_demo_gemini_cap.sql`. Over the limit, the template is used.
+- **Email functions:** migration 0037 (`tighten_email_functions`) removes the public execute permission from the two email functions. It is present on live and demo.
+- **Gemini cap:** demo accounts share a daily limit, `DEMO_GEMINI_DAILY_LIMIT` (default 50). Migration 0036 (`demo_gemini_cap`) is on live only. Over the limit, the template is used.
 
 ## Open items (not built)
 
