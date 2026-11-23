@@ -1,5 +1,6 @@
 <!-- Relay email: invite. Paste into Supabase: Authentication > Emails > Invite user.
      Subject: You've been invited to Relay
+     Header image: public/email/header.png (must be on main before it shows).
      Uses the company name sent with the invite ({{ .Data.company_name }}). Manage users invites
      send no company name, so they fall back to Kopano Freight. Needs custom SMTP first (README). -->
 <!DOCTYPE html>
@@ -10,9 +11,13 @@
       <td align="center">
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">
           <tr>
-            <td style="padding:28px 40px;background-color:#0b3d73;">
-              <p style="margin:0;font-size:26px;font-weight:bold;color:#ffffff;">Relay</p>
-              <p style="margin:6px 0 0 0;font-size:14px;color:#d6e2f2;">{{ if .Data.company_name }}{{ .Data.company_name }}{{ else }}Kopano Freight{{ end }} help desk</p>
+            <td style="padding:0;line-height:0;background-color:#0b3d73;">
+              <img src="https://relay-gilt-nine.vercel.app/email/header.png" width="600" alt="Relay" style="display:block;width:100%;max-width:600px;height:auto;border:0;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:12px 40px;background-color:#0b3d73;">
+              <p style="margin:0;font-size:14px;color:#d6e2f2;">{{ if .Data.company_name }}{{ .Data.company_name }}{{ else }}Kopano Freight{{ end }} help desk</p>
             </td>
           </tr>
           <tr>

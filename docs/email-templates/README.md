@@ -1,8 +1,8 @@
 # Relay's emails
 
 Supabase sends Relay's account emails: the **invite** (Manage users, S2-25) and **choose a new password** (Forgot your
-password and Send password reset, S2-36). These files are Relay's own designs for them, with the navy header from
-`public/email/header.png`.
+password and Send password reset, S2-36). These files are Relay's own designs for them, with the navy header image in
+`public/email/header.png` (no company name in the picture; the company name is written under it).
 
 | File | Paste into (Supabase → Authentication → Emails) | Subject |
 | --- | --- | --- |
