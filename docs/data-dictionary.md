@@ -198,3 +198,79 @@ Saved weekly reports.
 | `ai_summary` | text | |
 | `forecast` | jsonb, not null | The forecast saved with the report. |
 | `created_at` | timestamptz, not null | |
+
+## companies
+
+One row per company on Relay (migration 0032). Every company table carries `company_id`, and the row rules keep each person to their own company.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | bigint, not null | |
+| `slug` | text, not null | Short name used in addresses and scripts, such as `kopano`. |
+| `name` | text, not null | The name shown in the top bar, the emails and the reports. |
+| `require_two_step` | boolean, not null | Whether the company needs the second sign-in step. |
+| `allowed_domains` | text array | Email domains people may be invited with. Null or empty means any domain. |
+| `created_at` | timestamptz, not null | |
+
+## company_depots
+
+A company's depots (migration 0034). Saved by a general manager on Manage users → Company.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | bigint, not null | |
+| `company_id` | bigint, not null | |
+| `name` | text, not null | |
+| `active` | boolean, not null | Depots are switched off, not deleted. |
+| `created_at` | timestamptz, not null | |
+
+## platform_admins
+
+The people who can act across companies (migration 0030). Only the platform functions read this table.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `user_id` | uuid, not null | The sign-in account. |
+| `added_by` | uuid | Who added them. |
+| `added_at` | timestamptz, not null | |
+
+## notices
+
+In-app notices for ticket events (migrations 0021 and 0027). Written only by `notify_ticket_event()`.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | uuid, not null | |
+| `user_id` | uuid | The person the notice is for. |
+| `title` | text, not null | |
+| `message` | text, not null | |
+| `link` | text | Where the notice leads in the app. |
+| `read` | boolean | |
+| `company_id` | bigint, not null | |
+| `created_at` | timestamptz | |
+
+## email_outbox
+
+Emails waiting to be sent for notices (migration 0027). Read and marked sent only by secret-checked functions. Nothing is sent until `RESEND_API_KEY` is set.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | bigint, not null | |
+| `notice_id` | uuid | The notice it came from. |
+| `to_email` | text, not null | |
+| `subject` | text, not null | |
+| `reference` | text, not null | The ticket reference. |
+| `title` | text, not null | |
+| `link_path` | text, not null | |
+| `company_id` | bigint, not null | |
+| `created_at` | timestamptz, not null | |
+| `sent_at` | timestamptz | Empty until sent. |
+
+## demo_gemini_usage
+
+The count of AI draft calls made on the demo each day (migration 0036). Live only, for now.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `usage_day` | date, not null | |
+| `calls` | integer, not null | Checked against `DEMO_GEMINI_DAILY_LIMIT`. |

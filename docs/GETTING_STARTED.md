@@ -195,6 +195,8 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_xxxxxxxx
 GEMINI_API_KEY=xxxxxxxx
 ```
 
+These four are all you need to run the app on your laptop. `.env.example` lists the other variables (email, demo and company addresses). Leave those out of your `.env.local` unless Samukelo asks you to set one.
+
 - ❌ `NEXT_PUBLIC_SUPABASE_URL = https://...` (spaces around `=`)
 - ❌ `NEXT_PUBLIC_SUPABASE_URL="https://..."` (quotes)
 - ❌ `https://abcdefghijklmnop.supabase.co/` (slash at the end of the URL)

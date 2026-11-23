@@ -27,14 +27,14 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 | `reroute` | The agent or manager (`reroute_ticket()`, migration 0004) | A ticket is moved to another department | yes | `from`, `to` (departments) |
 | `confirm_department` | The agent or manager (`confirm_department()`, 0006) | "Department is correct" on a Needs review ticket | yes | `department` |
 | `assign` | The agent or manager (`assign_ticket()`, 0006) | Take ticket, or a manager assigns it | yes | `assigned_to` (profile id), `previous` (profile id or null) |
-| `company_create` | The platform admin (`create_company()`, migration 0031) | A company is created | no | `company_id`, `slug`, `require_two_step` |
-| `company_settings_save` | The general manager (`save_company_settings()`, migration 0032) | Depots or allowed domains are saved | no | `depots` (count), `domains` (count) |
-| `platform_user_edit` | The platform admin (`platform_update_person()`, migration 0033) | A person's name, department or depot is changed | no | `user_id`, `fields` (names of the fields set, never their values) |
+| `company_create` | The platform admin (`create_company()`, migration 0033) | A company is created | no | `company_id`, `slug`, `require_two_step` |
+| `company_settings_save` | The general manager (`save_company_settings()`, migration 0034) | Depots or allowed domains are saved | no | `depots` (count), `domains` (count) |
+| `platform_user_edit` | The platform admin (`platform_update_person()`, migration 0035) | A person's name, department or depot is changed | no | `user_id`, `fields` (names of the fields set, never their values) |
 | `platform_user_email_change` | The platform admin (invite-user function, `platform_update_email`) | A person's email is changed in any company | no | `user_id` (never the email) |
 | `close` | The sender, agent or manager (`close_ticket()`, 0006) | "This solved it", or Close ticket | yes | `closed_by_role` (`staff`, `agent` or `manager`) |
 | `reopen` *(added by 0006)* | The sender (`reopen_ticket()`, 0006) | "I still need help" | yes | `message_id` (row in `ticket_messages`) |
 | `template_edit` | The agent or manager (`src/app/agent/templates/actions.ts`) | A reply template is saved | no | `template_id`, `department`, `name` |
-| `user_create` | The manager (Manage users, S2-25: the invite-user Edge Function calls `set_user_role()`, migration 0012, as the manager) | A person is added | no | `user_id`, `role`, `department` (no email: it's in `auth.users`) |
+| `user_create` | The manager (Manage users, S2-25: the invite-user Edge Function calls `set_user_role()`, migration 0012, as the manager), or the platform admin who invites a company's first system admin (`platform_create_company_admin` in invite-user, which writes this entry with `company_id`) | A person is added | no | `user_id`, `role`, `department` (no email: it's in `auth.users`) |
 | `role_change` | The manager (Manage users, S2-25: `set_user_role()`, migration 0012) | A role or department changes | no | `user_id`, `from_role`, `to_role`, `from_department`, `to_department` |
 | `user_deactivate` | The manager (Manage users, "Remove from Relay", S2-35: `deactivate_user()`, migration 0013) | A person who left is switched off: they can't sign in, and their unanswered tickets go back to the inbox | no | `user_id`, `role`, `department`, `tickets_returned` |
 | `user_reactivate` | The manager (Manage users, "Bring back", S2-35: `reactivate_user()`, migration 0013) | A removed person is switched back on, with the role they had | no | `user_id`, `role`, `department` |
@@ -48,6 +48,8 @@ same way and the audit log screen (S2-12) and risk report (S2-30) can read them.
 | `flag_resolve` | The compliance officer (Flagged replies, `resolve_flag()`, migration 0011) | A flag is reviewed | yes | `flag_id`, `outcome` (`ok` or `needs_change`); the note stays in `flags.resolution_note` |
 | `approval_request` | The agent (`request_approval()`, migration 0020) | An agent asks a manager to approve a purchase or leave request, and the ticket moves to Awaiting approval | yes | `request_type` (`purchase`, `leave`, `system_access` or `other`), `amount` (rand value, or null when not a purchase), `department` |
 | `approval_decision` | The manager (`decide_approval()`, migration 0020) | A manager approves or declines a request | yes | `approval_id`, `decision` (`approved` or `rejected`), `note` (short reason; required when rejected) |
+| `auto_assign` | The sender of a new request (`auto_assign_ticket()`, migration 0028, S4-05; the submit action calls it as the sender) | A new ticket is given to the least-busy active agent in its department | yes | `agent` (the profile id it went to), `department`. Sensitive tickets stay unassigned for a manager. **Not on the live database until 0028 is run** |
+| `escalate` | The system, from the 15-minute job (`escalate_urgent_tickets()`, migration 0029, S4-06). Its actor is null | An urgent ticket that has been assigned for 4 hours with no reply is marked `escalated` for a manager | yes | `department`, `after_hours` (4). **Not on the live database until 0029 is run, so the job is not scheduled** |
 
 ## How to read it
 

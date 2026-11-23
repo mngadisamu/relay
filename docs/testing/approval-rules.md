@@ -7,11 +7,11 @@ needs it only when the amount is over R5,000.
 
 | # | Test request | Expected | Logic check | Form check (S4-07) |
 |---|---|---|---|---|
-| 1 | Finance purchase, R6,000 | Needs sign-off | Pass | Not run: needs the submit form (S4-07) |
-| 2 | Finance purchase, R5,000 | No sign-off | Pass | Not run: needs S4-07 |
-| 3 | Operations purchase, R9,000 | No sign-off | Pass | Not run: needs S4-07 |
-| 4 | HR leave request, no amount | Needs sign-off | Pass | Not run: needs S4-07 |
-| 5 | IT system access request | No sign-off | Pass | Not run: needs S4-07 |
+| 1 | Finance purchase, R6,000 | Needs sign-off | Pass | Not run yet: the S4-07 form is on main, so test it on the preview |
+| 2 | Finance purchase, R5,000 | No sign-off | Pass | Not run yet: test on the preview (S4-07 form is on main) |
+| 3 | Operations purchase, R9,000 | No sign-off | Pass | Not run yet: test on the preview (S4-07 form is on main) |
+| 4 | HR leave request, no amount | Needs sign-off | Pass | Not run yet: test on the preview (S4-07 form is on main) |
+| 5 | IT system access request | No sign-off | Pass | Not run yet: test on the preview (S4-07 form is on main) |
 
 The form checks are repeated on the preview once S4-07 is merged. Any Fail is raised with the team
 before code is changed.

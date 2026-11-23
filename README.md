@@ -14,7 +14,7 @@ Relay gives staff one place to ask for help. It routes each request to the right
 | --- | --- | --- | --- |
 | 1 | 19 Oct – 30 Oct 2026 | Ticket classification · AI response generator | Done |
 | 2 + 3 | 2 Nov – 13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | Done |
-| 4 | 16 Nov – 19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | **In progress** |
+| 4 | 16 Nov – 19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | **Built and merged.** Two database migrations (0028 auto-assign, 0029 escalation) are not yet on the live database; see [AGENTS.md](AGENTS.md) section 5 |
 
 Sprints 2 and 3 were combined into one two-week sprint by the programme. It starts with the Sprint 1 carry-over: assigning and closing tickets, priority on submit, manager and compliance homes, and Manage users.
 

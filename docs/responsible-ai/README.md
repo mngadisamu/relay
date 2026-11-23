@@ -15,7 +15,7 @@ This note says where Relay uses AI, what a person still decides, and where to fi
 | AI output | What it does | Model | Who checks it | Labelled in the app as |
 | --- | --- | --- | --- | --- |
 | Routing | Sends each request to HR, IT, Finance or Operations, with a confidence score | TF-IDF and logistic regression, trained in Google Colab, run in the app (no outside AI service) | Requests under 60% confidence are marked **Needs review**. An agent can move any request to another department, and every move is recorded | "Routed by AI · n% sure · an agent can change it" |
-| Reply drafts | Writes a reply draft from the approved template, the request and the chosen tone | Google Gemini (`gemini-3.6-flash` once `fix/gemini-model` is merged) | An agent reads, edits and sends every reply. Nothing is sent automatically | "AI-drafted · check before sending" |
+| Reply drafts | Writes a reply draft from the approved template, the request and the chosen tone | Google Gemini (`gemini-3.6-flash`) | An agent reads, edits and sends every reply. Nothing is sent automatically | "AI-drafted · check before sending" |
 | Weekly summary (planned, S2-28 and S2-34) | A short AI summary of the week's numbers, for managers | Gemini | Shown only with the AI label; a manager reads it before it's used | Must show `AiNote kind="summary"` before it is released |
 | Forecast (planned, S2-08 and S2-27) | Expected ticket numbers per department | A statistical method in `src/lib/forecast.ts`, tested against the last 8 weeks | Managers see the range, not a single number | Must show `AiNote kind="forecast"` before it is released |
 

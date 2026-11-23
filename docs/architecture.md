@@ -1,6 +1,8 @@
 # Relay architecture
 
-**Owner:** Samukelo · **Stories:** S1-20 (sections 1–4), S1-24 (sections 5–7), S2-31 (section 8) · **Last updated:** 9 Nov 2026
+**Owner:** Samukelo · **Stories:** S1-20 (sections 1–4), S1-24 (sections 5–7), S2-31 (section 8) · **Last updated:** 23 Nov 2026 (the design sections are as of 9 Nov; the current status of every story and migration is in [AGENTS.md](../AGENTS.md), sections 5 and 9)
+
+**Since 9 Nov:** companies and the platform admin area (migrations 0030 to 0038), company-scoped people lists, automatic assignment and escalation written (0028 and 0029, not yet on the live database), and the invite and password emails with the company name. Section 4 is the place to look for the current design of these.
 
 This document explains how Relay is built: its parts, why each was chosen, and how the data is organised. It is written for assessors, new team members and the Week 8 panel. You shouldn't need to read the code to follow it.
 
@@ -469,4 +471,4 @@ Sprint 4 added the approval step, the department rules, two-step sign-in and the
 
 **Demo reset (S4-14).** `scripts/reset-demo.mjs` runs locally with the service-role key. It restores one scripted set of demo tickets, approvals and replies. It doesn't clear the notices table yet. The table is on the live database.
 
-**Known gaps.** The "waiting for another manager" note on a manager's own requests (on My requests) and the decision for a sole general manager's own leave are open. Email notifications are built but not switched on: migration 0027 is run, and the Resend key is not set. The accessibility audit (S4-16) still needs its on-device checks. The business case figures (S4-19) are in.
+**Known gaps.** The "waiting for another manager" note on a manager's own requests (on My requests) and the decision for a sole general manager's own leave are open. Email notifications are built but not switched on: migration 0027 is run on live and demo, and the Resend key is not set. Automatic assignment (0028) and the urgent-ticket escalation job (0029) are built but not yet on the live database, so new tickets aren't auto-assigned until they are. The accessibility audit (S4-16) still needs its on-device checks. The business case figures (S4-19) are in. The invite and password emails (`docs/email-templates/`) need pasting into Supabase.
