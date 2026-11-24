@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { generateWeeklyInsight } from "@/lib/insights";
 
 // Monday AI summaries for last week (S2-34). Vercel calls this on the schedule in vercel.json.
@@ -43,13 +43,41 @@ export async function GET(request: Request) {
   const supabase = createClient(url, anonKey, { auth: { persistSession: false } });
   const { from, to } = lastWeek();
 
-  const results = await Promise.all(
+  // One summary per company that had tickets last week (migration 0039). Companies run one
+  // after another; each company's four departments run side by side.
+  const { data: companyIds, error: listError } = await supabase.rpc("scheduled_companies", {
+    p_secret: secret,
+    p_from: from,
+    p_to: to,
+  });
+  if (listError) {
+    return NextResponse.json({ error: "Could not list companies" }, { status: 500 });
+  }
+
+  const companies = [];
+  for (const companyId of (companyIds ?? []) as number[]) {
+    const results = await summariseCompany(supabase, secret, companyId, from, to);
+    companies.push({ company_id: companyId, results });
+  }
+
+  return NextResponse.json({ period: { from, to }, companies });
+}
+
+async function summariseCompany(
+  supabase: SupabaseClient,
+  secret: string,
+  companyId: number,
+  from: string,
+  to: string,
+) {
+  return Promise.all(
     DEPARTMENTS.map(async (department) => {
       const { data: metrics, error } = await supabase.rpc("scheduled_period_metrics", {
         p_secret: secret,
         p_from: from,
         p_to: to,
         p_department: department,
+        p_company_id: companyId,
       });
       if (error || !metrics) return { department, saved: false, reason: error?.message ?? "no numbers" };
 
@@ -73,11 +101,10 @@ export async function GET(request: Request) {
         p_summary: result.status === "ok" ? result.summary : null,
         p_metrics: summaryNumbers,
         p_status: result.status,
+        p_company_id: companyId,
       });
 
       return { department, saved: !saveError, status: result.status, reason: saveError?.message ?? null };
     })
   );
-
-  return NextResponse.json({ period: { from, to }, results });
 }

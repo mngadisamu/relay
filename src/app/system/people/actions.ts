@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { requirePlatformAdmin } from "@/lib/platform";
 
 // Saves one person's details (story P5). Name, department and depot go through
-// platform_update_person (migration 0033). A new email goes through the invite-user function,
+// platform_update_person (migration 0035). A new email goes through the invite-user function,
 // which holds the secret key. A platform admin never reads tickets here.
 export async function updatePerson(formData: FormData) {
   const supabase = await requirePlatformAdmin();

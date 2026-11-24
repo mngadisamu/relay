@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Relay · Kopano Freight",
-  description: "AI-powered internal help desk for Kopano Freight",
+  title: "Relay",
+  description: "AI-powered internal help desk for logistics teams",
 };
 
 export default function RootLayout({

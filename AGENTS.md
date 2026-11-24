@@ -24,7 +24,7 @@ The bootcamp runs **8 weeks**. Work is graded on technical delivery *and* profes
 | --- | --- | --- | --- |
 | 1 | 19–30 Oct 2026 | Ticket classification · AI response generator | Done |
 | 2 + 3 | 2–13 Nov 2026 | Analytics dashboard · Automated reporting · Workload forecasting · AI risk and compliance | Done, with the open items in section 9 |
-| 4 | 16–19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | Built and merged. Migrations 0028 and 0029 are **not yet on the live database** (see section 5). Showcase and documentation in progress |
+| 4 | 16–19 Nov 2026 (dates to confirm) | Routing and assignment · Approvals and sign-in security · Notifications and quality · Showcase and documentation | Built and merged. Migrations 0028 and 0029 (auto-assign and escalation) are **on the live database** (checked 25 Nov). Showcase and documentation in progress |
 
 **Platform (added after Sprint 4):** several companies on one Relay (migrations 0030 to 0038). Platform admins create companies and add each company's first system admin from `/system`. Each person belongs to one company, and every page and function only shows that company's data. The live database holds eight companies: Kopano Freight, Capaciti, ALX, BUCO, ONOMO, Mbali INK, MIHLALI CO and CALTEX. Invite emails name the company, and the invite and password-reset emails are in `docs/email-templates/`.
 
@@ -207,8 +207,8 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0025_department_scope_people_reports.sql` | Department scope for people lists, role changes, reports, insights, the audit log and self-assignment (17 Nov) | Samukelo |
 | `0026_risk_department_scope.sql` | The risk report counts only a department manager's own department (17 Nov) | Samukelo |
 | `0027_notifications.sql` | Notices only through `notify_ticket_event()`; the email outbox and its secret-checked send functions (S4-10). Run on the live and demo databases (checked 23 Nov) | Samukelo |
-| `0028_auto_assign.sql` | `auto_assign_ticket()`: a new ticket goes to the least-busy active agent in its department (S4-05). Sensitive tickets stay unassigned. **Not on the live database (checked 23 Nov).** Until it is, the staff submit action saves the ticket but assigns nobody. Demo: present | Samukelo |
-| `0029_escalation.sql` | `escalate_urgent_tickets()` and its pg_cron job every 15 minutes (S4-06). **Not on the live database (checked 23 Nov), so the job is not scheduled.** Demo: function present (check its job is scheduled) | Samukelo |
+| `0028_auto_assign.sql` | `auto_assign_ticket()`: a new ticket goes to the least-busy active agent in its department (S4-05). Sensitive tickets stay unassigned. On the live database (checked 25 Nov). Demo: present | Samukelo |
+| `0029_escalation.sql` | `escalate_urgent_tickets()` and its pg_cron job every 15 minutes (S4-06). On the live database, with its pg_cron job `escalate-urgent` running every 15 minutes (checked 25 Nov). Demo: function present (check its job is scheduled) | Samukelo |
 | `0030_platform_admins.sql` | `platform_admins` table, `is_platform_admin()` and `system_summary()` (platform admin area). Live and demo | Samukelo |
 | `0031_demo_reset.sql` | `reset_demo_company()`: resets the demo company. Live and demo | Samukelo |
 | `0032_companies_foundation.sql` | `companies` table, `company_id` on the tables, the "Same company only" row rules, `current_user_company()`, `kopano_company_id()`. Live and demo | Samukelo |
@@ -219,10 +219,11 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0036_demo_gemini_cap.sql` | `demo_gemini_usage` table and `use_demo_gemini_call()`: a daily cap on AI drafts in the demo. Live only; **not on the demo database** | Samukelo |
 | `0037_tighten_email_functions.sql` | Tightens the email outbox functions (`take_pending_emails()`, `mark_emails_sent()`). Functions present on live and demo | Samukelo |
 | `0038_people_company_scope.sql` | `list_people()` only lists the caller's own company (and, for a department manager, their department). Applied on live (20 Nov) | Samukelo |
+| `0039_company_scoped_jobs_and_grants.sql` | Company-scoped `dashboard_metrics`, scheduled summaries and reports (unique per company); company checks in auto-assign, escalation and notifications; grant hardening. Tested on the demo project in a rolled-back transaction. **Not yet applied to demo or live: awaiting review.** | Samukelo |
 
-The next free number is **0039**. Ask Samukelo before writing one.
+The next free number is **0040**. Ask Samukelo before writing one.
 
-**Database check, 23 Nov:** the live project (`krxzxwulkdxhirgarkwa`) has every function the code calls except `auto_assign_ticket`. The demo project (`bkdqnndsevayxpjckubw`) is missing `create_company`, `use_demo_gemini_call` and the platform company functions from 0035, so the platform admin area won't work there yet. Its migration history is empty, so it was set up by hand. Samukelo should check both projects before the showcase.
+**Database check, 25 Nov:** the live project (`krxzxwulkdxhirgarkwa`) has every function the code calls, including `auto_assign_ticket`, and the escalation job is scheduled. The demo project (`bkdqnndsevayxpjckubw`) is missing `create_company`, `use_demo_gemini_call` and the platform company functions from 0035, so the platform admin area won't work there yet. Its migration history is empty, so it was set up by hand. Samukelo should check both projects before the showcase.
 
 ### Tables
 
@@ -266,8 +267,8 @@ RLS is **on** for every table. These rules are the whole permission model. If a 
 | `companies` | people in their own company, and platform admins (live policy "Members read their company") | nobody directly: only through `create_company()` (platform admin, 0033) | nobody directly: only through `save_company_settings()` (0034) |
 | `company_depots` | people in their own company | people in their own company (live policy "Same company only") | people in their own company (same policy). Prefer `save_company_settings()` |
 | `platform_admins` | nobody directly (no policy; read only by the platform functions, 0030) | nobody directly: added by hand in the SQL Editor (the first platform admin) | nobody directly |
-| `notices` | the person it is for (their own notices), and the company's rows under "Same company only" (**see open items**) | people in their own company (same policy). Intended: only `notify_ticket_event()` | people in their own company (same policy). Intended: only the person it is for, to mark it read |
-| `email_outbox` | people in their own company (same policy). Intended: only the secret-checked functions in 0027 and 0037 (**see open items**) | people in their own company (same policy). Intended: only `notify_ticket_event()` | people in their own company (same policy). Intended: only `mark_emails_sent()` |
+| `notices` | the person it is for (their own notices), and the company's rows only (the "Same company only" policy is restrictive, checked 25 Nov) | people in their own company (same policy). Intended: only `notify_ticket_event()` | people in their own company (same policy). Intended: only the person it is for, to mark it read |
+| `email_outbox` | people in their own company (same policy). Only the secret-checked functions in 0027 and 0037 write it (checked 25 Nov: no direct writes) | people in their own company (same policy). Intended: only `notify_ticket_event()` | people in their own company (same policy). Intended: only `mark_emails_sent()` |
 | `demo_gemini_usage` | nobody directly (no policy); only `use_demo_gemini_call()` (0036) | nobody directly | nobody directly |
 
 ### The four contracts (agreed shapes other stories build against; change them only after agreeing it with the team)
@@ -408,10 +409,11 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ **S2-21** bias test complete: classifier and 50 Gemini drafts (9 Nov), results in `docs/responsible-ai/`
 - In review: **S2-31** responsible AI documents (`docs/responsible-ai/`, with `docs/architecture.md` section 8)
 - Open: Gemini transfer and retention decisions for Kopano Freight (`docs/responsible-ai/popia-note.md`); backup codes for the second step (S4-17 follow-up)
-- Open (23 Nov): migrations **0028** (auto-assign) and **0029** (escalation) are not on the live database, so new tickets aren't auto-assigned and the escalation job isn't scheduled. Run them after review (section 6 rule for migrations). The demo database also needs 0033, 0035 and 0036 (section 5).
+- Open (25 Nov): migration **0039** (company-scoped jobs, reports and summaries; company checks in auto-assign, escalation and notifications; grant hardening) is written and tested on demo in a rolled-back transaction. Review it, then apply it to demo and live. The live Monday summary and reports code (`weekly-summaries`, `reports/generate`) calls the 0039 signatures, so 0039 must be on live before that code is merged.
+- Open (25 Nov): `reset_demo_company()` exists on the live project. Its nightly route is off there (`DEMO_ENABLED` is unset), but the function still runs for anyone holding `CRON_SECRET` and deletes every live ticket across all companies. Remove it from live, or revoke it from `anon`, after the team agrees.
 - Open (23 Nov): the Supabase invite and reset emails need the templates pasted into Authentication → Emails (confirm when done). The invite flow still needs an end-to-end test on live: password page before two-step setup, and only that company's people on Manage users.
 - Open (23 Nov): the Company tab on Manage users showed a grey placeholder during a live test. It couldn't be reproduced; it needs the time it happened so the Vercel logs can be checked (Hobby plan keeps logs for one hour).
-- Open (23 Nov): `notices` and `email_outbox` have a "Same company only" policy for all commands (migrations 0021 and 0027). That lets any signed-in person in a company read and change its notices and queued emails directly, not only through the functions. Samukelo should tighten these to the intended rules (a new migration).
+- Resolved (25 Nov): `notices` and `email_outbox` are not open to direct writes. Their only permissive policy is the person's own notices (`notices`), and `email_outbox` has none. The "Same company only" policy is restrictive, so it limits rows to the company but grants no write.
 - Open (23 Nov): remove the test account `towe.triage@gmail.com` in Supabase Authentication → Users.
 
 ### Elzel: workload forecasting

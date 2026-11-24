@@ -42,7 +42,7 @@ export function checkSummary(summary: string, metrics: unknown): string | null {
 // The prompt sends the numbers and nothing else. It asks for plain sentences that
 // use only those numbers and don't guess a cause.
 function promptFor(metrics: unknown, scope: string) {
-  return `You write a short weekly summary of a help desk's numbers for a manager at Kopano Freight, a logistics company in Johannesburg.
+  return `You write a short weekly summary of a help desk's numbers for a manager at a logistics company in South Africa.
 Scope: ${scope}.
 
 Write 3 to 5 plain sentences in South African English. Say what went up or down compared with the previous period, and which number the manager may want to look at.

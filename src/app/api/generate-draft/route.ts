@@ -49,6 +49,10 @@ export async function POST(request: Request) {
   ]);
   if (!ticket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
 
+  // The signed-in person's own company name (row-level security returns only their company).
+  const { data: company } = await supabase.from("companies").select("name").maybeSingle<{ name: string }>();
+  const companyName = company?.name ?? "the company";
+
   // The department's template for this tone, read from the database every time (S1-27),
   // so a template saved in the Template library is used by the very next draft.
   const departmentTemplates = await loadTemplates(supabase, ticket.department ?? "IT");
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
   const template = templateText.replaceAll("[Staff Name]", staffName).replaceAll("[Subject]", ticket.subject);
 
   const prompt = `
-You are writing a reply for the ${ticket.department} team at Kopano Freight, a logistics company in Johannesburg.
+You are writing a reply for the ${ticket.department} team at ${companyName}.
 Tone: ${tone}.
 The reply goes to ${staffName}${ticket.depot ? ` at ${ticket.depot}` : ""}.
 

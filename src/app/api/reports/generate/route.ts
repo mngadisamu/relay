@@ -118,7 +118,7 @@ export async function POST(request: Request) {
     week_start: weekStart,
     metrics,
     forecast: { projection: forecastProjection, days: forecastResult.days },
-  }, { onConflict: "department,week_start" });
+  }, { onConflict: "company_id,department,week_start" });
   if (saveError) {
     // Don't hide a failed save: the preview still works, but the report won't be in Saved Reports.
     console.warn("Report not saved:", saveError.message);

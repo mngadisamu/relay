@@ -2,7 +2,7 @@
 
 **Owner:** Samukelo · **Stories:** S1-20 (sections 1–4), S1-24 (sections 5–7), S2-31 (section 8) · **Last updated:** 23 Nov 2026 (the design sections are as of 9 Nov; the current status of every story and migration is in [AGENTS.md](../AGENTS.md), sections 5 and 9)
 
-**Since 9 Nov:** companies and the platform admin area (migrations 0030 to 0038), company-scoped people lists, automatic assignment and escalation written (0028 and 0029, not yet on the live database), and the invite and password emails with the company name. Section 4 is the place to look for the current design of these.
+**Since 9 Nov:** companies and the platform admin area (migrations 0030 to 0038), company-scoped people lists, automatic assignment and escalation (0028 and 0029, both on the live database, checked 25 Nov), and the invite and password emails with the company name. Section 4 is the place to look for the current design of these.
 
 This document explains how Relay is built: its parts, why each was chosen, and how the data is organised. It is written for assessors, new team members and the Week 8 panel. You shouldn't need to read the code to follow it.
 
