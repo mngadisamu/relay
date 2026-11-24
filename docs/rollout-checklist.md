@@ -19,7 +19,7 @@ Samukelo owns migrations and approves each one. Run each new migration on a Supa
 
 ## 2. Not done
 
-1. **Auto-assign (0028)** is not on live. New tickets are saved but not assigned. Run it on a branch, then live, and check that `auto_assign_ticket` exists.
+1. **Auto-assign (0028)** is on live (checked 25 Nov). Check that `auto_assign_ticket` exists after any database change.
 2. **Escalation (0029)** is not on live, so the `escalate-urgent` job every 15 minutes is not scheduled. The demo has it.
 3. **Demo database:** add 0033, 0035 and 0036, or the platform admin area and the AI cap will not work there. Its migration history is empty, so record which migrations it has.
 4. **Demo platform admin:** the demo has no platform admin row yet.

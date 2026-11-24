@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
 
   // Allowed email domains (P4, migration 0032). Null or empty means any domain.
   // The company row is visible to its own members only (0030), so this reads the caller's company.
-  const { data: company } = await asCaller.from("companies").select("allowed_domains").maybeSingle();
+  const { data: company } = await asCaller.from("companies").select("name, allowed_domains").maybeSingle();
   const allowedDomains: string[] | null = company?.allowed_domains ?? null;
   if (allowedDomains && allowedDomains.length > 0 && !allowedDomains.includes(email.split("@")[1])) {
     return reply(400, { error: "This email is not on the company's list of allowed domains", field: "email" });
@@ -192,8 +192,9 @@ Deno.serve(async (req) => {
   }
 
   // 3. Send the invite. The email's link opens Relay's /auth/confirm page.
+  // company_name tells the invite email which company the person is joining (the platform path does the same).
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: fullName },
+    data: { full_name: fullName, company_name: company?.name ?? null },
     redirectTo,
   });
   if (inviteError || !invited.user) {

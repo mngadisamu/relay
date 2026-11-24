@@ -43,13 +43,15 @@ export default async function SystemPage() {
       <section aria-labelledby="counts-heading" className="space-y-3">
         <h2 id="counts-heading" className="text-base font-semibold text-ink sm:text-lg">Counts</h2>
         {summaryError || !counts ? (
-          <p className="text-sm text-muted">The counts are not set up yet. Samukelo needs to run migration 0028.</p>
+          <p role="alert" className="rounded-[10px] border border-line bg-white px-4 py-3 text-sm text-ink-2">
+            The counts can&apos;t load yet. The database needs migration 0030 (platform admins). Reload once it is in place.
+          </p>
         ) : (
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {Object.entries(counts).map(([key, value]) => (
-              <div key={key} className="rounded-[10px] border border-line bg-white p-3">
-                <dt className="text-xs text-muted">{key.replace(/_/g, " ")}</dt>
-                <dd className="text-xl font-semibold text-ink">{value}</dd>
+              <div key={key} className="rounded-[10px] border border-line bg-white p-4">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted">{key.replace(/_/g, " ")}</dt>
+                <dd className="mt-1 text-2xl font-semibold tabular-nums text-ink">{value}</dd>
               </div>
             ))}
           </dl>

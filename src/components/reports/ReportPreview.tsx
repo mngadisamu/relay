@@ -47,7 +47,7 @@ export default function ReportPreview({ department, weekStart, reportData }: Rep
       {/* HEADER */}
       <div className="flex justify-between items-center border-b border-line pb-6 mb-6">
         <div>
-          <span className="text-xs font-bold tracking-widest text-brand uppercase">Kopano Freight Relay</span>
+          <span className="text-xs font-bold tracking-widest text-brand uppercase">Relay report</span>
           <h1 className="text-2xl font-bold text-ink">Weekly Department Report</h1>
         </div>
         <div className="text-right">
