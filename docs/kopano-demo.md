@@ -1,6 +1,6 @@
 # Kopano Freight demo
 
-**Status (23 Nov): running on the demo project (`relay-demo`).** The reset is migration 0031, and the demo sign-in buttons have been tested by the team. Checked on 23 Nov: the Gemini daily cap (0036) is **not** on the demo project, so the cap doesn't apply there yet. The company-creation function (0033) and the platform company functions (0035) are missing there too. Samukelo should check these before the showcase (see [rollout-checklist.md](rollout-checklist.md)).
+**Status (25 Nov): running on the demo project (`relay-demo`).** The reset is migration 0031, and the demo sign-in buttons have been tested by the team. 0039 and the escalation job are on the demo project. Checked on 25 Nov: the Gemini daily cap (0036) is **not** on the demo project, so the cap doesn't apply there yet. The company-creation function (0033) and the platform company functions (0035) are missing there too. Samukelo should check these before the showcase (see [rollout-checklist.md](rollout-checklist.md)).
 
 ## What it is
 
@@ -33,6 +33,7 @@ Kopano Freight is a fictional company, created for demonstrations. The demo give
 - The function (migration 0031, `reset_demo_company`) deletes only live tickets (`is_historical = false`) and their child rows, children first. It then recreates the scripted set: a Finance purchase and a leave request waiting for approval, and an HR ticket with an AI draft waiting for an agent. It mirrors `scripts/reset-demo.mjs`.
 - It uses the anon key plus `CRON_SECRET` (the same pattern as migration 0019). No service-role key is used in app code.
 - With `DEMO_ENABLED` unset, the route does nothing.
+- The function deletes the live tickets of **every** company in the project, not only Kopano's. That is fine on the demo project, which holds only Kopano. On the live project it is locked (25 Nov), so the route can't reach it there even if `DEMO_ENABLED` were set by mistake.
 
 ## Environment variables
 

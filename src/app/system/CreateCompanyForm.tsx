@@ -29,7 +29,7 @@ export function CreateCompanyForm() {
       )}
 
       {/* The key redraws the form after each result, so the typed values come back on an error. */}
-      <form key={state.stamp} action={action} className="grid max-w-xl gap-5 rounded-[10px] border border-line bg-white p-5 sm:p-6">
+      <form key={state.stamp} action={action} className="grid gap-5">
         <div className="grid gap-1.5">
           <Label htmlFor="name">Company name</Label>
           <Input id="name" name="name" required minLength={2} maxLength={120} autoComplete="off" defaultValue={v.name}
@@ -45,7 +45,7 @@ export function CreateCompanyForm() {
           {fe.slug && <p id="slug-error" className="text-sm text-[#a4231a]">{fe.slug}</p>}
         </div>
 
-        <fieldset className="grid gap-5 rounded-[10px] border border-line-soft p-4">
+        <fieldset className="grid gap-5 rounded-lg border border-line-soft bg-page/60 p-4">
           <legend className="px-1 text-sm font-semibold text-ink">System admin</legend>
           <p className="-mt-2 text-sm text-ink-2">
             They get an invite email, choose their own password, and manage the company&apos;s people and settings.
@@ -69,7 +69,7 @@ export function CreateCompanyForm() {
           <span>Require two-step sign-in (keep this on for every real company)</span>
         </label>
 
-        <Button type="submit" disabled={pending} className="w-fit">
+        <Button type="submit" disabled={pending} className="h-11 w-full">
           {pending ? "Creating…" : "Create company"}
         </Button>
       </form>

@@ -1,6 +1,6 @@
 # Separate demo deployment (plan)
 
-**Status (23 Nov 2026): set up.** The `relay-demo` Supabase project exists and runs, and it has its own Vercel project. Its migrations are not all in place yet: 0033, 0035 and 0036 are missing, and 0028 and 0029 are present (see [rollout-checklist.md](rollout-checklist.md), section 2). The steps below are the plan it was set up from. Use them as a reference, and check the status in the rollout checklist before changing anything.
+**Status (25 Nov 2026): set up.** The `relay-demo` Supabase project exists and runs, and it has its own Vercel project. Its migrations are not all in place yet: 0033, 0035 and 0036 are missing; 0028, 0029 and 0039 are present, and the escalation job runs (see [rollout-checklist.md](rollout-checklist.md), section 2). The steps below are the plan it was set up from. Use them as a reference, and check the status in the rollout checklist before changing anything.
 
 ## Why
 

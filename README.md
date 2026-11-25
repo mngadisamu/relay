@@ -49,7 +49,7 @@ Every piece of AI work is labelled (for example "Routed by AI · 92% sure · an 
 
 ## Tech stack
 
-- **Next.js 15.5** (App Router, TypeScript) on **Vercel**
+- **Next.js 16.4** (App Router, TypeScript) on **Vercel**
 - **Supabase**: Postgres database, sign-in with roles, row-level security on every table
 - **Tailwind CSS v4** with **shadcn/ui** components in Relay's colours
 - **ML classifier**: TF-IDF + logistic regression, trained in Google Colab, exported to JSON and run in TypeScript on the server (no Python server)
