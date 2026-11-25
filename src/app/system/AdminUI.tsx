@@ -55,7 +55,7 @@ export function AdminHero({
   return (
     <section className="relative overflow-hidden rounded-2xl bg-navy px-5 py-7 text-white sm:px-8 sm:py-9">
       <HeroLines />
-      <div className="relative flex min-w-0 items-start gap-4 md:max-w-[60%]">
+      <div className="relative flex min-w-0 items-start gap-4 lg:max-w-[55%]">
         {leading}
         <div className="min-w-0 space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8cc4ff]">{eyebrow}</p>
@@ -80,7 +80,7 @@ function HeroLines() {
     <svg
       aria-hidden="true"
       viewBox="0 0 520 210"
-      className="pointer-events-none absolute -right-10 top-1/2 hidden h-[220px] w-[540px] -translate-y-1/2 opacity-40 md:block"
+      className="pointer-events-none absolute -right-6 top-1/2 hidden h-[190px] w-[460px] -translate-y-1/2 opacity-40 lg:block"
       fill="none"
       strokeLinecap="round"
       strokeLinejoin="round"

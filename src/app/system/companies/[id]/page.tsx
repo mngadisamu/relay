@@ -106,15 +106,16 @@ export default async function CompanyPeoplePage({
           ) : (
             <>
               {/* Wide screens: a table. */}
-              <table className="hidden w-full text-left text-sm md:table">
+              <table className="hidden w-full table-fixed text-left text-sm md:table">
                 <caption className="sr-only">{activeTabLabel} in {company.company_name}</caption>
                 <thead className="text-xs uppercase tracking-wide text-muted">
                   <tr className="border-b border-line-soft">
+                    {/* Fixed widths, so a long email truncates instead of pushing Edit out of the card. */}
                     <th scope="col" className="px-5 py-2.5 font-semibold">Name</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Department</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Depot</th>
-                    <th scope="col" className="px-3 py-2.5 font-semibold">Status</th>
-                    <th scope="col" className="px-5 py-2.5"><span className="sr-only">Actions</span></th>
+                    <th scope="col" className="w-[17%] px-3 py-2.5 font-semibold">Department</th>
+                    <th scope="col" className="w-[19%] px-3 py-2.5 font-semibold">Depot</th>
+                    <th scope="col" className="w-[15%] px-3 py-2.5 font-semibold">Status</th>
+                    <th scope="col" className="w-[72px] px-3 py-2.5"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line-soft">
@@ -130,9 +131,9 @@ export default async function CompanyPeoplePage({
                         </div>
                       </td>
                       <td className="px-3 py-3 text-ink-2">{p.person_department ?? <span className="text-muted">None</span>}</td>
-                      <td className="whitespace-nowrap px-3 py-3 text-ink-2">{p.person_depot ?? <span className="text-muted">None</span>}</td>
+                      <td className="truncate px-3 py-3 text-ink-2">{p.person_depot ?? <span className="text-muted">None</span>}</td>
                       <td className="px-3 py-3"><StatusTag active={p.person_active} /></td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-3 py-3 text-right">
                         <Link
                           href={`/system/people/${p.person_id}?company=${id}&tab=${active}`}
                           className="rounded-md px-2.5 py-1.5 font-semibold text-brand hover:bg-brand-soft hover:text-brand-dark"
