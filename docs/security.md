@@ -96,7 +96,9 @@ Relay now holds several companies (migrations 0030 to 0038; the live database ha
 3. **Support access is not built.** There is no grant that lets a platform admin read a company's tickets for a set time. The plan (time-limited, recorded in that company's audit log) is still open. Until it is built, a platform admin can't see a company's tickets.
 4. **Each company manages its own people.** General managers add, change and remove people in their own company only. Nobody in one company can change someone in another.
 5. **Optional per company:** the allowed email domains (`companies.allowed_domains`, set on Manage users → Company, 0034) are built. Two-step sign-in can be required per company (`companies.require_two_step`), enforced in `src/lib/supabase/middleware.ts`.
-6. **Open (23 Nov):** the `notices` and `email_outbox` tables have a "Same company only" rule for every command, so any signed-in person in a company can read and change those rows directly. The intended rule is that only the functions write them. This needs a new migration (Samukelo).
+6. **Checked (25 Nov): `notices` and `email_outbox` are closed to direct writes.** Their "Same company only" rule is *restrictive*: it limits rows to the company but grants nothing on its own. The only permissive rule is a person reading their own notices; `email_outbox` has none. Rows are written only by `notify_ticket_event()` and the secret-checked email functions.
+7. **Jobs that run with nobody signed in are company-scoped (migration 0039, 25 Nov).** Row rules don't apply to them, so the Monday summaries and reports, auto-assign, escalation and notifications now filter by company themselves. Database-only functions can no longer be called by anonymous visitors.
+8. **The demo reset is locked on live (25 Nov).** `reset_demo_company()` deletes every company's live tickets, so on the live project nobody but the database owner can run it. The demo project keeps it for its nightly reset.
 
 ## Secret scan (18 Nov 2026)
 

@@ -59,7 +59,7 @@ Sprints 2 and 3 were combined into one two-week sprint by the programme.
 
 | Layer | Choice | Notes |
 | --- | --- | --- |
-| Framework | **Next.js 15.5** (App Router), **React 19**, **TypeScript** | `src/` directory, import alias `@/*` → `src/*`. Install with `npm ci` so everyone gets exactly these versions. |
+| Framework | **Next.js 16.4** (App Router), **React 19**, **TypeScript** | `src/` directory, import alias `@/*` → `src/*`. Install with `npm ci` so everyone gets exactly these versions. `package.json` moved from 15.5 to 16 in Sprint 4 (commit `73c06db`); the live site builds and runs on 16. |
 | Styling | **Tailwind CSS v4** with **shadcn/ui** | Relay's colours are in `globals.css` (`text-ink`, `text-ink-2`, `text-muted`, `bg-page`, `border-line`, `bg-brand`, `bg-navy`…); shadcn components are in `src/components/ui/`. Don't use Tailwind's default `slate-*` or `blue-*` colours. |
 | Database and auth | **Supabase** (Postgres + Auth) via `@supabase/ssr` 0.12 and `@supabase/supabase-js` 2.x | Email and password sign-in. Row-level security (RLS) is on for every table. |
 | Hosting | **Vercel** (team "Team AI", project `relay`) | Env vars set in Vercel for Production **and** Preview. Every PR gets a preview link. |
@@ -134,7 +134,7 @@ src/
     │                             confirm, move, AI draft, send) · template library
     ├── manager/                  Manager home · dashboard · forecast (S2-27) · approvals (S4-08) · reports · Manage users (S2-25)
     ├── compliance/               Compliance home · audit log (S2-12) · Flagged replies (S2-26) · Risk report and PDF (S2-30)
-    ├── system/                   Platform admin: Companies list and create (name, slug, first system admin) · company page with people tabs and "Invite a system admin" · person edit (`SystemShell`, Relay layout)
+    ├── system/                   Platform admin: Companies list and create (name, code, first system admin) · company page with people tabs and "Invite a system admin" · person edit. `SystemShell` (Relay top bar) and `AdminUI.tsx` (navy header band, number tiles, panels, breadcrumbs; redesigned 25 Nov)
     ├── demo/                     Demo sign-in page (S4-14). Off unless `DEMO_ENABLED=true`; passwords are read on the server only
     ├── auth/confirm, auth/link-expired   Invite and password link landing pages (S2-25, S2-36)
     ├── lib/platform.ts           Platform admin menu (`SYSTEM_MENU`) and platform helpers
@@ -210,7 +210,7 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0028_auto_assign.sql` | `auto_assign_ticket()`: a new ticket goes to the least-busy active agent in its department (S4-05). Sensitive tickets stay unassigned. On the live database (checked 25 Nov). Demo: present | Samukelo |
 | `0029_escalation.sql` | `escalate_urgent_tickets()` and its pg_cron job every 15 minutes (S4-06). On the live database, with its pg_cron job `escalate-urgent` running every 15 minutes (checked 25 Nov). Demo: function present (check its job is scheduled) | Samukelo |
 | `0030_platform_admins.sql` | `platform_admins` table, `is_platform_admin()` and `system_summary()` (platform admin area). Live and demo | Samukelo |
-| `0031_demo_reset.sql` | `reset_demo_company()`: resets the demo company. Live and demo | Samukelo |
+| `0031_demo_reset.sql` | `reset_demo_company()`: resets the demo company. Demo: runs nightly. Live: present but **locked** (execute revoked from anon and signed-in users, 25 Nov), because it deletes every company's live tickets | Samukelo |
 | `0032_companies_foundation.sql` | `companies` table, `company_id` on the tables, the "Same company only" row rules, `current_user_company()`, `kopano_company_id()`. Live and demo | Samukelo |
 | `0032_companies_tests.sql` | Checks for 0032. Test script, not a schema change | Samukelo |
 | `0033_create_company.sql` | `create_company()`: a platform admin creates a company (the invite of its first system admin goes through `invite-user`). Live only; **not on the demo database** | Samukelo |
@@ -219,7 +219,7 @@ Need an agent for HR, Finance or Operations, or a department manager? Ask Samuke
 | `0036_demo_gemini_cap.sql` | `demo_gemini_usage` table and `use_demo_gemini_call()`: a daily cap on AI drafts in the demo. Live only; **not on the demo database** | Samukelo |
 | `0037_tighten_email_functions.sql` | Tightens the email outbox functions (`take_pending_emails()`, `mark_emails_sent()`). Functions present on live and demo | Samukelo |
 | `0038_people_company_scope.sql` | `list_people()` only lists the caller's own company (and, for a department manager, their department). Applied on live (20 Nov) | Samukelo |
-| `0039_company_scoped_jobs_and_grants.sql` | Company-scoped `dashboard_metrics`, scheduled summaries and reports (unique per company); company checks in auto-assign, escalation and notifications; grant hardening. Tested on the demo project in a rolled-back transaction. **Not yet applied to demo or live: awaiting review.** | Samukelo |
+| `0039_company_scoped_jobs_and_grants.sql` | Company-scoped `dashboard_metrics`, scheduled summaries and reports (unique per company); company checks in auto-assign, escalation and notifications; grant hardening. Applied on live and demo (checked 25 Nov). | Samukelo |
 
 The next free number is **0040**. Ask Samukelo before writing one.
 
@@ -372,7 +372,7 @@ The submit form calls `classify()` from `src/lib/classifier.ts` directly (faster
 | `npm.ps1 cannot be loaded because running scripts is disabled` | VS Code terminal is PowerShell. Switch the default profile to **Command Prompt** (terminal **⌄** → *Select Default Profile*). |
 | Prompt shows `C:\WINDOWS\system32>` | Admin Command Prompt. Use a normal one. |
 | `'node' is not recognized` right after installing | Open a **new** terminal window; restart the laptop if needed. |
-| `npm run dev` says **Next.js 16**, or warns "middleware is deprecated" | Something upgraded Next.js (often `npm audit fix --force`). Run `git checkout -- package.json package-lock.json`, then `npm ci`. Never run `npm audit fix --force`. |
+| `npm run dev` shows a Next.js version other than the one in `package.json` (16.4) | Your installed packages are out of date, or a tool changed the version (often `npm audit fix --force`). Run `git checkout -- package.json package-lock.json`, then `npm ci`. Never run `npm audit fix --force`. A note that "middleware" is now called "proxy" is expected on Next.js 16: `src/middleware.ts` still works. |
 | `git status` shows `tsconfig.json` or `package.json` changed, and you didn't change them | A tool rewrote them. `git restore tsconfig.json` (or the file named) before committing. |
 | The push worked but GitHub offers no pull request | Nothing was committed: `git status` said the files weren't added, or the new files never reached the `relay` folder. Check `git status` and `git log --oneline -1` before pushing. |
 | Build fails with `supabaseKey is required` | A file creates a Supabase client with the secret key at the top of the file. Use `createClient` from `@/lib/supabase/server` inside the function instead (section 6). |
@@ -409,8 +409,8 @@ Full stories and acceptance criteria: [`docs/sprints/SPRINT2_3_STORIES.md`](docs
 - ✅ **S2-21** bias test complete: classifier and 50 Gemini drafts (9 Nov), results in `docs/responsible-ai/`
 - In review: **S2-31** responsible AI documents (`docs/responsible-ai/`, with `docs/architecture.md` section 8)
 - Open: Gemini transfer and retention decisions for Kopano Freight (`docs/responsible-ai/popia-note.md`); backup codes for the second step (S4-17 follow-up)
-- Open (25 Nov): migration **0039** (company-scoped jobs, reports and summaries; company checks in auto-assign, escalation and notifications; grant hardening) is written and tested on demo in a rolled-back transaction. Review it, then apply it to demo and live. The live Monday summary and reports code (`weekly-summaries`, `reports/generate`) calls the 0039 signatures, so 0039 must be on live before that code is merged.
-- Open (25 Nov): `reset_demo_company()` exists on the live project. Its nightly route is off there (`DEMO_ENABLED` is unset), but the function still runs for anyone holding `CRON_SECRET` and deletes every live ticket across all companies. Remove it from live, or revoke it from `anon`, after the team agrees.
+- Done (25 Nov): migration **0039** (company-scoped jobs, reports and summaries; company checks in auto-assign, escalation and notifications; grant hardening) is on live and demo.
+- Done (25 Nov): `reset_demo_company()` is locked on live (execute revoked from `public`, `anon` and `authenticated`). The demo project keeps it for the nightly reset.
 - Open (23 Nov): the Supabase invite and reset emails need the templates pasted into Authentication → Emails (confirm when done). The invite flow still needs an end-to-end test on live: password page before two-step setup, and only that company's people on Manage users.
 - Open (23 Nov): the Company tab on Manage users showed a grey placeholder during a live test. It couldn't be reproduced; it needs the time it happened so the Vercel logs can be checked (Hobby plan keeps logs for one hour).
 - Resolved (25 Nov): `notices` and `email_outbox` are not open to direct writes. Their only permissive policy is the person's own notices (`notices`), and `email_outbox` has none. The "Same company only" policy is restrictive, so it limits rows to the company but grants no write.
@@ -445,3 +445,13 @@ Guide me step by step: tell me which files to create or change and where,
 give complete code I can paste, explain why each part is needed,
 and tell me how to test each scenario. Wait for me after each step.
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

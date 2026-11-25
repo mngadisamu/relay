@@ -1,6 +1,6 @@
 # User guide
 
-For people using Relay at Kopano Freight. Each section covers one role. Find your section by the role your manager gave you.
+For people using Relay at their company. Each section covers one role. Find your section by the role your manager gave you.
 
 Relay has no sign-up page. Your manager adds you on **Manage users**. You get an invite email, choose a password, and then sign in with your work email. Forgot your password? Choose **Forgot your password?** on the sign-in page, and Relay emails you a link to choose a new one.
 
@@ -10,7 +10,7 @@ Relay can hold more than one company. You only see your own company's people, re
 
 **Send a request.** Go to **Submit request**. Write a subject and describe what you need. Choose your depot and a priority. Relay sends the request to the team that can answer it and shows you a reference number. Keep the reference if you phone the office.
 
-**Waiting for approval.** Some requests need a manager's approval before a team starts on them: all leave, and Finance purchases over R5,000. The confirmation says **Waiting for approval**, and the request shows that status until a manager decides. If the manager declines, the reason is shown on the request.
+**Waiting for approval.** Some requests need a manager's approval before a team starts on them: all leave, and Finance purchases over R5,000. The submit form doesn't ask for the request type yet, so for now only requests the Relay team sets up this way wait for approval. When one does, the confirmation says **Waiting for approval**, and the request shows that status until a manager decides. If the manager declines, the reason is shown on the request.
 
 **Follow a request.** Go to **My requests**. The newest is at the top. Each request shows its status in words and colour, and its request page shows the history and the reply once it is sent.
 
@@ -57,7 +57,7 @@ Your menu also has **Tickets** (the department's inbox, as for agents), **Submit
 
 **Reports.** Weekly reports for a department, with a PDF download. Department managers see their own department's reports.
 
-**Two-step sign-in.** You also need a six-digit code from an authenticator app (such as Google Authenticator or Microsoft Authenticator). The first time you sign in, Relay asks you to set it up. After that, it asks for a code at each sign-in. If you lose your phone, ask Samukelo to reset it.
+**Two-step sign-in.** You also need a six-digit code from an authenticator app (such as Google Authenticator or Microsoft Authenticator). The first time you sign in, Relay asks you to set it up. After that, it asks for a code at each sign-in. If you lose your phone, ask the Relay team to reset it (there are no backup codes yet).
 
 ## Compliance: check the AI and the audit trail
 
@@ -79,7 +79,7 @@ Your menu also has **Tickets** (the department's inbox, as for agents), **Submit
 This section is for Relay's own platform team, not for company staff. A platform admin:
 
 - sees every company and its counts on the **Companies** page (`/system`),
-- creates a company with its name, a short address name and the name and email of its **system admin**. The system admin gets an invite email and becomes that company's general manager,
+- creates a company with its name, a **company code** (lower-case letters, numbers and hyphens) and the name and email of its **system admin**. The system admin gets an invite email and becomes that company's general manager,
 - opens a company to see its people in tabs (Staff, Agents, Managers, Company admins and Compliance), and to **invite another system admin** into that company,
 - can edit a person's name, department, depot and email, but can't see the company's tickets or replies.
 

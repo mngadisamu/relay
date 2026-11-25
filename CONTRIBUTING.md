@@ -13,10 +13,18 @@ Four of us work in this repo, so a few rules keep `main` working and deployable 
   fix/S1-09-login-redirect
   docs/S1-20-architecture
   ```
-- Keep branches short-lived (a day or two). Pull from `main` often:
-  ```bash
-  git checkout main && git pull
-  git checkout your-branch && git merge main
+- Keep branches short-lived (a day or two). Pull from `main` often, one command at a time in Command Prompt:
+  ```
+  git checkout main
+  ```
+  ```
+  git pull
+  ```
+  ```
+  git checkout your-branch
+  ```
+  ```
+  git merge main
   ```
 
 ## Commits
@@ -41,7 +49,7 @@ API keys and Supabase keys go in `.env.local`, which is ignored by Git. Add any 
 
 ## Database changes
 
-Never change tables by hand in the Supabase dashboard. Add a new numbered file to `supabase/migrations/` (e.g. `0002_add_priority.sql`) and mention it in your PR so everyone applies it.
+Never change tables by hand in the Supabase dashboard. Database changes go through Samukelo as the next numbered file in `supabase/migrations/` (the next free number is in `AGENTS.md`, section 5). He reviews it and runs it on the live and demo projects.
 
 ## Definition of done
 

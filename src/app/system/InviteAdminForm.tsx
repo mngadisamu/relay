@@ -23,7 +23,7 @@ export function InviteAdminForm({ companyId }: { companyId: number }) {
         <p role="alert" className="rounded-[10px] border border-[#f0c8c3] bg-[#fdf1ef] px-4 py-3 text-sm text-[#a4231a]">{state.error}</p>
       )}
 
-      <form key={state.stamp} action={action} className="grid max-w-xl gap-5 rounded-[10px] border border-line bg-white p-5 sm:p-6">
+      <form key={state.stamp} action={action} className="grid gap-5">
         <input type="hidden" name="companyId" value={companyId} />
 
         <div className="grid gap-1.5">
@@ -40,7 +40,7 @@ export function InviteAdminForm({ companyId }: { companyId: number }) {
           {fe.adminEmail && <p id="inviteAdminEmail-error" className="text-sm text-[#a4231a]">{fe.adminEmail}</p>}
         </div>
 
-        <Button type="submit" disabled={pending} className="w-fit">
+        <Button type="submit" disabled={pending} className="h-11 w-full">
           {pending ? "Sending invite…" : "Send invite"}
         </Button>
       </form>
